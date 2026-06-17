@@ -972,3 +972,54 @@
   transition: width var(--transition-base);
   min-width: 2px;
 }
+
+/* ── Settings & Data Management ──────────────────────────── */
+.settings-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.settings-card {
+  transition: box-shadow var(--transition-fast);
+}
+
+.settings-info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.settings-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--color-hairline-soft);
+}
+
+.settings-info-row:last-child {
+  border-bottom: none;
+}
+
+.settings-info-label {
+  font: var(--text-body-sm);
+  color: var(--color-muted);
+  font-weight: 500;
+}
+
+.settings-info-value {
+  font: var(--text-body-sm);
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+.settings-action-row {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.danger-zone {
+  border: 1px solid var(--color-error);
+}

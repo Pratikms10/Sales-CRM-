@@ -186,6 +186,83 @@ export const Store = {
     localStorage.setItem(KEYS.seeded, 'true');
   },
 
+  // ── Settings ───────────────────────────────────────────
+  getSettings() {
+    try {
+      const data = localStorage.getItem(KEYS.settings);
+      return data ? JSON.parse(data) : {};
+    } catch (e) {
+      return {};
+    }
+  },
+
+  updateSettings(settings) {
+    try {
+      localStorage.setItem(KEYS.settings, JSON.stringify(settings));
+    } catch (e) {
+      console.error('Store: Error writing settings', e);
+    }
+  },
+
+  // ── Export / Import ────────────────────────────────────
+  exportData() {
+    return {
+      users: getAll(KEYS.users),
+      teams: getAll(KEYS.teams),
+      leads: getAll(KEYS.leads),
+      contacts: getAll(KEYS.contacts),
+      deals: getAll(KEYS.deals),
+      activities: getAll(KEYS.activities),
+      settings: Store.getSettings(),
+      exportedAt: new Date().toISOString()
+    };
+  },
+
+  importData(payload) {
+    // Pre-serialize all datasets before touching localStorage
+    const dataKeys = [KEYS.users, KEYS.teams, KEYS.leads, KEYS.contacts, KEYS.deals, KEYS.activities, KEYS.settings];
+    const newValues = {
+      [KEYS.users]:      JSON.stringify(payload.users || []),
+      [KEYS.teams]:      JSON.stringify(payload.teams || []),
+      [KEYS.leads]:      JSON.stringify(payload.leads || []),
+      [KEYS.contacts]:   JSON.stringify(payload.contacts || []),
+      [KEYS.deals]:      JSON.stringify(payload.deals || []),
+      [KEYS.activities]: JSON.stringify(payload.activities || []),
+      [KEYS.settings]:   JSON.stringify(payload.settings || {})
+    };
+
+    // Back up existing values
+    const backup = {};
+    dataKeys.forEach(key => {
+      backup[key] = localStorage.getItem(key);
+    });
+    const seededBackup = localStorage.getItem(KEYS.seeded);
+
+    try {
+      dataKeys.forEach(key => {
+        localStorage.setItem(key, newValues[key]);
+      });
+      localStorage.setItem(KEYS.seeded, 'true');
+      return true;
+    } catch (e) {
+      console.error('Store: Import failed, rolling back', e);
+      // Restore backups
+      dataKeys.forEach(key => {
+        if (backup[key] === null) {
+          localStorage.removeItem(key);
+        } else {
+          localStorage.setItem(key, backup[key]);
+        }
+      });
+      if (seededBackup === null) {
+        localStorage.removeItem(KEYS.seeded);
+      } else {
+        localStorage.setItem(KEYS.seeded, seededBackup);
+      }
+      return false;
+    }
+  },
+
   // ── Full Reset ─────────────────────────────────────────
   clearAll() {
     Object.values(KEYS).forEach(key => localStorage.removeItem(key));

@@ -1,744 +1,734 @@
 ﻿# AI Change Audit Report
 
 ## Generated On
-2026-06-17_18-44-01
+2026-06-17_18-56-37
 
 ## Branch
 main
 
 ## Baseline Commit
-9d65a2e
+22f4eab
 
 ## Task Summary
-Phase 1G Reports and Analytics page with manager-only access, KPI cards, pipeline reports, team performance, forecast, stuck deal insights, and consistent filters
+Phase 1H Settings and Data Management page with role-scoped export, atomic JSON import, demo reset, session controls, and local preferences
 
 ## Git Status
 ```text
  M css/components.css
  M js/app.js
- A js/pages/reports.js
+ A js/pages/settings.js
+ M js/store.js
 ```
 
 ## Files Changed
 ```text
 M	css/components.css
 M	js/app.js
-A	js/pages/reports.js
+A	js/pages/settings.js
+M	js/store.js
 ```
 
 ## Change Summary
 ```text
- css/components.css  |  60 ++++++
- js/app.js           |   4 +
- js/pages/reports.js | 595 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 659 insertions(+)
+ css/components.css   |  51 ++++++
+ js/app.js            |   4 +-
+ js/pages/settings.js | 503 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ js/store.js          |  77 ++++++++
+ 4 files changed, 634 insertions(+), 1 deletion(-)
 ```
 
 ## Full Diff
 ```diff
 diff --git a/css/components.css b/css/components.css
-index f35ea6d..af2c123 100644
+index af2c123..0338e6f 100644
 --- a/css/components.css
 +++ b/css/components.css
-@@ -912,3 +912,63 @@
- .text-link:hover {
-   text-decoration: underline;
+@@ -972,3 +972,54 @@
+   transition: width var(--transition-base);
+   min-width: 2px;
  }
 +
-+/* ΓöÇΓöÇ Reports & Analytics ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
-+.report-grid {
-+  display: grid;
++/* ΓöÇΓöÇ Settings & Data Management ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
++.settings-grid {
++  display: flex;
++  flex-direction: column;
 +  gap: var(--space-lg);
 +}
 +
-+.report-grid-2 {
-+  grid-template-columns: 1fr 1fr;
++.settings-card {
++  transition: box-shadow var(--transition-fast);
 +}
 +
-+@media (max-width: 768px) {
-+  .report-grid-2 {
-+    grid-template-columns: 1fr;
-+  }
++.settings-info-grid {
++  display: flex;
++  flex-direction: column;
++  gap: var(--space-sm);
 +}
 +
-+.report-metric-row {
-+  display: grid;
-+  grid-template-columns: 160px 1fr 1fr;
-+  gap: var(--space-md);
++.settings-info-row {
++  display: flex;
 +  align-items: center;
++  justify-content: space-between;
 +  padding: var(--space-sm) 0;
 +  border-bottom: 1px solid var(--color-hairline-soft);
 +}
 +
-+.report-metric-row:last-child {
++.settings-info-row:last-child {
 +  border-bottom: none;
 +}
 +
-+.report-metric-label {
++.settings-info-label {
 +  font: var(--text-body-sm);
++  color: var(--color-muted);
 +  font-weight: 500;
-+  color: var(--color-ink);
-+  white-space: nowrap;
 +}
 +
-+.report-metric-stats {
-+  display: flex;
-+  gap: var(--space-base);
++.settings-info-value {
 +  font: var(--text-body-sm);
 +  color: var(--color-ink);
-+  justify-content: flex-end;
-+  white-space: nowrap;
++  font-weight: 600;
 +}
 +
-+.report-bar {
-+  height: 8px;
-+  background: var(--color-surface-strong);
-+  border-radius: var(--rounded-full);
-+  overflow: hidden;
-+  min-width: 60px;
++.settings-action-row {
++  display: flex;
++  gap: var(--space-md);
++  flex-wrap: wrap;
 +}
 +
-+.report-bar-fill {
-+  height: 100%;
-+  border-radius: var(--rounded-full);
-+  transition: width var(--transition-base);
-+  min-width: 2px;
++.danger-zone {
++  border: 1px solid var(--color-error);
 +}
 diff --git a/js/app.js b/js/app.js
-index 1414743..289dcb3 100644
+index 289dcb3..45a11b5 100644
 --- a/js/app.js
 +++ b/js/app.js
-@@ -17,6 +17,7 @@ import { renderLeads, bindLeadsEvents } from './pages/leads.js';
- import { renderContacts, bindContactsEvents } from './pages/contacts.js';
+@@ -18,6 +18,7 @@ import { renderContacts, bindContactsEvents } from './pages/contacts.js';
  import { renderDeals, bindDealsEvents } from './pages/deals.js';
  import { renderTeam, bindTeamEvents } from './pages/team.js';
-+import { renderReports, bindReportsEvents } from './pages/reports.js';
+ import { renderReports, bindReportsEvents } from './pages/reports.js';
++import { renderSettings, bindSettingsEvents } from './pages/settings.js';
  
  // ΓöÇΓöÇ DOM References ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
  
-@@ -119,6 +120,8 @@ function renderPage(pageId, params) {
-       contentEl.innerHTML = renderTeam();
+@@ -123,7 +124,7 @@ function renderPage(pageId, params) {
+       contentEl.innerHTML = renderReports();
        break;
-     case 'reports':
-+      contentEl.innerHTML = renderReports();
-+      break;
      case 'settings':
-       contentEl.innerHTML = renderComingSoon(pageId);
+-      contentEl.innerHTML = renderComingSoon(pageId);
++      contentEl.innerHTML = renderSettings();
        break;
-@@ -136,6 +139,7 @@ bindLeadsEvents();
- bindContactsEvents();
+     default:
+       contentEl.innerHTML = renderComingSoon(pageId);
+@@ -140,6 +141,7 @@ bindContactsEvents();
  bindDealsEvents();
  bindTeamEvents();
-+bindReportsEvents();
+ bindReportsEvents();
++bindSettingsEvents();
  
  // ΓöÇΓöÇ Bootstrap ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
  
-diff --git a/js/pages/reports.js b/js/pages/reports.js
+diff --git a/js/pages/settings.js b/js/pages/settings.js
 new file mode 100644
-index 0000000..7d2bd17
+index 0000000..b30425d
 --- /dev/null
-+++ b/js/pages/reports.js
-@@ -0,0 +1,595 @@
++++ b/js/pages/settings.js
+@@ -0,0 +1,503 @@
 +// ============================================================
-+// TechnoEdge CRM ΓÇö Reports & Analytics Page
-+// Manager-only reports with team/status filters
++// TechnoEdge CRM ΓÇö Settings & Data Management Page
++// Role-scoped settings, export/import, demo reset
 +// ============================================================
 +
 +import { Store } from '../store.js';
 +import { Auth } from '../auth.js';
-+import { formatCurrency, capitalize, formatDate, formatDateTime, timeAgo, SOP_STAGES } from '../utils.js';
++import { Router } from '../router.js';
++import { Toast } from '../components/toast.js';
++import { seedData } from '../seed.js';
++import { formatRole, formatDateTime } from '../utils.js';
 +
-+// ΓöÇΓöÇ Stage Probability Map (forecast weighting) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++// ΓöÇΓöÇ Data Summary ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 +
-+const STAGE_PROBABILITY = {
-+  sales: 20,
-+  requirement: 35,
-+  sourcing: 50,
-+  delivery: 70,
-+  feedback: 80,
-+  invoice: 90,
-+  renewal: 60
-+};
-+
-+function getStageProbability(stageKey) {
-+  return STAGE_PROBABILITY[stageKey] || 0;
++function getDataSummary() {
++  return {
++    users: Store.getUsers().length,
++    teams: Store.getTeams().length,
++    leads: Store.getLeads().length,
++    contacts: Store.getContacts().length,
++    deals: Store.getDeals().length,
++    activities: Store.getActivities().length
++  };
 +}
 +
-+function calculateForecast(deals) {
-+  return deals
-+    .filter(d => d.status === 'active')
-+    .reduce((sum, d) => sum + (d.value || 0) * getStageProbability(d.stage) / 100, 0);
++// ΓöÇΓöÇ CSV Helpers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++
++function escapeCsvValue(value) {
++  if (value === null || value === undefined) return '';
++  const str = String(value);
++  if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
++    return '"' + str.replace(/"/g, '""') + '"';
++  }
++  return str;
 +}
 +
-+function daysSince(dateStr) {
-+  if (!dateStr) return 999;
-+  const now = new Date();
-+  const then = new Date(dateStr);
-+  return Math.floor((now - then) / (1000 * 60 * 60 * 24));
++function toCsv(rows, columns) {
++  const header = columns.map(c => escapeCsvValue(c.label)).join(',');
++  const body = rows.map(row =>
++    columns.map(c => escapeCsvValue(c.accessor(row))).join(',')
++  ).join('\n');
++  return header + '\n' + body;
 +}
 +
-+// ΓöÇΓöÇ Current Filter State ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++function downloadFile(filename, content, mimeType) {
++  const blob = new Blob([content], { type: mimeType });
++  const url = URL.createObjectURL(blob);
++  const a = document.createElement('a');
++  a.href = url;
++  a.download = filename;
++  document.body.appendChild(a);
++  a.click();
++  document.body.removeChild(a);
++  URL.revokeObjectURL(url);
++}
 +
-+let reportFilters = {
-+  teamId: '',
-+  dealStatus: ''
-+};
++// ΓöÇΓöÇ Section Builders ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 +
-+// ΓöÇΓöÇ Filtered Data Helper ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++function buildSessionCard() {
++  const user = Auth.getCurrentUser();
++  const session = Store.getSession();
++  const team = user.teamId ? Store.getTeamById(user.teamId) : null;
 +
-+function getFilteredReportData() {
-+  let leads = Store.getLeads();
-+  let deals = Store.getDeals();
-+  const allUsers = Store.getUsers();
-+  const allTeams = Store.getTeams();
++  return `
++    <div class="card settings-card">
++      <div style="padding:1.5rem; border-bottom:1px solid var(--color-hairline-soft);">
++        <h3 style="margin:0;">Current Session</h3>
++      </div>
++      <div style="padding:1.5rem;">
++        <div class="settings-info-grid">
++          <div class="settings-info-row">
++            <span class="settings-info-label">User</span>
++            <span class="settings-info-value">${user.name}</span>
++          </div>
++          <div class="settings-info-row">
++            <span class="settings-info-label">Role</span>
++            <span class="settings-info-value"><span class="role-badge role-badge-${user.role}">${formatRole(user.role)}</span></span>
++          </div>
++          <div class="settings-info-row">
++            <span class="settings-info-label">Team</span>
++            <span class="settings-info-value">${team ? team.name : 'ΓÇö'}</span>
++          </div>
++          <div class="settings-info-row">
++            <span class="settings-info-label">Login Time</span>
++            <span class="settings-info-value">${session && session.loginAt ? formatDateTime(session.loginAt) : 'ΓÇö'}</span>
++          </div>
++          <div class="settings-info-row">
++            <span class="settings-info-label">Storage</span>
++            <span class="settings-info-value">LocalStorage</span>
++          </div>
++          <div class="settings-info-row">
++            <span class="settings-info-label">App Phase</span>
++            <span class="settings-info-value"><span class="badge badge-primary">Phase 1H Basic CRM</span></span>
++          </div>
++        </div>
++      </div>
++    </div>
++  `;
++}
 +
-+  // Validate teamId against Store
-+  if (reportFilters.teamId) {
-+    const validTeam = allTeams.find(t => t.id === reportFilters.teamId);
-+    if (!validTeam) reportFilters.teamId = '';
-+  }
++function buildDataSummaryCard(user) {
++  const summary = getDataSummary();
++  const label = user.role === 'manager' ? 'Organization data summary' : 'Local demo data summary';
 +
-+  // Team filter
-+  if (reportFilters.teamId) {
-+    const teamUsers = Store.getUsersByTeam(reportFilters.teamId);
-+    const teamUserIds = teamUsers.map(u => u.id);
++  const items = [
++    { label: 'Users', count: summary.users, color: 'var(--color-stage-sales)' },
++    { label: 'Teams', count: summary.teams, color: 'var(--color-stage-requirement)' },
++    { label: 'Leads', count: summary.leads, color: 'var(--color-stage-sourcing)' },
++    { label: 'Contacts', count: summary.contacts, color: 'var(--color-stage-delivery)' },
++    { label: 'Deals', count: summary.deals, color: 'var(--color-stage-feedback)' },
++    { label: 'Activities', count: summary.activities, color: 'var(--color-stage-invoice)' }
++  ];
 +
-+    leads = leads.filter(l => teamUserIds.includes(l.assignedTo));
-+    deals = deals.filter(d => d.teamId === reportFilters.teamId || teamUserIds.includes(d.assignedTo));
-+  }
++  const itemsHtml = items.map(i => `
++    <div style="text-align:center;">
++      <div style="font-size:1.5rem; font-weight:700; color:${i.color};">${i.count}</div>
++      <div style="font-size:0.8rem; color:var(--color-muted);">${i.label}</div>
++    </div>
++  `).join('');
 +
-+  // Deal status filter
-+  if (reportFilters.dealStatus) {
-+    deals = deals.filter(d => d.status === reportFilters.dealStatus);
-+  }
++  return `
++    <div class="card settings-card">
++      <div style="padding:1.5rem; border-bottom:1px solid var(--color-hairline-soft);">
++        <h3 style="margin:0;">Data Summary</h3>
++        <p style="margin:0.25rem 0 0; font-size:0.85rem; color:var(--color-muted);">${label}</p>
++      </div>
++      <div style="padding:1.5rem;">
++        <div style="display:grid; grid-template-columns:repeat(6, 1fr); gap:1rem;">
++          ${itemsHtml}
++        </div>
++      </div>
++    </div>
++  `;
++}
 +
-+  return { leads, deals, allUsers, allTeams };
++function buildExportSection() {
++  return `
++    <div class="card settings-card">
++      <div style="padding:1.5rem; border-bottom:1px solid var(--color-hairline-soft);">
++        <h3 style="margin:0;">Export Data</h3>
++        <p style="margin:0.25rem 0 0; font-size:0.85rem; color:var(--color-muted);">Download CRM data as JSON or CSV files.</p>
++      </div>
++      <div style="padding:1.5rem;">
++        <div class="settings-action-row">
++          <button class="btn btn-primary btn-sm" id="btn-export-json">Export Full JSON</button>
++          <button class="btn btn-secondary btn-sm" id="btn-export-leads-csv">Export Leads CSV</button>
++          <button class="btn btn-secondary btn-sm" id="btn-export-contacts-csv">Export Contacts CSV</button>
++          <button class="btn btn-secondary btn-sm" id="btn-export-deals-csv">Export Deals CSV</button>
++        </div>
++      </div>
++    </div>
++  `;
++}
++
++function buildImportSection() {
++  return `
++    <div class="card settings-card">
++      <div style="padding:1.5rem; border-bottom:1px solid var(--color-hairline-soft);">
++        <h3 style="margin:0;">Import Data</h3>
++        <p style="margin:0.25rem 0 0; font-size:0.85rem; color:var(--color-muted);">Imports a full CRM JSON export created by this Settings page.</p>
++      </div>
++      <div style="padding:1.5rem;">
++        <div style="margin-bottom:1rem;">
++          <input type="file" id="import-file-input" class="login-input" accept=".json" style="padding:0.5rem;">
++        </div>
++        <button class="btn btn-primary btn-sm" id="btn-import-json">Import JSON</button>
++      </div>
++    </div>
++  `;
++}
++
++function buildResetSection() {
++  return `
++    <div class="card settings-card danger-zone">
++      <div style="padding:1.5rem; border-bottom:1px solid var(--color-error);">
++        <h3 style="margin:0; color:var(--color-error);">Danger Zone</h3>
++        <p style="margin:0.25rem 0 0; font-size:0.85rem; color:var(--color-muted);">Destructive actions that cannot be undone.</p>
++      </div>
++      <div style="padding:1.5rem;">
++        <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem;">
++          <div>
++            <strong>Reset Demo Data</strong>
++            <p style="margin:0.25rem 0 0; font-size:0.85rem; color:var(--color-muted);">Clears all CRM data and re-seeds the original demo dataset. You will be logged out.</p>
++          </div>
++          <button class="btn btn-sm" id="btn-reset-demo" style="background:var(--color-error); color:var(--color-on-primary); white-space:nowrap;">Reset Demo Data</button>
++        </div>
++      </div>
++    </div>
++  `;
++}
++
++function buildPreferencesSection() {
++  const settings = Store.getSettings();
++  const compactTables = settings.compactTables || false;
++
++  return `
++    <div class="card settings-card">
++      <div style="padding:1.5rem; border-bottom:1px solid var(--color-hairline-soft);">
++        <h3 style="margin:0;">Workspace Preferences</h3>
++      </div>
++      <div style="padding:1.5rem;">
++        <div class="settings-info-grid">
++          <div class="settings-info-row">
++            <span class="settings-info-label">Compact Tables</span>
++            <span class="settings-info-value">
++              <input type="checkbox" id="pref-compact-tables" ${compactTables ? 'checked' : ''}>
++            </span>
++          </div>
++          <div class="settings-info-row">
++            <span class="settings-info-label">Currency</span>
++            <span class="settings-info-value"><span class="badge badge-neutral">INR (locked)</span></span>
++          </div>
++        </div>
++        <div style="margin-top:1rem;">
++          <button class="btn btn-primary btn-sm" id="btn-save-preferences">Save Preferences</button>
++        </div>
++      </div>
++    </div>
++  `;
++}
++
++function buildSignOutSection() {
++  return `
++    <div class="card settings-card">
++      <div style="padding:1.5rem; border-bottom:1px solid var(--color-hairline-soft);">
++        <h3 style="margin:0;">Session</h3>
++      </div>
++      <div style="padding:1.5rem;">
++        <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem;">
++          <div>
++            <strong>Sign Out</strong>
++            <p style="margin:0.25rem 0 0; font-size:0.85rem; color:var(--color-muted);">End your current session and return to the login screen.</p>
++          </div>
++          <button class="btn btn-secondary btn-sm" id="btn-settings-signout">Sign Out</button>
++        </div>
++      </div>
++    </div>
++  `;
 +}
 +
 +// ΓöÇΓöÇ Main Render ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 +
-+export function renderReports() {
-+  if (!Auth.canAccessPage('reports')) {
-+    return `
-+      <div class="content-inner">
-+        <div class="coming-soon">
-+          <div class="coming-soon-icon">
-+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-+              <path d="M7 11V7a5 5 0 0110 0v4"/>
-+            </svg>
-+          </div>
-+          <h3 class="coming-soon-title">Access Denied</h3>
-+          <p class="coming-soon-desc">You do not have permission to view Reports. This section is available to Managers only.</p>
-+        </div>
-+      </div>
++export function renderSettings() {
++  const user = Auth.getCurrentUser();
++  if (!user) return '';
++
++  const isManager = user.role === 'manager';
++  const subtitle = isManager
++    ? 'Manage CRM data, demo records, and local workspace settings.'
++    : 'View workspace information and manage your local session.';
++
++  let managerSections = '';
++  if (isManager) {
++    managerSections = `
++      ${buildExportSection()}
++      ${buildImportSection()}
++      ${buildResetSection()}
 +    `;
 +  }
-+
-+  const allTeams = Store.getTeams();
-+  const { leads, deals } = getFilteredReportData();
-+
-+  const teamOptions = allTeams.map(t =>
-+    `<option value="${t.id}" ${reportFilters.teamId === t.id ? 'selected' : ''}>${t.name}</option>`
-+  ).join('');
 +
 +  return `
 +    <div class="content-inner">
 +      <div class="page-header">
 +        <div>
-+          <h1 class="page-header-title">Reports & Analytics</h1>
-+          <p class="page-header-subtitle">Organization-wide performance metrics and pipeline intelligence.</p>
++          <h1 class="page-header-title">Settings</h1>
++          <p class="page-header-subtitle">${subtitle}</p>
 +        </div>
 +      </div>
 +
-+      <div class="card" style="margin-bottom: var(--space-lg);">
-+        <div class="filter-bar" style="display:flex; gap:1rem; padding:1rem; border-bottom:1px solid var(--color-border); flex-wrap:wrap; align-items:center;">
-+          <select class="login-input" id="report-filter-team" style="max-width:180px;">
-+            <option value="">All Teams</option>
-+            ${teamOptions}
-+          </select>
-+          <select class="login-input" id="report-filter-status" style="max-width:150px;">
-+            <option value="">All Deals</option>
-+            <option value="active" ${reportFilters.dealStatus === 'active' ? 'selected' : ''}>Active</option>
-+            <option value="won" ${reportFilters.dealStatus === 'won' ? 'selected' : ''}>Won</option>
-+            <option value="lost" ${reportFilters.dealStatus === 'lost' ? 'selected' : ''}>Lost</option>
-+          </select>
-+          <button class="btn btn-secondary btn-sm" id="btn-clear-report-filters">Clear</button>
-+        </div>
-+      </div>
-+
-+      ${buildKpiCards(leads, deals)}
-+
-+      ${buildPipelineReport(deals)}
-+
-+      <div class="report-grid report-grid-2" style="margin-bottom: var(--space-xl);">
-+        ${buildDistributionReport(leads, 'status', 'Leads by Status')}
-+        ${buildDistributionReport(leads, 'source', 'Leads by Source')}
-+      </div>
-+
-+      ${buildTeamPerformance()}
-+
-+      ${buildEmployeePerformance()}
-+
-+      ${buildStuckDeals()}
-+
-+      ${buildRecentActivity()}
-+    </div>
-+  `;
-+}
-+
-+// ΓöÇΓöÇ KPI Cards ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-+
-+function buildKpiCards(leads, deals) {
-+  const totalLeads = leads.length;
-+  const qualifiedLeads = leads.filter(l => l.status === 'qualified').length;
-+  const convertedLeads = leads.filter(l => l.status === 'converted').length;
-+
-+  const activeDeals = deals.filter(d => d.status === 'active');
-+  const activeDealCount = activeDeals.length;
-+  const openPipeline = activeDeals.reduce((s, d) => s + (d.value || 0), 0);
-+  const wonRevenue = deals.filter(d => d.status === 'won').reduce((s, d) => s + (d.value || 0), 0);
-+  const conversionRate = totalLeads > 0 ? ((convertedLeads / totalLeads) * 100).toFixed(1) : '0.0';
-+  const forecastRevenue = calculateForecast(deals);
-+
-+  const kpis = [
-+    { label: 'Total Leads',         value: totalLeads,                    color: 'var(--color-stage-sales)',       bg: 'var(--color-primary-disabled)' },
-+    { label: 'Qualified Leads',     value: qualifiedLeads,                color: 'var(--color-stage-sourcing)',    bg: 'var(--color-info-soft)' },
-+    { label: 'Converted Leads',     value: convertedLeads,                color: 'var(--color-success)',           bg: 'var(--color-success-soft)' },
-+    { label: 'Active Deals',        value: activeDealCount,               color: 'var(--color-stage-delivery)',    bg: 'var(--color-warning-soft)' },
-+    { label: 'Open Pipeline',       value: formatCurrency(openPipeline),  color: 'var(--color-stage-feedback)',    bg: '#f3e8ff' },
-+    { label: 'Won Revenue',         value: formatCurrency(wonRevenue),    color: 'var(--color-success)',           bg: 'var(--color-success-soft)' },
-+    { label: 'Lead Conversion Rate',value: conversionRate + '%',          color: 'var(--color-stage-invoice)',     bg: 'var(--color-info-soft)' },
-+    { label: 'Forecast Revenue',    value: formatCurrency(forecastRevenue),color:'var(--color-stage-renewal)',     bg: 'var(--color-primary-disabled)' }
-+  ];
-+
-+  const cardsHtml = kpis.map(k => `
-+    <div class="stat-card">
-+      <div class="stat-card-icon" style="background:${k.bg}; color:${k.color};">
-+        <span style="font-size:1.2rem; font-weight:700;">${typeof k.value === 'number' ? '#' : 'Γé╣'}</span>
-+      </div>
-+      <div class="stat-card-content">
-+        <div class="stat-card-label">${k.label}</div>
-+        <div class="stat-card-value">${k.value}</div>
-+      </div>
-+    </div>
-+  `).join('');
-+
-+  return `<div class="stat-cards" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));">${cardsHtml}</div>`;
-+}
-+
-+// ΓöÇΓöÇ Pipeline Stage Report ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-+
-+function buildPipelineReport(deals) {
-+  const activeDeals = deals.filter(d => d.status === 'active');
-+  const maxVal = Math.max(...SOP_STAGES.map(s =>
-+    activeDeals.filter(d => d.stage === s.key).reduce((sum, d) => sum + (d.value || 0), 0)
-+  ), 1);
-+
-+  const rows = SOP_STAGES.map(s => {
-+    const stageDeals = activeDeals.filter(d => d.stage === s.key);
-+    const count = stageDeals.length;
-+    const total = stageDeals.reduce((sum, d) => sum + (d.value || 0), 0);
-+    const forecast = total * getStageProbability(s.key) / 100;
-+    const pct = maxVal > 0 ? (total / maxVal * 100) : 0;
-+
-+    return `
-+      <div class="report-metric-row">
-+        <div class="report-metric-label">
-+          <span class="stage-badge stage-badge-${s.key}" style="margin-right: 0.5rem;">${s.label}</span>
-+        </div>
-+        <div class="report-metric-stats">
-+          <span>${count} deal${count !== 1 ? 's' : ''}</span>
-+          <span>${formatCurrency(total)}</span>
-+          <span style="color:var(--color-muted)">Fcst: ${formatCurrency(forecast)}</span>
-+        </div>
-+        <div class="report-bar">
-+          <div class="report-bar-fill" style="width:${pct}%; background:${s.color};"></div>
-+        </div>
-+      </div>
-+    `;
-+  }).join('');
-+
-+  return `
-+    <div class="report-card card" style="margin-bottom: var(--space-xl);">
-+      <div style="padding:1.5rem; border-bottom:1px solid var(--color-hairline-soft);">
-+        <h3 style="margin:0;">Pipeline by SOP Stage</h3>
-+      </div>
-+      <div style="padding:1.5rem;">
-+        ${rows}
++      <div class="settings-grid">
++        ${buildSessionCard()}
++        ${buildDataSummaryCard(user)}
++        ${managerSections}
++        ${buildPreferencesSection()}
++        ${buildSignOutSection()}
 +      </div>
 +    </div>
 +  `;
 +}
 +
-+// ΓöÇΓöÇ Distribution Report (Leads by Status / Source) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++// ΓöÇΓöÇ Action Handlers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 +
-+function buildDistributionReport(leads, field, title) {
-+  const counts = {};
-+  leads.forEach(l => {
-+    const val = l[field] || 'Unknown';
-+    counts[val] = (counts[val] || 0) + 1;
-+  });
-+
-+  const total = leads.length || 1;
-+  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-+  const maxCount = entries.length > 0 ? entries[0][1] : 1;
-+
-+  const COLORS = ['var(--color-stage-sales)', 'var(--color-stage-requirement)', 'var(--color-stage-sourcing)', 'var(--color-stage-delivery)', 'var(--color-stage-feedback)', 'var(--color-stage-invoice)', 'var(--color-stage-renewal)', 'var(--color-primary)'];
-+
-+  const rows = entries.map(([label, count], i) => {
-+    const pct = ((count / total) * 100).toFixed(1);
-+    const barPct = (count / maxCount) * 100;
-+    const color = COLORS[i % COLORS.length];
-+    return `
-+      <div class="report-metric-row">
-+        <div class="report-metric-label"><span>${capitalize(label)}</span></div>
-+        <div class="report-metric-stats">
-+          <span>${count}</span>
-+          <span style="color:var(--color-muted);">${pct}%</span>
-+        </div>
-+        <div class="report-bar">
-+          <div class="report-bar-fill" style="width:${barPct}%; background:${color};"></div>
-+        </div>
-+      </div>
-+    `;
-+  }).join('');
-+
-+  const emptyHtml = entries.length === 0 ? `<p style="color:var(--color-muted); text-align:center; padding:1rem;">No data.</p>` : '';
-+
-+  return `
-+    <div class="report-card card">
-+      <div style="padding:1.5rem; border-bottom:1px solid var(--color-hairline-soft);">
-+        <h3 style="margin:0;">${title}</h3>
-+      </div>
-+      <div style="padding:1.5rem;">
-+        ${rows}
-+        ${emptyHtml}
-+      </div>
-+    </div>
-+  `;
++function handleExportJson() {
++  const user = Auth.getCurrentUser();
++  if (!user || user.role !== 'manager') {
++    Toast.error('Permission Denied', 'Only managers can export data.');
++    return;
++  }
++  const data = Store.exportData();
++  const json = JSON.stringify(data, null, 2);
++  downloadFile('technoedge-crm-export.json', json, 'application/json');
++  Toast.success('Exported', 'Full CRM data downloaded as JSON.');
 +}
 +
-+// ΓöÇΓöÇ Team Performance ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-+
-+function buildTeamPerformance() {
-+  const { deals, leads, allTeams, allUsers } = getFilteredReportData();
-+
-+  let teams = allTeams;
-+  if (reportFilters.teamId) {
-+    teams = allTeams.filter(t => t.id === reportFilters.teamId);
++function handleExportCsv(type) {
++  const user = Auth.getCurrentUser();
++  if (!user || user.role !== 'manager') {
++    Toast.error('Permission Denied', 'Only managers can export data.');
++    return;
 +  }
 +
-+  const rows = teams.map(team => {
-+    const tUsers = Store.getUsersByTeam(team.id);
-+    const tUserIds = tUsers.map(u => u.id);
-+    const leadUser = allUsers.find(u => u.id === team.leadId);
++  let csv = '';
++  let filename = '';
 +
-+    const tDeals = deals.filter(d => d.teamId === team.id || tUserIds.includes(d.assignedTo));
-+    const tLeads = leads.filter(l => tUserIds.includes(l.assignedTo));
-+
-+    const openLeads = tLeads.filter(l => l.status === 'new' || l.status === 'contacted').length;
-+    const activeDeals = tDeals.filter(d => d.status === 'active');
-+    const pipelineValue = activeDeals.reduce((s, d) => s + (d.value || 0), 0);
-+    const wonDeals = tDeals.filter(d => d.status === 'won');
-+    const wonRevenue = wonDeals.reduce((s, d) => s + (d.value || 0), 0);
-+    const forecast = calculateForecast(tDeals);
-+
-+    return `
-+      <tr>
-+        <td style="font-weight:500;">${team.name}</td>
-+        <td>${leadUser ? leadUser.name : 'ΓÇö'}</td>
-+        <td>${tUsers.length}</td>
-+        <td>${openLeads}</td>
-+        <td>${activeDeals.length}</td>
-+        <td style="font-weight:600;">${formatCurrency(pipelineValue)}</td>
-+        <td style="color:var(--color-success); font-weight:600;">${formatCurrency(wonRevenue)}</td>
-+        <td>${formatCurrency(forecast)}</td>
-+      </tr>
-+    `;
-+  }).join('');
-+
-+  return `
-+    <div class="report-card card" style="margin-bottom: var(--space-xl);">
-+      <div style="padding:1.5rem; border-bottom:1px solid var(--color-hairline-soft);">
-+        <h3 style="margin:0;">Team Performance</h3>
-+      </div>
-+      <div style="overflow-x:auto;">
-+        <table class="data-table">
-+          <thead>
-+            <tr>
-+              <th>Team</th>
-+              <th>Team Lead</th>
-+              <th>Members</th>
-+              <th>Open Leads</th>
-+              <th>Active Deals</th>
-+              <th>Pipeline Value</th>
-+              <th>Won Revenue</th>
-+              <th>Forecast Revenue</th>
-+            </tr>
-+          </thead>
-+          <tbody>
-+            ${rows || '<tr><td colspan="8" style="text-align:center; padding:1.5rem; color:var(--color-muted);">No teams.</td></tr>'}
-+          </tbody>
-+        </table>
-+      </div>
-+    </div>
-+  `;
-+}
-+
-+// ΓöÇΓöÇ Employee Performance ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-+
-+function buildEmployeePerformance() {
-+  const { deals, leads, allUsers, allTeams } = getFilteredReportData();
-+
-+  let users = allUsers.filter(u => u.role === 'team_lead' || u.role === 'employee');
-+
-+  // Also include managers who own records
-+  const managerUsers = allUsers.filter(u => u.role === 'manager');
-+  managerUsers.forEach(m => {
-+    const hasRecords = deals.some(d => d.assignedTo === m.id) || leads.some(l => l.assignedTo === m.id);
-+    if (hasRecords && !users.find(u => u.id === m.id)) users.push(m);
-+  });
-+
-+  if (reportFilters.teamId) {
-+    const teamUserIds = Store.getUsersByTeam(reportFilters.teamId).map(u => u.id);
-+    users = users.filter(u => teamUserIds.includes(u.id));
++  if (type === 'leads') {
++    const leads = Store.getLeads();
++    csv = toCsv(leads, [
++      { label: 'ID', accessor: r => r.id },
++      { label: 'Name', accessor: r => r.name },
++      { label: 'Company', accessor: r => r.company },
++      { label: 'Email', accessor: r => r.email },
++      { label: 'Phone', accessor: r => r.phone },
++      { label: 'Source', accessor: r => r.source },
++      { label: 'Status', accessor: r => r.status },
++      { label: 'Assigned To', accessor: r => { const u = Store.getUserById(r.assignedTo); return u ? u.name : ''; } },
++      { label: 'Created At', accessor: r => r.createdAt },
++      { label: 'Updated At', accessor: r => r.updatedAt }
++    ]);
++    filename = 'technoedge-leads.csv';
++  } else if (type === 'contacts') {
++    const contacts = Store.getContacts();
++    csv = toCsv(contacts, [
++      { label: 'ID', accessor: r => r.id },
++      { label: 'Name', accessor: r => r.name },
++      { label: 'Company', accessor: r => r.company },
++      { label: 'Designation', accessor: r => r.designation },
++      { label: 'Email', accessor: r => r.email },
++      { label: 'Phone', accessor: r => r.phone },
++      { label: 'Type', accessor: r => r.type },
++      { label: 'Tags', accessor: r => Array.isArray(r.tags) ? r.tags.join('; ') : r.tags },
++      { label: 'Created At', accessor: r => r.createdAt }
++    ]);
++    filename = 'technoedge-contacts.csv';
++  } else if (type === 'deals') {
++    const deals = Store.getDeals();
++    csv = toCsv(deals, [
++      { label: 'ID', accessor: r => r.id },
++      { label: 'Title', accessor: r => r.title },
++      { label: 'Value', accessor: r => r.value },
++      { label: 'Currency', accessor: r => r.currency },
++      { label: 'Stage', accessor: r => r.stage },
++      { label: 'Status', accessor: r => r.status },
++      { label: 'Priority', accessor: r => r.priority },
++      { label: 'Assigned To', accessor: r => { const u = Store.getUserById(r.assignedTo); return u ? u.name : ''; } },
++      { label: 'Team', accessor: r => { const t = Store.getTeamById(r.teamId); return t ? t.name : ''; } },
++      { label: 'Created At', accessor: r => r.createdAt },
++      { label: 'Updated At', accessor: r => r.updatedAt }
++    ]);
++    filename = 'technoedge-deals.csv';
 +  }
 +
-+  // Build performance data
-+  const perfData = users.map(u => {
-+    const uDeals = deals.filter(d => d.assignedTo === u.id);
-+    const uLeads = leads.filter(l => l.assignedTo === u.id);
-+    const openLeads = uLeads.filter(l => l.status === 'new' || l.status === 'contacted').length;
-+    const activeDeals = uDeals.filter(d => d.status === 'active');
-+    const pipelineValue = activeDeals.reduce((s, d) => s + (d.value || 0), 0);
-+    const wonDeals = uDeals.filter(d => d.status === 'won');
-+    const wonRevenue = wonDeals.reduce((s, d) => s + (d.value || 0), 0);
-+    const teamName = u.teamId ? (allTeams.find(t => t.id === u.teamId)?.name || 'ΓÇö') : 'ΓÇö';
-+
-+    return { user: u, openLeads, activeDeals: activeDeals.length, pipelineValue, wonDeals: wonDeals.length, wonRevenue, teamName };
-+  });
-+
-+  // Sort by pipeline value descending
-+  perfData.sort((a, b) => b.pipelineValue - a.pipelineValue);
-+
-+  const rows = perfData.map(p => {
-+    const roleLabel = p.user.role === 'team_lead' ? 'Team Lead' : capitalize(p.user.role);
-+    return `
-+      <tr>
-+        <td style="font-weight:500;">${p.user.name}</td>
-+        <td><span class="badge badge-neutral">${roleLabel}</span></td>
-+        <td style="font-size:0.85rem;">${p.teamName}</td>
-+        <td>${p.openLeads}</td>
-+        <td>${p.activeDeals}</td>
-+        <td style="font-weight:600;">${formatCurrency(p.pipelineValue)}</td>
-+        <td>${p.wonDeals}</td>
-+        <td style="color:var(--color-success); font-weight:600;">${formatCurrency(p.wonRevenue)}</td>
-+      </tr>
-+    `;
-+  }).join('');
-+
-+  const emptyRow = perfData.length === 0 ? '<tr><td colspan="8" style="text-align:center; padding:1.5rem; color:var(--color-muted);">No employees found.</td></tr>' : '';
-+
-+  return `
-+    <div class="report-card card" style="margin-bottom: var(--space-xl);">
-+      <div style="padding:1.5rem; border-bottom:1px solid var(--color-hairline-soft);">
-+        <h3 style="margin:0;">Employee Performance</h3>
-+      </div>
-+      <div style="overflow-x:auto;">
-+        <table class="data-table">
-+          <thead>
-+            <tr>
-+              <th>Employee</th>
-+              <th>Role</th>
-+              <th>Team</th>
-+              <th>Open Leads</th>
-+              <th>Active Deals</th>
-+              <th>Pipeline Value</th>
-+              <th>Won Deals</th>
-+              <th>Won Revenue</th>
-+            </tr>
-+          </thead>
-+          <tbody>
-+            ${rows}
-+            ${emptyRow}
-+          </tbody>
-+        </table>
-+      </div>
-+    </div>
-+  `;
++  downloadFile(filename, csv, 'text/csv');
++  Toast.success('Exported', `${type.charAt(0).toUpperCase() + type.slice(1)} CSV downloaded.`);
 +}
 +
-+// ΓöÇΓöÇ Stuck Deals ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-+
-+function buildStuckDeals() {
-+  const { deals, allUsers, allTeams } = getFilteredReportData();
-+  const stuckDeals = deals
-+    .filter(d => d.status === 'active' && daysSince(d.updatedAt) > 7)
-+    .sort((a, b) => daysSince(b.updatedAt) - daysSince(a.updatedAt));
-+
-+  if (stuckDeals.length === 0) {
-+    return `
-+      <div class="report-card card" style="margin-bottom: var(--space-xl);">
-+        <div style="padding:1.5rem; border-bottom:1px solid var(--color-hairline-soft);">
-+          <h3 style="margin:0;">Stuck Deals</h3>
-+        </div>
-+        <div class="empty-state" style="padding: var(--space-xl);">
-+          <div class="empty-state-icon">
-+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-+          </div>
-+          <div class="empty-state-title">No Stuck Deals</div>
-+          <div class="empty-state-desc">All active deals have been updated within the last 7 days. Great momentum!</div>
-+        </div>
-+      </div>
-+    `;
++function handleImportJson() {
++  const user = Auth.getCurrentUser();
++  if (!user || user.role !== 'manager') {
++    Toast.error('Permission Denied', 'Only managers can import data.');
++    return;
 +  }
 +
-+  const rows = stuckDeals.map(d => {
-+    const owner = d.assignedTo ? Store.getUserById(d.assignedTo) : null;
-+    const team = d.teamId ? Store.getTeamById(d.teamId) : null;
-+    const stageObj = SOP_STAGES.find(s => s.key === d.stage);
-+    const stageLabel = stageObj ? stageObj.label : capitalize(d.stage);
-+    const days = daysSince(d.updatedAt);
++  const fileInput = document.getElementById('import-file-input');
++  if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
++    Toast.error('No File', 'Please select a JSON file to import.');
++    return;
++  }
 +
-+    return `
-+      <tr>
-+        <td><a href="#/deals/${d.id}" class="text-link" style="font-weight:500;">${d.title}</a></td>
-+        <td><span class="stage-badge stage-badge-${d.stage}">${stageLabel}</span></td>
-+        <td>${owner ? owner.name : '<span style="color:var(--color-muted)">Unassigned</span>'}</td>
-+        <td style="font-size:0.85rem;">${team ? team.name : 'ΓÇö'}</td>
-+        <td style="font-weight:600;">${formatCurrency(d.value)}</td>
-+        <td><span class="badge badge-error">${days} day${days !== 1 ? 's' : ''}</span></td>
-+        <td style="text-align:right;"><a href="#/deals/${d.id}" class="btn btn-sm btn-secondary">View</a></td>
-+      </tr>
-+    `;
-+  }).join('');
++  const file = fileInput.files[0];
++  const reader = new FileReader();
 +
-+  return `
-+    <div class="report-card card" style="margin-bottom: var(--space-xl);">
-+      <div style="padding:1.5rem; border-bottom:1px solid var(--color-hairline-soft);">
-+        <h3 style="margin:0;">Stuck Deals <span class="badge badge-error" style="margin-left:0.5rem;">${stuckDeals.length}</span></h3>
-+      </div>
-+      <div style="overflow-x:auto;">
-+        <table class="data-table">
-+          <thead>
-+            <tr>
-+              <th>Deal</th>
-+              <th>Stage</th>
-+              <th>Owner</th>
-+              <th>Team</th>
-+              <th>Value</th>
-+              <th>Days Stuck</th>
-+              <th style="text-align:right;">Action</th>
-+            </tr>
-+          </thead>
-+          <tbody>
-+            ${rows}
-+          </tbody>
-+        </table>
-+      </div>
-+    </div>
-+  `;
-+}
-+
-+// ΓöÇΓöÇ Recent Activity ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-+
-+function buildRecentActivity() {
-+  const { deals } = getFilteredReportData();
-+  const dealIds = new Set(deals.map(d => d.id));
-+
-+  let activities = Store.getActivities()
-+    .filter(a => dealIds.has(a.dealId))
-+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-+    .slice(0, 8);
-+
-+  const ACTIVITY_ICONS = {
-+    call: '≡ƒô₧', email: 'Γ£ë∩╕Å', meeting: '≡ƒñ¥', note: '≡ƒô¥', stage_change: '≡ƒöä', assignment: '≡ƒæñ'
++  reader.onerror = function() {
++    Toast.error('Read Error', 'The selected file could not be read.');
 +  };
 +
-+  if (activities.length === 0) {
-+    return `
-+      <div class="report-card card" style="margin-bottom: var(--space-xl);">
-+        <div style="padding:1.5rem; border-bottom:1px solid var(--color-hairline-soft);">
-+          <h3 style="margin:0;">Recent Sales Activity</h3>
-+        </div>
-+        <div class="activity-feed-empty" style="padding:var(--space-xl);">No recent activity for the current filter.</div>
-+      </div>
-+    `;
++  reader.onload = function(e) {
++    let payload;
++    try {
++      payload = JSON.parse(e.target.result);
++    } catch (err) {
++      Toast.error('Invalid JSON', 'The selected file is not valid JSON.');
++      return;
++    }
++
++    // Validate structure
++    const requiredKeys = ['users', 'teams', 'leads', 'contacts', 'deals', 'activities'];
++    for (const key of requiredKeys) {
++      if (!Array.isArray(payload[key])) {
++        Toast.error('Invalid Structure', `Missing or invalid "${key}" array in import file.`);
++        return;
++      }
++    }
++
++    if (!confirm('This will replace ALL existing CRM data with the imported data. Continue?')) {
++      return;
++    }
++
++    const imported = Store.importData(payload);
++
++    if (!imported) {
++      Toast.error('Import Failed', 'LocalStorage write failed. Your existing data has been preserved.');
++      return;
++    }
++
++    // Check if current user still exists
++    const currentSession = Store.getSession();
++    if (currentSession && currentSession.userId) {
++      const stillExists = Store.getUserById(currentSession.userId);
++      if (!stillExists) {
++        Store.clearSession();
++        Toast.success('Import Complete', 'Data imported. Your user no longer exists ΓÇö redirecting to login.');
++        Router.navigate('#/login');
++        return;
++      }
++    }
++
++    Toast.success('Import Complete', 'CRM data has been replaced with imported data.');
++    Router.handleRoute();
++  };
++
++  reader.readAsText(file);
++}
++
++function handleResetDemoData() {
++  const user = Auth.getCurrentUser();
++  if (!user || user.role !== 'manager') {
++    Toast.error('Permission Denied', 'Only managers can reset demo data.');
++    return;
 +  }
 +
-+  const items = activities.map(a => {
-+    const user = Store.getUserById(a.createdBy);
-+    const deal = Store.getDealById(a.dealId);
-+    const icon = ACTIVITY_ICONS[a.type] || '≡ƒôî';
-+    return `
-+      <div class="activity-feed-item">
-+        <span class="activity-feed-dot" style="background: var(--color-primary);"></span>
-+        <div class="activity-feed-content">
-+          <div class="activity-feed-text">
-+            <strong>${user ? user.name : 'Unknown'}</strong> ΓÇö ${deal ? deal.title : 'Unknown deal'}<br/>
-+            <span style="color:var(--color-muted);">${icon} ${a.content}</span>
-+          </div>
-+          <div class="activity-feed-time">${timeAgo(a.createdAt)}</div>
-+        </div>
-+      </div>
-+    `;
-+  }).join('');
++  if (!confirm('This will erase ALL CRM data and restore the original demo dataset. You will be logged out. Continue?')) {
++    return;
++  }
 +
-+  return `
-+    <div class="report-card card" style="margin-bottom: var(--space-xl);">
-+      <div style="padding:1.5rem; border-bottom:1px solid var(--color-hairline-soft);">
-+        <h3 style="margin:0;">Recent Sales Activity</h3>
-+      </div>
-+      <div class="activity-feed-list">
-+        ${items}
-+      </div>
-+    </div>
-+  `;
++  Store.clearAll();
++  seedData();
++  Toast.success('Reset Complete', 'Demo data has been restored. Please log in again.');
++  Router.navigate('#/login');
++}
++
++function handleSavePreferences() {
++  const compactTables = document.getElementById('pref-compact-tables')?.checked || false;
++  const settings = Store.getSettings();
++  settings.compactTables = compactTables;
++  Store.updateSettings(settings);
++  Toast.success('Saved', 'Workspace preferences updated.');
++}
++
++function reRenderSettings() {
++  const contentEl = document.getElementById('content-area');
++  if (contentEl) {
++    contentEl.innerHTML = renderSettings();
++  }
 +}
 +
 +// ΓöÇΓöÇ Event Binding ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 +
-+export function bindReportsEvents() {
++export function bindSettingsEvents() {
 +  const content = document.getElementById('content-area');
 +  if (!content) return;
 +
-+  content.addEventListener('change', (e) => {
-+    const user = Auth.getCurrentUser();
-+    if (!user || user.role !== 'manager') return;
-+
-+    if (e.target.id === 'report-filter-team') {
-+      reportFilters.teamId = e.target.value;
-+      reRenderReports();
-+    }
-+    if (e.target.id === 'report-filter-status') {
-+      reportFilters.dealStatus = e.target.value;
-+      reRenderReports();
-+    }
-+  });
-+
 +  content.addEventListener('click', (e) => {
-+    const user = Auth.getCurrentUser();
-+    if (!user || user.role !== 'manager') return;
++    // Sign out ΓÇö all roles
++    if (e.target.id === 'btn-settings-signout') {
++      Auth.logout();
++      Toast.info('Signed out', 'You have been logged out.');
++      Router.navigate('#/login');
++      return;
++    }
 +
-+    if (e.target.id === 'btn-clear-report-filters') {
-+      reportFilters = { teamId: '', dealStatus: '' };
-+      reRenderReports();
++    // Save preferences ΓÇö all roles
++    if (e.target.id === 'btn-save-preferences') {
++      handleSavePreferences();
++      return;
++    }
++
++    // Manager-only actions
++    if (e.target.id === 'btn-export-json') {
++      handleExportJson();
++      return;
++    }
++    if (e.target.id === 'btn-export-leads-csv') {
++      handleExportCsv('leads');
++      return;
++    }
++    if (e.target.id === 'btn-export-contacts-csv') {
++      handleExportCsv('contacts');
++      return;
++    }
++    if (e.target.id === 'btn-export-deals-csv') {
++      handleExportCsv('deals');
++      return;
++    }
++    if (e.target.id === 'btn-import-json') {
++      handleImportJson();
++      return;
++    }
++    if (e.target.id === 'btn-reset-demo') {
++      handleResetDemoData();
++      return;
 +    }
 +  });
 +}
+diff --git a/js/store.js b/js/store.js
+index 6328d28..3fd15ef 100644
+--- a/js/store.js
++++ b/js/store.js
+@@ -186,6 +186,83 @@ export const Store = {
+     localStorage.setItem(KEYS.seeded, 'true');
+   },
+ 
++  // ΓöÇΓöÇ Settings ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++  getSettings() {
++    try {
++      const data = localStorage.getItem(KEYS.settings);
++      return data ? JSON.parse(data) : {};
++    } catch (e) {
++      return {};
++    }
++  },
 +
-+function reRenderReports() {
-+  const contentEl = document.getElementById('content-area');
-+  if (contentEl) {
-+    contentEl.innerHTML = renderReports();
-+  }
-+}
++  updateSettings(settings) {
++    try {
++      localStorage.setItem(KEYS.settings, JSON.stringify(settings));
++    } catch (e) {
++      console.error('Store: Error writing settings', e);
++    }
++  },
++
++  // ΓöÇΓöÇ Export / Import ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++  exportData() {
++    return {
++      users: getAll(KEYS.users),
++      teams: getAll(KEYS.teams),
++      leads: getAll(KEYS.leads),
++      contacts: getAll(KEYS.contacts),
++      deals: getAll(KEYS.deals),
++      activities: getAll(KEYS.activities),
++      settings: Store.getSettings(),
++      exportedAt: new Date().toISOString()
++    };
++  },
++
++  importData(payload) {
++    // Pre-serialize all datasets before touching localStorage
++    const dataKeys = [KEYS.users, KEYS.teams, KEYS.leads, KEYS.contacts, KEYS.deals, KEYS.activities, KEYS.settings];
++    const newValues = {
++      [KEYS.users]:      JSON.stringify(payload.users || []),
++      [KEYS.teams]:      JSON.stringify(payload.teams || []),
++      [KEYS.leads]:      JSON.stringify(payload.leads || []),
++      [KEYS.contacts]:   JSON.stringify(payload.contacts || []),
++      [KEYS.deals]:      JSON.stringify(payload.deals || []),
++      [KEYS.activities]: JSON.stringify(payload.activities || []),
++      [KEYS.settings]:   JSON.stringify(payload.settings || {})
++    };
++
++    // Back up existing values
++    const backup = {};
++    dataKeys.forEach(key => {
++      backup[key] = localStorage.getItem(key);
++    });
++    const seededBackup = localStorage.getItem(KEYS.seeded);
++
++    try {
++      dataKeys.forEach(key => {
++        localStorage.setItem(key, newValues[key]);
++      });
++      localStorage.setItem(KEYS.seeded, 'true');
++      return true;
++    } catch (e) {
++      console.error('Store: Import failed, rolling back', e);
++      // Restore backups
++      dataKeys.forEach(key => {
++        if (backup[key] === null) {
++          localStorage.removeItem(key);
++        } else {
++          localStorage.setItem(key, backup[key]);
++        }
++      });
++      if (seededBackup === null) {
++        localStorage.removeItem(KEYS.seeded);
++      } else {
++        localStorage.setItem(KEYS.seeded, seededBackup);
++      }
++      return false;
++    }
++  },
++
+   // ΓöÇΓöÇ Full Reset ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+   clearAll() {
+     Object.values(KEYS).forEach(key => localStorage.removeItem(key));
 ```
 
 ## Tests Run
 ```text
-Browser preview performed externally: Manager reports page checked; Team Lead and Employee access denied checked; team and deal status filters checked
+Browser preview performed externally: Manager settings actions checked; Team Lead and Employee restricted settings checked; export/import/reset behavior checked
 ```
 
 ## Risks / Pending Checks
