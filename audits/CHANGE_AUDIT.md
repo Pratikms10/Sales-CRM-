@@ -1,397 +1,744 @@
 ﻿# AI Change Audit Report
 
 ## Generated On
-2026-06-17_17-40-31
+2026-06-17_18-44-01
 
 ## Branch
 main
 
 ## Baseline Commit
-aefbe47
+9d65a2e
 
 ## Task Summary
-Phase 1F Team Management page with role-scoped team visibility, guarded reassignment, and non-duplicating event binding
+Phase 1G Reports and Analytics page with manager-only access, KPI cards, pipeline reports, team performance, forecast, stuck deal insights, and consistent filters
 
 ## Git Status
 ```text
+ M css/components.css
  M js/app.js
- A js/pages/team.js
+ A js/pages/reports.js
 ```
 
 ## Files Changed
 ```text
+M	css/components.css
 M	js/app.js
-A	js/pages/team.js
+A	js/pages/reports.js
 ```
 
 ## Change Summary
 ```text
- js/app.js        |   4 +
- js/pages/team.js | 319 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 323 insertions(+)
+ css/components.css  |  60 ++++++
+ js/app.js           |   4 +
+ js/pages/reports.js | 595 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 659 insertions(+)
 ```
 
 ## Full Diff
 ```diff
+diff --git a/css/components.css b/css/components.css
+index f35ea6d..af2c123 100644
+--- a/css/components.css
++++ b/css/components.css
+@@ -912,3 +912,63 @@
+ .text-link:hover {
+   text-decoration: underline;
+ }
++
++/* ΓöÇΓöÇ Reports & Analytics ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
++.report-grid {
++  display: grid;
++  gap: var(--space-lg);
++}
++
++.report-grid-2 {
++  grid-template-columns: 1fr 1fr;
++}
++
++@media (max-width: 768px) {
++  .report-grid-2 {
++    grid-template-columns: 1fr;
++  }
++}
++
++.report-metric-row {
++  display: grid;
++  grid-template-columns: 160px 1fr 1fr;
++  gap: var(--space-md);
++  align-items: center;
++  padding: var(--space-sm) 0;
++  border-bottom: 1px solid var(--color-hairline-soft);
++}
++
++.report-metric-row:last-child {
++  border-bottom: none;
++}
++
++.report-metric-label {
++  font: var(--text-body-sm);
++  font-weight: 500;
++  color: var(--color-ink);
++  white-space: nowrap;
++}
++
++.report-metric-stats {
++  display: flex;
++  gap: var(--space-base);
++  font: var(--text-body-sm);
++  color: var(--color-ink);
++  justify-content: flex-end;
++  white-space: nowrap;
++}
++
++.report-bar {
++  height: 8px;
++  background: var(--color-surface-strong);
++  border-radius: var(--rounded-full);
++  overflow: hidden;
++  min-width: 60px;
++}
++
++.report-bar-fill {
++  height: 100%;
++  border-radius: var(--rounded-full);
++  transition: width var(--transition-base);
++  min-width: 2px;
++}
 diff --git a/js/app.js b/js/app.js
-index 68ab4a2..1414743 100644
+index 1414743..289dcb3 100644
 --- a/js/app.js
 +++ b/js/app.js
-@@ -16,6 +16,7 @@ import { renderDealDetail, bindDealDetailEvents } from './pages/deal-detail.js';
- import { renderLeads, bindLeadsEvents } from './pages/leads.js';
+@@ -17,6 +17,7 @@ import { renderLeads, bindLeadsEvents } from './pages/leads.js';
  import { renderContacts, bindContactsEvents } from './pages/contacts.js';
  import { renderDeals, bindDealsEvents } from './pages/deals.js';
-+import { renderTeam, bindTeamEvents } from './pages/team.js';
+ import { renderTeam, bindTeamEvents } from './pages/team.js';
++import { renderReports, bindReportsEvents } from './pages/reports.js';
  
  // ΓöÇΓöÇ DOM References ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
  
-@@ -115,6 +116,8 @@ function renderPage(pageId, params) {
-       contentEl.innerHTML = renderContacts();
+@@ -119,6 +120,8 @@ function renderPage(pageId, params) {
+       contentEl.innerHTML = renderTeam();
        break;
-     case 'team':
-+      contentEl.innerHTML = renderTeam();
-+      break;
      case 'reports':
++      contentEl.innerHTML = renderReports();
++      break;
      case 'settings':
        contentEl.innerHTML = renderComingSoon(pageId);
-@@ -132,6 +135,7 @@ bindDealDetailEvents();
- bindLeadsEvents();
+       break;
+@@ -136,6 +139,7 @@ bindLeadsEvents();
  bindContactsEvents();
  bindDealsEvents();
-+bindTeamEvents();
+ bindTeamEvents();
++bindReportsEvents();
  
  // ΓöÇΓöÇ Bootstrap ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
  
-diff --git a/js/pages/team.js b/js/pages/team.js
+diff --git a/js/pages/reports.js b/js/pages/reports.js
 new file mode 100644
-index 0000000..fa97708
+index 0000000..7d2bd17
 --- /dev/null
-+++ b/js/pages/team.js
-@@ -0,0 +1,319 @@
++++ b/js/pages/reports.js
+@@ -0,0 +1,595 @@
 +// ============================================================
-+// TechnoEdge CRM ΓÇö Team Management Page
-+// Role-scoped team visibility and guarded reassignment
++// TechnoEdge CRM ΓÇö Reports & Analytics Page
++// Manager-only reports with team/status filters
 +// ============================================================
 +
 +import { Store } from '../store.js';
 +import { Auth } from '../auth.js';
-+import { formatCurrency, generateId, capitalize } from '../utils.js';
-+import { Toast } from '../components/toast.js';
++import { formatCurrency, capitalize, formatDate, formatDateTime, timeAgo, SOP_STAGES } from '../utils.js';
 +
-+export function renderTeam() {
-+  if (!Auth.canAccessPage('team')) {
-+    return `<div class="content-inner"><h2>Access Denied</h2><p>You do not have permission to view this page.</p></div>`;
-+  }
++// ΓöÇΓöÇ Stage Probability Map (forecast weighting) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 +
-+  const user = Auth.getCurrentUser();
-+  const allTeams = Store.getTeams();
++const STAGE_PROBABILITY = {
++  sales: 20,
++  requirement: 35,
++  sourcing: 50,
++  delivery: 70,
++  feedback: 80,
++  invoice: 90,
++  renewal: 60
++};
++
++function getStageProbability(stageKey) {
++  return STAGE_PROBABILITY[stageKey] || 0;
++}
++
++function calculateForecast(deals) {
++  return deals
++    .filter(d => d.status === 'active')
++    .reduce((sum, d) => sum + (d.value || 0) * getStageProbability(d.stage) / 100, 0);
++}
++
++function daysSince(dateStr) {
++  if (!dateStr) return 999;
++  const now = new Date();
++  const then = new Date(dateStr);
++  return Math.floor((now - then) / (1000 * 60 * 60 * 24));
++}
++
++// ΓöÇΓöÇ Current Filter State ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++
++let reportFilters = {
++  teamId: '',
++  dealStatus: ''
++};
++
++// ΓöÇΓöÇ Filtered Data Helper ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++
++function getFilteredReportData() {
++  let leads = Store.getLeads();
++  let deals = Store.getDeals();
 +  const allUsers = Store.getUsers();
-+  const allLeads = Store.getLeads();
-+  const allDeals = Store.getDeals();
-+  
-+  let visibleTeams = [];
-+  let visibleUsers = [];
-+  
-+  if (user.role === 'manager') {
-+    visibleTeams = allTeams;
-+    visibleUsers = allUsers;
-+  } else if (user.role === 'team_lead') {
-+    visibleTeams = allTeams.filter(t => t.id === user.teamId);
-+    visibleUsers = Store.getUsersByTeam(user.teamId);
-+    if (!visibleUsers.find(u => u.id === user.id)) visibleUsers.push(user);
++  const allTeams = Store.getTeams();
++
++  // Validate teamId against Store
++  if (reportFilters.teamId) {
++    const validTeam = allTeams.find(t => t.id === reportFilters.teamId);
++    if (!validTeam) reportFilters.teamId = '';
 +  }
 +
-+  let teamsHtml = visibleTeams.map(team => {
-+    const tUsers = Store.getUsersByTeam(team.id);
-+    const tUserIds = tUsers.map(u => u.id);
-+    const tDeals = allDeals.filter(d => d.teamId === team.id || tUserIds.includes(d.assignedTo));
-+    const tLeads = allLeads.filter(l => tUserIds.includes(l.assignedTo));
++  // Team filter
++  if (reportFilters.teamId) {
++    const teamUsers = Store.getUsersByTeam(reportFilters.teamId);
++    const teamUserIds = teamUsers.map(u => u.id);
 +
-+    const pipelineValue = tDeals.reduce((sum, d) => sum + (d.value || 0), 0);
-+    const activeDeals = tDeals.filter(d => d.status === 'active').length;
-+    const openLeads = tLeads.filter(l => l.status === 'new' || l.status === 'contacted').length;
++    leads = leads.filter(l => teamUserIds.includes(l.assignedTo));
++    deals = deals.filter(d => d.teamId === reportFilters.teamId || teamUserIds.includes(d.assignedTo));
++  }
 +
-+    const leadUser = allUsers.find(u => u.id === team.leadId);
-+    const leadName = leadUser ? leadUser.name : 'Unassigned';
++  // Deal status filter
++  if (reportFilters.dealStatus) {
++    deals = deals.filter(d => d.status === reportFilters.dealStatus);
++  }
 +
++  return { leads, deals, allUsers, allTeams };
++}
++
++// ΓöÇΓöÇ Main Render ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++
++export function renderReports() {
++  if (!Auth.canAccessPage('reports')) {
 +    return `
-+      <div class="card" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
-+        <h3 style="margin: 0;">${team.name}</h3>
-+        <p style="margin: 0; color: var(--color-muted); font-size: 0.85rem;">Lead: ${leadName}</p>
-+        <div style="margin-top: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-+          <div><strong style="display:block; font-size:1.2rem;">${tUsers.length}</strong> <span style="font-size:0.8rem; color:var(--color-muted);">Members</span></div>
-+          <div><strong style="display:block; font-size:1.2rem;">${formatCurrency(pipelineValue, 'INR')}</strong> <span style="font-size:0.8rem; color:var(--color-muted);">Pipeline</span></div>
-+          <div><strong style="display:block; font-size:1.2rem;">${activeDeals}</strong> <span style="font-size:0.8rem; color:var(--color-muted);">Active Deals</span></div>
-+          <div><strong style="display:block; font-size:1.2rem;">${openLeads}</strong> <span style="font-size:0.8rem; color:var(--color-muted);">Open Leads</span></div>
++      <div class="content-inner">
++        <div class="coming-soon">
++          <div class="coming-soon-icon">
++            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
++              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
++              <path d="M7 11V7a5 5 0 0110 0v4"/>
++            </svg>
++          </div>
++          <h3 class="coming-soon-title">Access Denied</h3>
++          <p class="coming-soon-desc">You do not have permission to view Reports. This section is available to Managers only.</p>
 +        </div>
 +      </div>
 +    `;
-+  }).join('');
-+
-+  if (visibleTeams.length === 0) {
-+    teamsHtml = `<p>No teams available.</p>`;
 +  }
 +
-+  let usersHtml = visibleUsers.map(u => {
-+    const uDeals = allDeals.filter(d => d.assignedTo === u.id);
-+    const uLeads = allLeads.filter(l => l.assignedTo === u.id);
-+    const uPipeline = uDeals.reduce((sum, d) => sum + (d.value || 0), 0);
-+    const uActiveDeals = uDeals.filter(d => d.status === 'active').length;
-+    const uOpenLeads = uLeads.length;
++  const allTeams = Store.getTeams();
++  const { leads, deals } = getFilteredReportData();
 +
-+    const tName = u.teamId ? (allTeams.find(t => t.id === u.teamId)?.name || 'ΓÇö') : 'ΓÇö';
-+
-+    return `
-+      <tr>
-+        <td style="font-weight: 500;">${u.name}</td>
-+        <td><span class="badge badge-neutral">${capitalize(u.role)}</span></td>
-+        <td style="font-size: 0.85rem;">${u.email}</td>
-+        <td style="font-size: 0.85rem;">${tName}</td>
-+        <td>${uOpenLeads}</td>
-+        <td>${uActiveDeals}</td>
-+        <td style="font-weight: 500;">${formatCurrency(uPipeline, 'INR')}</td>
-+      </tr>
-+    `;
-+  }).join('');
-+
-+  if (visibleUsers.length === 0) {
-+    usersHtml = `<tr><td colspan="7" class="text-center" style="padding: 2rem;">No users found.</td></tr>`;
-+  }
-+
-+  // Assignment Options
-+  const targetUserOptions = visibleUsers.map(u => `<option value="${u.id}">${u.name} (${capitalize(u.role)})</option>`).join('');
-+  
-+  // Reassignable records (Leads and Deals)
-+  const assignableLeads = Store.getLeadsForUser(user);
-+  const assignableDeals = Store.getDealsForUser(user);
-+
-+  const leadOptions = assignableLeads.map(l => {
-+    const assigneeName = l.assignedTo ? (Store.getUserById(l.assignedTo)?.name || 'Unknown') : 'Unassigned';
-+    return `<option value="lead_${l.id}">${l.name} (${l.company}) ΓÇö Curr: ${assigneeName}</option>`;
-+  }).join('');
-+
-+  const dealOptions = assignableDeals.map(d => {
-+    const assigneeName = d.assignedTo ? (Store.getUserById(d.assignedTo)?.name || 'Unknown') : 'Unassigned';
-+    return `<option value="deal_${d.id}">${d.title} ΓÇö Curr: ${assigneeName}</option>`;
-+  }).join('');
++  const teamOptions = allTeams.map(t =>
++    `<option value="${t.id}" ${reportFilters.teamId === t.id ? 'selected' : ''}>${t.name}</option>`
++  ).join('');
 +
 +  return `
 +    <div class="content-inner">
 +      <div class="page-header">
 +        <div>
-+          <h1 class="page-header-title">Team Management</h1>
-+          <p class="page-header-subtitle">Manage teams, view performance, and reassign records.</p>
++          <h1 class="page-header-title">Reports & Analytics</h1>
++          <p class="page-header-subtitle">Organization-wide performance metrics and pipeline intelligence.</p>
 +        </div>
 +      </div>
 +
-+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-+        ${teamsHtml}
++      <div class="card" style="margin-bottom: var(--space-lg);">
++        <div class="filter-bar" style="display:flex; gap:1rem; padding:1rem; border-bottom:1px solid var(--color-border); flex-wrap:wrap; align-items:center;">
++          <select class="login-input" id="report-filter-team" style="max-width:180px;">
++            <option value="">All Teams</option>
++            ${teamOptions}
++          </select>
++          <select class="login-input" id="report-filter-status" style="max-width:150px;">
++            <option value="">All Deals</option>
++            <option value="active" ${reportFilters.dealStatus === 'active' ? 'selected' : ''}>Active</option>
++            <option value="won" ${reportFilters.dealStatus === 'won' ? 'selected' : ''}>Won</option>
++            <option value="lost" ${reportFilters.dealStatus === 'lost' ? 'selected' : ''}>Lost</option>
++          </select>
++          <button class="btn btn-secondary btn-sm" id="btn-clear-report-filters">Clear</button>
++        </div>
 +      </div>
 +
-+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
-+        <div class="card">
-+          <div style="padding: 1.5rem; border-bottom: 1px solid var(--color-border);">
-+            <h3 style="margin: 0;">Team Members</h3>
-+          </div>
-+          <div style="overflow-x: auto;">
-+            <table class="data-table">
-+              <thead>
-+                <tr>
-+                  <th>Name</th>
-+                  <th>Role</th>
-+                  <th>Email</th>
-+                  <th>Team</th>
-+                  <th>Leads</th>
-+                  <th>Deals (Active)</th>
-+                  <th>Pipeline Value</th>
-+                </tr>
-+              </thead>
-+              <tbody>
-+                ${usersHtml}
-+              </tbody>
-+            </table>
-+          </div>
++      ${buildKpiCards(leads, deals)}
++
++      ${buildPipelineReport(deals)}
++
++      <div class="report-grid report-grid-2" style="margin-bottom: var(--space-xl);">
++        ${buildDistributionReport(leads, 'status', 'Leads by Status')}
++        ${buildDistributionReport(leads, 'source', 'Leads by Source')}
++      </div>
++
++      ${buildTeamPerformance()}
++
++      ${buildEmployeePerformance()}
++
++      ${buildStuckDeals()}
++
++      ${buildRecentActivity()}
++    </div>
++  `;
++}
++
++// ΓöÇΓöÇ KPI Cards ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++
++function buildKpiCards(leads, deals) {
++  const totalLeads = leads.length;
++  const qualifiedLeads = leads.filter(l => l.status === 'qualified').length;
++  const convertedLeads = leads.filter(l => l.status === 'converted').length;
++
++  const activeDeals = deals.filter(d => d.status === 'active');
++  const activeDealCount = activeDeals.length;
++  const openPipeline = activeDeals.reduce((s, d) => s + (d.value || 0), 0);
++  const wonRevenue = deals.filter(d => d.status === 'won').reduce((s, d) => s + (d.value || 0), 0);
++  const conversionRate = totalLeads > 0 ? ((convertedLeads / totalLeads) * 100).toFixed(1) : '0.0';
++  const forecastRevenue = calculateForecast(deals);
++
++  const kpis = [
++    { label: 'Total Leads',         value: totalLeads,                    color: 'var(--color-stage-sales)',       bg: 'var(--color-primary-disabled)' },
++    { label: 'Qualified Leads',     value: qualifiedLeads,                color: 'var(--color-stage-sourcing)',    bg: 'var(--color-info-soft)' },
++    { label: 'Converted Leads',     value: convertedLeads,                color: 'var(--color-success)',           bg: 'var(--color-success-soft)' },
++    { label: 'Active Deals',        value: activeDealCount,               color: 'var(--color-stage-delivery)',    bg: 'var(--color-warning-soft)' },
++    { label: 'Open Pipeline',       value: formatCurrency(openPipeline),  color: 'var(--color-stage-feedback)',    bg: '#f3e8ff' },
++    { label: 'Won Revenue',         value: formatCurrency(wonRevenue),    color: 'var(--color-success)',           bg: 'var(--color-success-soft)' },
++    { label: 'Lead Conversion Rate',value: conversionRate + '%',          color: 'var(--color-stage-invoice)',     bg: 'var(--color-info-soft)' },
++    { label: 'Forecast Revenue',    value: formatCurrency(forecastRevenue),color:'var(--color-stage-renewal)',     bg: 'var(--color-primary-disabled)' }
++  ];
++
++  const cardsHtml = kpis.map(k => `
++    <div class="stat-card">
++      <div class="stat-card-icon" style="background:${k.bg}; color:${k.color};">
++        <span style="font-size:1.2rem; font-weight:700;">${typeof k.value === 'number' ? '#' : 'Γé╣'}</span>
++      </div>
++      <div class="stat-card-content">
++        <div class="stat-card-label">${k.label}</div>
++        <div class="stat-card-value">${k.value}</div>
++      </div>
++    </div>
++  `).join('');
++
++  return `<div class="stat-cards" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));">${cardsHtml}</div>`;
++}
++
++// ΓöÇΓöÇ Pipeline Stage Report ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++
++function buildPipelineReport(deals) {
++  const activeDeals = deals.filter(d => d.status === 'active');
++  const maxVal = Math.max(...SOP_STAGES.map(s =>
++    activeDeals.filter(d => d.stage === s.key).reduce((sum, d) => sum + (d.value || 0), 0)
++  ), 1);
++
++  const rows = SOP_STAGES.map(s => {
++    const stageDeals = activeDeals.filter(d => d.stage === s.key);
++    const count = stageDeals.length;
++    const total = stageDeals.reduce((sum, d) => sum + (d.value || 0), 0);
++    const forecast = total * getStageProbability(s.key) / 100;
++    const pct = maxVal > 0 ? (total / maxVal * 100) : 0;
++
++    return `
++      <div class="report-metric-row">
++        <div class="report-metric-label">
++          <span class="stage-badge stage-badge-${s.key}" style="margin-right: 0.5rem;">${s.label}</span>
 +        </div>
-+
-+        <div class="card">
-+          <div style="padding: 1.5rem; border-bottom: 1px solid var(--color-border);">
-+            <h3 style="margin: 0;">Record Reassignment</h3>
-+          </div>
-+          <div style="padding: 1.5rem;">
-+            <div style="margin-bottom: 1rem;">
-+              <label style="display:block; margin-bottom:0.5rem; font-weight:500;">Record Type</label>
-+              <select id="reassign-type" class="login-input">
-+                <option value="lead">Lead</option>
-+                <option value="deal">Deal</option>
-+              </select>
-+            </div>
-+
-+            <div style="margin-bottom: 1rem;">
-+              <label style="display:block; margin-bottom:0.5rem; font-weight:500;">Select Record</label>
-+              <select id="reassign-record" class="login-input">
-+                <!-- Populated dynamically -->
-+              </select>
-+            </div>
-+
-+            <div style="margin-bottom: 1.5rem;">
-+              <label style="display:block; margin-bottom:0.5rem; font-weight:500;">New Owner</label>
-+              <select id="reassign-target" class="login-input">
-+                <option value="">-- Select New Owner --</option>
-+                ${targetUserOptions}
-+              </select>
-+            </div>
-+
-+            <button class="btn btn-primary" id="btn-reassign" style="width: 100%;">Reassign Record</button>
-+            <div id="reassign-data-leads" style="display:none;">${leadOptions}</div>
-+            <div id="reassign-data-deals" style="display:none;">${dealOptions}</div>
-+          </div>
++        <div class="report-metric-stats">
++          <span>${count} deal${count !== 1 ? 's' : ''}</span>
++          <span>${formatCurrency(total)}</span>
++          <span style="color:var(--color-muted)">Fcst: ${formatCurrency(forecast)}</span>
 +        </div>
++        <div class="report-bar">
++          <div class="report-bar-fill" style="width:${pct}%; background:${s.color};"></div>
++        </div>
++      </div>
++    `;
++  }).join('');
++
++  return `
++    <div class="report-card card" style="margin-bottom: var(--space-xl);">
++      <div style="padding:1.5rem; border-bottom:1px solid var(--color-hairline-soft);">
++        <h3 style="margin:0;">Pipeline by SOP Stage</h3>
++      </div>
++      <div style="padding:1.5rem;">
++        ${rows}
 +      </div>
 +    </div>
 +  `;
 +}
 +
-+function populateReassignRecordDropdown() {
-+  const typeSelect = document.getElementById('reassign-type');
-+  const recordSelect = document.getElementById('reassign-record');
-+  const leadsHtml = document.getElementById('reassign-data-leads');
-+  const dealsHtml = document.getElementById('reassign-data-deals');
++// ΓöÇΓöÇ Distribution Report (Leads by Status / Source) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 +
-+  if (!typeSelect || !recordSelect || !leadsHtml || !dealsHtml) return;
++function buildDistributionReport(leads, field, title) {
++  const counts = {};
++  leads.forEach(l => {
++    const val = l[field] || 'Unknown';
++    counts[val] = (counts[val] || 0) + 1;
++  });
 +
-+  if (typeSelect.value === 'lead') {
-+    recordSelect.innerHTML = leadsHtml.innerHTML;
-+  } else {
-+    recordSelect.innerHTML = dealsHtml.innerHTML;
-+  }
++  const total = leads.length || 1;
++  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
++  const maxCount = entries.length > 0 ? entries[0][1] : 1;
++
++  const COLORS = ['var(--color-stage-sales)', 'var(--color-stage-requirement)', 'var(--color-stage-sourcing)', 'var(--color-stage-delivery)', 'var(--color-stage-feedback)', 'var(--color-stage-invoice)', 'var(--color-stage-renewal)', 'var(--color-primary)'];
++
++  const rows = entries.map(([label, count], i) => {
++    const pct = ((count / total) * 100).toFixed(1);
++    const barPct = (count / maxCount) * 100;
++    const color = COLORS[i % COLORS.length];
++    return `
++      <div class="report-metric-row">
++        <div class="report-metric-label"><span>${capitalize(label)}</span></div>
++        <div class="report-metric-stats">
++          <span>${count}</span>
++          <span style="color:var(--color-muted);">${pct}%</span>
++        </div>
++        <div class="report-bar">
++          <div class="report-bar-fill" style="width:${barPct}%; background:${color};"></div>
++        </div>
++      </div>
++    `;
++  }).join('');
++
++  const emptyHtml = entries.length === 0 ? `<p style="color:var(--color-muted); text-align:center; padding:1rem;">No data.</p>` : '';
++
++  return `
++    <div class="report-card card">
++      <div style="padding:1.5rem; border-bottom:1px solid var(--color-hairline-soft);">
++        <h3 style="margin:0;">${title}</h3>
++      </div>
++      <div style="padding:1.5rem;">
++        ${rows}
++        ${emptyHtml}
++      </div>
++    </div>
++  `;
 +}
 +
-+export function bindTeamEvents() {
++// ΓöÇΓöÇ Team Performance ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++
++function buildTeamPerformance() {
++  const { deals, leads, allTeams, allUsers } = getFilteredReportData();
++
++  let teams = allTeams;
++  if (reportFilters.teamId) {
++    teams = allTeams.filter(t => t.id === reportFilters.teamId);
++  }
++
++  const rows = teams.map(team => {
++    const tUsers = Store.getUsersByTeam(team.id);
++    const tUserIds = tUsers.map(u => u.id);
++    const leadUser = allUsers.find(u => u.id === team.leadId);
++
++    const tDeals = deals.filter(d => d.teamId === team.id || tUserIds.includes(d.assignedTo));
++    const tLeads = leads.filter(l => tUserIds.includes(l.assignedTo));
++
++    const openLeads = tLeads.filter(l => l.status === 'new' || l.status === 'contacted').length;
++    const activeDeals = tDeals.filter(d => d.status === 'active');
++    const pipelineValue = activeDeals.reduce((s, d) => s + (d.value || 0), 0);
++    const wonDeals = tDeals.filter(d => d.status === 'won');
++    const wonRevenue = wonDeals.reduce((s, d) => s + (d.value || 0), 0);
++    const forecast = calculateForecast(tDeals);
++
++    return `
++      <tr>
++        <td style="font-weight:500;">${team.name}</td>
++        <td>${leadUser ? leadUser.name : 'ΓÇö'}</td>
++        <td>${tUsers.length}</td>
++        <td>${openLeads}</td>
++        <td>${activeDeals.length}</td>
++        <td style="font-weight:600;">${formatCurrency(pipelineValue)}</td>
++        <td style="color:var(--color-success); font-weight:600;">${formatCurrency(wonRevenue)}</td>
++        <td>${formatCurrency(forecast)}</td>
++      </tr>
++    `;
++  }).join('');
++
++  return `
++    <div class="report-card card" style="margin-bottom: var(--space-xl);">
++      <div style="padding:1.5rem; border-bottom:1px solid var(--color-hairline-soft);">
++        <h3 style="margin:0;">Team Performance</h3>
++      </div>
++      <div style="overflow-x:auto;">
++        <table class="data-table">
++          <thead>
++            <tr>
++              <th>Team</th>
++              <th>Team Lead</th>
++              <th>Members</th>
++              <th>Open Leads</th>
++              <th>Active Deals</th>
++              <th>Pipeline Value</th>
++              <th>Won Revenue</th>
++              <th>Forecast Revenue</th>
++            </tr>
++          </thead>
++          <tbody>
++            ${rows || '<tr><td colspan="8" style="text-align:center; padding:1.5rem; color:var(--color-muted);">No teams.</td></tr>'}
++          </tbody>
++        </table>
++      </div>
++    </div>
++  `;
++}
++
++// ΓöÇΓöÇ Employee Performance ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++
++function buildEmployeePerformance() {
++  const { deals, leads, allUsers, allTeams } = getFilteredReportData();
++
++  let users = allUsers.filter(u => u.role === 'team_lead' || u.role === 'employee');
++
++  // Also include managers who own records
++  const managerUsers = allUsers.filter(u => u.role === 'manager');
++  managerUsers.forEach(m => {
++    const hasRecords = deals.some(d => d.assignedTo === m.id) || leads.some(l => l.assignedTo === m.id);
++    if (hasRecords && !users.find(u => u.id === m.id)) users.push(m);
++  });
++
++  if (reportFilters.teamId) {
++    const teamUserIds = Store.getUsersByTeam(reportFilters.teamId).map(u => u.id);
++    users = users.filter(u => teamUserIds.includes(u.id));
++  }
++
++  // Build performance data
++  const perfData = users.map(u => {
++    const uDeals = deals.filter(d => d.assignedTo === u.id);
++    const uLeads = leads.filter(l => l.assignedTo === u.id);
++    const openLeads = uLeads.filter(l => l.status === 'new' || l.status === 'contacted').length;
++    const activeDeals = uDeals.filter(d => d.status === 'active');
++    const pipelineValue = activeDeals.reduce((s, d) => s + (d.value || 0), 0);
++    const wonDeals = uDeals.filter(d => d.status === 'won');
++    const wonRevenue = wonDeals.reduce((s, d) => s + (d.value || 0), 0);
++    const teamName = u.teamId ? (allTeams.find(t => t.id === u.teamId)?.name || 'ΓÇö') : 'ΓÇö';
++
++    return { user: u, openLeads, activeDeals: activeDeals.length, pipelineValue, wonDeals: wonDeals.length, wonRevenue, teamName };
++  });
++
++  // Sort by pipeline value descending
++  perfData.sort((a, b) => b.pipelineValue - a.pipelineValue);
++
++  const rows = perfData.map(p => {
++    const roleLabel = p.user.role === 'team_lead' ? 'Team Lead' : capitalize(p.user.role);
++    return `
++      <tr>
++        <td style="font-weight:500;">${p.user.name}</td>
++        <td><span class="badge badge-neutral">${roleLabel}</span></td>
++        <td style="font-size:0.85rem;">${p.teamName}</td>
++        <td>${p.openLeads}</td>
++        <td>${p.activeDeals}</td>
++        <td style="font-weight:600;">${formatCurrency(p.pipelineValue)}</td>
++        <td>${p.wonDeals}</td>
++        <td style="color:var(--color-success); font-weight:600;">${formatCurrency(p.wonRevenue)}</td>
++      </tr>
++    `;
++  }).join('');
++
++  const emptyRow = perfData.length === 0 ? '<tr><td colspan="8" style="text-align:center; padding:1.5rem; color:var(--color-muted);">No employees found.</td></tr>' : '';
++
++  return `
++    <div class="report-card card" style="margin-bottom: var(--space-xl);">
++      <div style="padding:1.5rem; border-bottom:1px solid var(--color-hairline-soft);">
++        <h3 style="margin:0;">Employee Performance</h3>
++      </div>
++      <div style="overflow-x:auto;">
++        <table class="data-table">
++          <thead>
++            <tr>
++              <th>Employee</th>
++              <th>Role</th>
++              <th>Team</th>
++              <th>Open Leads</th>
++              <th>Active Deals</th>
++              <th>Pipeline Value</th>
++              <th>Won Deals</th>
++              <th>Won Revenue</th>
++            </tr>
++          </thead>
++          <tbody>
++            ${rows}
++            ${emptyRow}
++          </tbody>
++        </table>
++      </div>
++    </div>
++  `;
++}
++
++// ΓöÇΓöÇ Stuck Deals ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++
++function buildStuckDeals() {
++  const { deals, allUsers, allTeams } = getFilteredReportData();
++  const stuckDeals = deals
++    .filter(d => d.status === 'active' && daysSince(d.updatedAt) > 7)
++    .sort((a, b) => daysSince(b.updatedAt) - daysSince(a.updatedAt));
++
++  if (stuckDeals.length === 0) {
++    return `
++      <div class="report-card card" style="margin-bottom: var(--space-xl);">
++        <div style="padding:1.5rem; border-bottom:1px solid var(--color-hairline-soft);">
++          <h3 style="margin:0;">Stuck Deals</h3>
++        </div>
++        <div class="empty-state" style="padding: var(--space-xl);">
++          <div class="empty-state-icon">
++            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
++          </div>
++          <div class="empty-state-title">No Stuck Deals</div>
++          <div class="empty-state-desc">All active deals have been updated within the last 7 days. Great momentum!</div>
++        </div>
++      </div>
++    `;
++  }
++
++  const rows = stuckDeals.map(d => {
++    const owner = d.assignedTo ? Store.getUserById(d.assignedTo) : null;
++    const team = d.teamId ? Store.getTeamById(d.teamId) : null;
++    const stageObj = SOP_STAGES.find(s => s.key === d.stage);
++    const stageLabel = stageObj ? stageObj.label : capitalize(d.stage);
++    const days = daysSince(d.updatedAt);
++
++    return `
++      <tr>
++        <td><a href="#/deals/${d.id}" class="text-link" style="font-weight:500;">${d.title}</a></td>
++        <td><span class="stage-badge stage-badge-${d.stage}">${stageLabel}</span></td>
++        <td>${owner ? owner.name : '<span style="color:var(--color-muted)">Unassigned</span>'}</td>
++        <td style="font-size:0.85rem;">${team ? team.name : 'ΓÇö'}</td>
++        <td style="font-weight:600;">${formatCurrency(d.value)}</td>
++        <td><span class="badge badge-error">${days} day${days !== 1 ? 's' : ''}</span></td>
++        <td style="text-align:right;"><a href="#/deals/${d.id}" class="btn btn-sm btn-secondary">View</a></td>
++      </tr>
++    `;
++  }).join('');
++
++  return `
++    <div class="report-card card" style="margin-bottom: var(--space-xl);">
++      <div style="padding:1.5rem; border-bottom:1px solid var(--color-hairline-soft);">
++        <h3 style="margin:0;">Stuck Deals <span class="badge badge-error" style="margin-left:0.5rem;">${stuckDeals.length}</span></h3>
++      </div>
++      <div style="overflow-x:auto;">
++        <table class="data-table">
++          <thead>
++            <tr>
++              <th>Deal</th>
++              <th>Stage</th>
++              <th>Owner</th>
++              <th>Team</th>
++              <th>Value</th>
++              <th>Days Stuck</th>
++              <th style="text-align:right;">Action</th>
++            </tr>
++          </thead>
++          <tbody>
++            ${rows}
++          </tbody>
++        </table>
++      </div>
++    </div>
++  `;
++}
++
++// ΓöÇΓöÇ Recent Activity ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++
++function buildRecentActivity() {
++  const { deals } = getFilteredReportData();
++  const dealIds = new Set(deals.map(d => d.id));
++
++  let activities = Store.getActivities()
++    .filter(a => dealIds.has(a.dealId))
++    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
++    .slice(0, 8);
++
++  const ACTIVITY_ICONS = {
++    call: '≡ƒô₧', email: 'Γ£ë∩╕Å', meeting: '≡ƒñ¥', note: '≡ƒô¥', stage_change: '≡ƒöä', assignment: '≡ƒæñ'
++  };
++
++  if (activities.length === 0) {
++    return `
++      <div class="report-card card" style="margin-bottom: var(--space-xl);">
++        <div style="padding:1.5rem; border-bottom:1px solid var(--color-hairline-soft);">
++          <h3 style="margin:0;">Recent Sales Activity</h3>
++        </div>
++        <div class="activity-feed-empty" style="padding:var(--space-xl);">No recent activity for the current filter.</div>
++      </div>
++    `;
++  }
++
++  const items = activities.map(a => {
++    const user = Store.getUserById(a.createdBy);
++    const deal = Store.getDealById(a.dealId);
++    const icon = ACTIVITY_ICONS[a.type] || '≡ƒôî';
++    return `
++      <div class="activity-feed-item">
++        <span class="activity-feed-dot" style="background: var(--color-primary);"></span>
++        <div class="activity-feed-content">
++          <div class="activity-feed-text">
++            <strong>${user ? user.name : 'Unknown'}</strong> ΓÇö ${deal ? deal.title : 'Unknown deal'}<br/>
++            <span style="color:var(--color-muted);">${icon} ${a.content}</span>
++          </div>
++          <div class="activity-feed-time">${timeAgo(a.createdAt)}</div>
++        </div>
++      </div>
++    `;
++  }).join('');
++
++  return `
++    <div class="report-card card" style="margin-bottom: var(--space-xl);">
++      <div style="padding:1.5rem; border-bottom:1px solid var(--color-hairline-soft);">
++        <h3 style="margin:0;">Recent Sales Activity</h3>
++      </div>
++      <div class="activity-feed-list">
++        ${items}
++      </div>
++    </div>
++  `;
++}
++
++// ΓöÇΓöÇ Event Binding ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++
++export function bindReportsEvents() {
 +  const content = document.getElementById('content-area');
 +  if (!content) return;
 +
-+  // Type change for reassignment dropdown
 +  content.addEventListener('change', (e) => {
-+    if (e.target.id === 'reassign-type') {
-+      populateReassignRecordDropdown();
++    const user = Auth.getCurrentUser();
++    if (!user || user.role !== 'manager') return;
++
++    if (e.target.id === 'report-filter-team') {
++      reportFilters.teamId = e.target.value;
++      reRenderReports();
++    }
++    if (e.target.id === 'report-filter-status') {
++      reportFilters.dealStatus = e.target.value;
++      reRenderReports();
 +    }
 +  });
 +
-+  // Reassign click
 +  content.addEventListener('click', (e) => {
-+    if (e.target.id === 'btn-reassign') {
-+      handleReassignment();
++    const user = Auth.getCurrentUser();
++    if (!user || user.role !== 'manager') return;
++
++    if (e.target.id === 'btn-clear-report-filters') {
++      reportFilters = { teamId: '', dealStatus: '' };
++      reRenderReports();
 +    }
 +  });
-+
-+  // Trigger initial population
-+  setTimeout(() => {
-+    populateReassignRecordDropdown();
-+  }, 0);
 +}
 +
-+function handleReassignment() {
-+  const user = Auth.getCurrentUser();
-+  if (!user || user.role === 'employee') {
-+    Toast.error('Permission Denied', 'You do not have permission to reassign records.');
-+    return;
-+  }
-+
-+  const type = document.getElementById('reassign-type').value;
-+  const recordVal = document.getElementById('reassign-record').value;
-+  const targetUserId = document.getElementById('reassign-target').value;
-+
-+  if (!recordVal) {
-+    Toast.error('Validation Error', 'Please select a record to reassign.');
-+    return;
-+  }
-+
-+  if (!targetUserId) {
-+    Toast.error('Validation Error', 'Please select a new owner.');
-+    return;
-+  }
-+
-+  const targetUser = Store.getUserById(targetUserId);
-+  if (!targetUser) {
-+    Toast.error('Validation Error', 'Invalid target user.');
-+    return;
-+  }
-+
-+  // Re-check target permission (TL can only assign to own team)
-+  if (!Auth.canAssignTo(targetUserId)) {
-+    Toast.error('Permission Denied', 'You can only reassign to your own team members.');
-+    return;
-+  }
-+
-+  if (type === 'lead') {
-+    const leadId = recordVal.replace('lead_', '');
-+    const lead = Store.getLeadById(leadId);
-+    
-+    if (!lead) {
-+      Toast.error('Error', 'Lead not found.');
-+      return;
-+    }
-+    
-+    // Check if user has permission to edit this lead
-+    if (!Auth.canEditRecord(lead)) {
-+      Toast.error('Permission Denied', 'You do not have permission to reassign this lead.');
-+      return;
-+    }
-+
-+    Store.updateLead(leadId, {
-+      assignedTo: targetUserId,
-+      updatedAt: new Date().toISOString()
-+    });
-+
-+    Toast.success('Success', `Lead reassigned to ${targetUser.name}`);
-+
-+  } else if (type === 'deal') {
-+    const dealId = recordVal.replace('deal_', '');
-+    const deal = Store.getDealById(dealId);
-+    
-+    if (!deal) {
-+      Toast.error('Error', 'Deal not found.');
-+      return;
-+    }
-+
-+    // Check if user has permission to edit this deal
-+    if (!Auth.canEditRecord(deal)) {
-+      Toast.error('Permission Denied', 'You do not have permission to reassign this deal.');
-+      return;
-+    }
-+
-+    const oldAssignee = deal.assignedTo ? Store.getUserById(deal.assignedTo)?.name || 'Unknown' : 'Unassigned';
-+
-+    Store.updateDeal(dealId, {
-+      assignedTo: targetUserId,
-+      teamId: targetUser.teamId || null,
-+      updatedAt: new Date().toISOString()
-+    });
-+
-+    Store.createActivity({
-+      id: generateId(),
-+      dealId: dealId,
-+      type: 'assignment',
-+      content: `Deal reassigned from ${oldAssignee} to ${targetUser.name}`,
-+      createdBy: user.id,
-+      createdAt: new Date().toISOString()
-+    });
-+
-+    Toast.success('Success', `Deal reassigned to ${targetUser.name}`);
-+  }
-+
-+  // Refresh page
++function reRenderReports() {
 +  const contentEl = document.getElementById('content-area');
 +  if (contentEl) {
-+    contentEl.innerHTML = renderTeam();
-+    populateReassignRecordDropdown();
++    contentEl.innerHTML = renderReports();
 +  }
 +}
 ```
 
 ## Tests Run
 ```text
-Browser preview performed externally: Manager and Team Lead team visibility/reassignment checked; Employee route guard checked
+Browser preview performed externally: Manager reports page checked; Team Lead and Employee access denied checked; team and deal status filters checked
 ```
 
 ## Risks / Pending Checks

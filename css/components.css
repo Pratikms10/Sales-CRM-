@@ -912,3 +912,63 @@
 .text-link:hover {
   text-decoration: underline;
 }
+
+/* ── Reports & Analytics ─────────────────────────────────── */
+.report-grid {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+.report-grid-2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 768px) {
+  .report-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.report-metric-row {
+  display: grid;
+  grid-template-columns: 160px 1fr 1fr;
+  gap: var(--space-md);
+  align-items: center;
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--color-hairline-soft);
+}
+
+.report-metric-row:last-child {
+  border-bottom: none;
+}
+
+.report-metric-label {
+  font: var(--text-body-sm);
+  font-weight: 500;
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+
+.report-metric-stats {
+  display: flex;
+  gap: var(--space-base);
+  font: var(--text-body-sm);
+  color: var(--color-ink);
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+.report-bar {
+  height: 8px;
+  background: var(--color-surface-strong);
+  border-radius: var(--rounded-full);
+  overflow: hidden;
+  min-width: 60px;
+}
+
+.report-bar-fill {
+  height: 100%;
+  border-radius: var(--rounded-full);
+  transition: width var(--transition-base);
+  min-width: 2px;
+}
