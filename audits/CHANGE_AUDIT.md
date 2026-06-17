@@ -1,704 +1,658 @@
 ﻿# AI Change Audit Report
 
 ## Generated On
-2026-06-17_15-51-16
+2026-06-17_16-14-18
 
 ## Branch
 main
 
 ## Baseline Commit
-0f2bd91
+13bfc1a
 
 ## Task Summary
-Phase 1B SOP pipeline page and deal detail stage controls with permission guard fix
+Phase 1C Leads page with role-scoped visibility, guarded lead forms, filters, and conversion foundation
 
 ## Git Status
 ```text
  M audits/CHANGE_AUDIT.md
  M css/components.css
  M js/app.js
- A js/pages/deal-detail.js
- A js/pages/pipeline.js
+ A js/pages/leads.js
 ```
 
 ## Files Changed
 ```text
 M	css/components.css
 M	js/app.js
-A	js/pages/deal-detail.js
-A	js/pages/pipeline.js
+A	js/pages/leads.js
 ```
 
 ## Change Summary
 ```text
- css/components.css      | 212 ++++++++++++++++++++++++++++++++++++++++++++++++
- js/app.js               |  18 +++-
- js/pages/deal-detail.js | 206 ++++++++++++++++++++++++++++++++++++++++++++++
- js/pages/pipeline.js    | 171 ++++++++++++++++++++++++++++++++++++++
- 4 files changed, 606 insertions(+), 1 deletion(-)
+ css/components.css |  79 +++++++++
+ js/app.js          |   4 +
+ js/pages/leads.js  | 489 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 572 insertions(+)
 ```
 
 ## Full Diff
 ```diff
 diff --git a/css/components.css b/css/components.css
-index 0980f8a..e980079 100644
+index e980079..f35ea6d 100644
 --- a/css/components.css
 +++ b/css/components.css
-@@ -621,3 +621,215 @@
-   color: var(--color-muted);
-   max-width: 400px;
+@@ -833,3 +833,82 @@
+   align-items: center;
  }
-+
-+/* -- Pipeline Board (Kanban) ------------------------------- */
-+.pipeline-board {
-+  display: flex;
-+  gap: var(--space-md);
-+  overflow-x: auto;
-+  padding-bottom: var(--space-base);
-+  min-height: 500px;
-+  align-items: flex-start;
+ 
++/* -- Data Tables ------------------------------------------- */
++.data-table {
++  width: 100%;
++  border-collapse: collapse;
++  text-align: left;
 +}
 +
-+.pipeline-column {
-+  flex: 0 0 320px;
-+  background: var(--color-surface-strong);
-+  border-radius: var(--rounded-md);
-+  display: flex;
-+  flex-direction: column;
-+  max-height: calc(100vh - 200px);
-+}
-+
-+.pipeline-column-header {
-+  padding: var(--space-md);
-+  border-bottom: 2px solid transparent;
-+  display: flex;
-+  justify-content: space-between;
-+  align-items: center;
-+  border-radius: var(--rounded-md) var(--rounded-md) 0 0;
-+  background: var(--color-canvas);
-+}
-+
-+.pipeline-column-title {
-+  font: var(--text-title-sm);
-+  color: var(--color-ink);
-+  display: flex;
-+  align-items: center;
-+  gap: var(--space-xs);
-+}
-+
-+.pipeline-column-count {
-+  font: var(--text-badge);
-+  background: var(--color-surface-strong);
++.data-table th {
++  padding: var(--space-sm) var(--space-md);
++  font: var(--text-caption-sm);
 +  color: var(--color-muted);
-+  padding: 2px 8px;
-+  border-radius: var(--rounded-full);
++  border-bottom: 1px solid var(--color-hairline-soft);
++  background: var(--color-surface-strong);
 +}
 +
-+.pipeline-column-body {
-+  padding: var(--space-sm);
-+  overflow-y: auto;
-+  flex: 1;
-+  display: flex;
-+  flex-direction: column;
-+  gap: var(--space-sm);
-+}
-+
-+/* -- Deal Card --------------------------------------------- */
-+.deal-card {
-+  background: var(--color-canvas);
-+  border-radius: var(--rounded-sm);
-+  box-shadow: var(--shadow-card);
++.data-table td {
 +  padding: var(--space-md);
-+  cursor: pointer;
-+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
-+  border: 1px solid var(--color-hairline-soft);
-+}
-+
-+.deal-card:hover {
-+  transform: translateY(-2px);
-+  box-shadow: var(--shadow-dropdown);
-+}
-+
-+.deal-card-header {
-+  display: flex;
-+  justify-content: space-between;
-+  align-items: flex-start;
-+  margin-bottom: var(--space-xs);
-+}
-+
-+.deal-card-title {
-+  font: var(--text-title-sm);
-+  color: var(--color-ink);
-+  margin: 0;
-+}
-+
-+.deal-card-value {
 +  font: var(--text-body-sm);
-+  font-weight: 600;
-+  color: var(--color-success);
-+  margin-bottom: var(--space-sm);
++  color: var(--color-ink);
++  border-bottom: 1px solid var(--color-hairline-soft);
++  vertical-align: middle;
 +}
 +
-+.deal-card-footer {
-+  display: flex;
-+  justify-content: space-between;
-+  align-items: center;
-+  margin-top: var(--space-sm);
-+  padding-top: var(--space-sm);
-+  border-top: 1px solid var(--color-hairline-soft);
++.data-table tbody tr {
++  transition: background var(--transition-fast);
 +}
 +
-+.deal-card-time {
-+  font: var(--text-caption-sm);
-+  color: var(--color-muted);
++.data-table tbody tr:hover {
++  background: var(--color-surface-soft);
 +}
 +
-+.deal-card-actions {
++.table-actions {
 +  display: flex;
 +  gap: var(--space-xs);
-+  margin-top: var(--space-sm);
++  justify-content: flex-end;
 +}
 +
-+/* -- Deal Detail Page -------------------------------------- */
-+.deal-detail-header {
++/* -- Modals ------------------------------------------------ */
++.modal-overlay {
++  position: fixed;
++  top: 0;
++  left: 0;
++  right: 0;
++  bottom: 0;
++  background: rgba(0,0,0,0.4);
++  z-index: 1000;
++  backdrop-filter: blur(2px);
++}
++
++.modal {
++  position: fixed;
++  top: 50%;
++  left: 50%;
++  transform: translate(-50%, -50%);
 +  background: var(--color-canvas);
-+  padding: var(--space-xl);
 +  border-radius: var(--rounded-md);
-+  box-shadow: var(--shadow-card);
-+  margin-bottom: var(--space-xl);
++  box-shadow: var(--shadow-dropdown);
++  z-index: 1001;
++  width: 90%;
++  max-width: 600px;
++  max-height: 90vh;
++  overflow-y: auto;
++}
++
++.modal-header {
++  padding: var(--space-md) var(--space-lg);
++  border-bottom: 1px solid var(--color-hairline-soft);
 +  display: flex;
 +  justify-content: space-between;
-+  align-items: flex-start;
-+}
-+
-+.deal-detail-title {
-+  font: var(--text-display-lg);
-+  color: var(--color-ink);
-+  margin-bottom: var(--space-xs);
-+}
-+
-+.deal-detail-value {
-+  font: var(--text-display-md);
-+  color: var(--color-success);
-+  margin-bottom: var(--space-md);
-+}
-+
-+/* SOP Progress Bar */
-+.sop-progress {
-+  display: flex;
 +  align-items: center;
-+  width: 100%;
-+  margin: var(--space-lg) 0;
-+  background: var(--color-surface-strong);
-+  padding: var(--space-md);
-+  border-radius: var(--rounded-lg);
 +}
 +
-+.sop-step {
-+  flex: 1;
-+  text-align: center;
-+  position: relative;
-+}
-+
-+.sop-step-dot {
-+  width: 24px;
-+  height: 24px;
-+  border-radius: var(--rounded-full);
-+  background: var(--color-surface-soft);
-+  border: 2px solid var(--color-hairline);
-+  margin: 0 auto var(--space-xs);
-+  z-index: 2;
-+  position: relative;
-+  transition: all var(--transition-fast);
-+}
-+
-+.sop-step-label {
-+  font: var(--text-caption-sm);
-+  color: var(--color-muted);
-+}
-+
-+.sop-step.is-completed .sop-step-dot {
-+  background: var(--color-primary);
-+  border-color: var(--color-primary);
-+}
-+
-+.sop-step.is-current .sop-step-dot {
-+  background: var(--color-canvas);
-+  border-color: var(--color-primary);
-+  border-width: 4px;
-+}
-+
-+.sop-step.is-completed .sop-step-label {
-+  color: var(--color-ink);
-+  font-weight: 500;
-+}
-+
-+.sop-step.is-current .sop-step-label {
++.text-link {
 +  color: var(--color-primary);
-+  font-weight: 600;
++  text-decoration: none;
 +}
-+
-+/* Line connecting steps */
-+.sop-step:not(:last-child)::after {
-+  content: '';
-+  position: absolute;
-+  top: 12px;
-+  left: 50%;
-+  width: 100%;
-+  height: 2px;
-+  background: var(--color-hairline);
-+  z-index: 1;
++.text-link:hover {
++  text-decoration: underline;
 +}
-+
-+.sop-step.is-completed:not(:last-child)::after {
-+  background: var(--color-primary);
-+}
-+
-+.deal-actions-bar {
-+  display: flex;
-+  gap: var(--space-md);
-+  align-items: center;
-+}
-+
 diff --git a/js/app.js b/js/app.js
-index 8d0a6c4..0ca826b 100644
+index 0ca826b..d6b3c58 100644
 --- a/js/app.js
 +++ b/js/app.js
-@@ -11,6 +11,8 @@ import { renderSidebar, bindSidebarEvents } from './components/sidebar.js';
- import { renderTopbar } from './components/topbar.js';
- import { renderLoginPage, bindLoginEvents } from './pages/login.js';
+@@ -13,6 +13,7 @@ import { renderLoginPage, bindLoginEvents } from './pages/login.js';
  import { renderDashboard } from './pages/dashboard.js';
-+import { renderPipeline, bindPipelineEvents } from './pages/pipeline.js';
-+import { renderDealDetail, bindDealDetailEvents } from './pages/deal-detail.js';
+ import { renderPipeline, bindPipelineEvents } from './pages/pipeline.js';
+ import { renderDealDetail, bindDealDetailEvents } from './pages/deal-detail.js';
++import { renderLeads, bindLeadsEvents } from './pages/leads.js';
  
  // ΓöÇΓöÇ DOM References ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
  
-@@ -94,9 +96,17 @@ function renderPage(pageId, params) {
-       contentEl.innerHTML = renderDashboard();
+@@ -106,6 +107,8 @@ function renderPage(pageId, params) {
+       }
        break;
-     case 'pipeline':
-+      contentEl.innerHTML = renderPipeline();
-+      break;
-+    case 'deals':
-+      if (params && params.id) {
-+        contentEl.innerHTML = renderDealDetail(params);
-+      } else {
-+        contentEl.innerHTML = renderComingSoon(pageId);
-+      }
-+      break;
      case 'leads':
++      contentEl.innerHTML = renderLeads();
++      break;
      case 'contacts':
--    case 'deals':
      case 'team':
      case 'reports':
-     case 'settings':
-@@ -107,6 +117,12 @@ function renderPage(pageId, params) {
-   }
- }
+@@ -122,6 +125,7 @@ function renderPage(pageId, params) {
+ // Since we completely replace innerHTML, we can bind on the document or contentEl.
+ bindPipelineEvents();
+ bindDealDetailEvents();
++bindLeadsEvents();
  
-+// ΓöÇΓöÇ Event Delegation for Main Content ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-+// Bind events that live inside the content-area once, or within the render calls.
-+// Since we completely replace innerHTML, we can bind on the document or contentEl.
-+bindPipelineEvents();
-+bindDealDetailEvents();
-+
  // ΓöÇΓöÇ Bootstrap ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
  
- function init() {
-diff --git a/js/pages/deal-detail.js b/js/pages/deal-detail.js
+diff --git a/js/pages/leads.js b/js/pages/leads.js
 new file mode 100644
-index 0000000..06dbf08
+index 0000000..3f84e48
 --- /dev/null
-+++ b/js/pages/deal-detail.js
-@@ -0,0 +1,206 @@
++++ b/js/pages/leads.js
+@@ -0,0 +1,489 @@
 +// ============================================================
-+// TechnoEdge CRM ΓÇö Deal Detail Page
-+// Detail view with SOP progress bar and activity history
++// TechnoEdge CRM ΓÇö Leads Page
++// Lead list with role-scoped access and CRUD operations
 +// ============================================================
 +
 +import { Store } from '../store.js';
 +import { Auth } from '../auth.js';
-+import { SOP_STAGES, formatCurrency, timeAgo, formatDateTime } from '../utils.js';
++import { formatDate, generateId, capitalize, getInitials } from '../utils.js';
 +import { Router } from '../router.js';
 +import { Toast } from '../components/toast.js';
 +
-+export function renderDealDetail(params) {
-+  const user = Auth.getCurrentUser();
-+  if (!user || !params || !params.id) {
-+    Router.navigate('#/pipeline');
-+    return '';
-+  }
++let currentFilters = {
++  search: '',
++  status: '',
++  source: ''
++};
 +
-+  const deal = Store.getDealById(params.id);
-+  if (!deal) {
-+    Toast.error('Not Found', 'Deal not found.');
-+    Router.navigate('#/pipeline');
-+    return '';
-+  }
-+
-+  if (!Auth.canViewRecord(deal)) {
-+    Toast.error('Access Denied', 'You do not have permission to view this deal.');
-+    Router.navigate('#/pipeline');
-+    return '';
-+  }
-+
-+  const currentStageIndex = SOP_STAGES.findIndex(s => s.key === deal.stage);
-+  
-+  // Build SOP Progress Bar
-+  const sopProgressHtml = SOP_STAGES.map((stage, index) => {
-+    let stateClass = '';
-+    if (index < currentStageIndex) stateClass = 'is-completed';
-+    else if (index === currentStageIndex) stateClass = 'is-current';
-+    
-+    return `
-+      <div class="sop-step ${stateClass}">
-+        <div class="sop-step-dot"></div>
-+        <div class="sop-step-label">${stage.label}</div>
-+      </div>
-+    `;
-+  }).join('');
-+
-+  // Action Controls
-+  let actionHtml = '';
-+  const canMoveForward = currentStageIndex < SOP_STAGES.length - 1 && (user.role === 'manager' || Auth.canEditRecord(deal));
-+  
-+  if (user.role === 'manager') {
-+    const CHEVRON_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
-+    const options = SOP_STAGES.map(s => `<option value="${s.key}" ${s.key === deal.stage ? 'selected' : ''}>${s.label}</option>`).join('');
-+    actionHtml = `
-+      <div class="deal-actions-bar">
-+        <div class="login-select-wrapper" style="margin-bottom: 0; width: 200px;">
-+          <select class="login-select" id="override-stage-select" style="height: 40px; padding-right: 36px; cursor: pointer;">
-+            ${options}
-+          </select>
-+          <span class="login-select-arrow" style="pointer-events: none; top: 50%; transform: translateY(-50%);">${CHEVRON_ICON}</span>
-+        </div>
-+        <button class="btn btn-primary" id="btn-override-stage" data-deal-id="${deal.id}">Override Stage</button>
-+      </div>
-+    `;
-+  } else if (canMoveForward) {
-+    const nextStage = SOP_STAGES[currentStageIndex + 1];
-+    actionHtml = `
-+      <div class="deal-actions-bar">
-+        <button class="btn btn-primary" id="btn-next-stage" data-deal-id="${deal.id}" data-next-stage="${nextStage.key}">
-+          Move to ${nextStage.label}
-+        </button>
-+      </div>
-+    `;
-+  }
-+
-+  // Activities
-+  const activities = Store.getActivitiesForDeal(deal.id);
-+  const activitiesHtml = activities.map(act => {
-+    const creator = Store.getUserById(act.createdBy);
-+    return `
-+      <div class="activity-feed-item">
-+        <span class="activity-feed-dot"></span>
-+        <div class="activity-feed-content">
-+          <div class="activity-feed-text">
-+            <strong>${creator ? creator.name : 'Unknown'}</strong><br>
-+            <span style="color: var(--color-muted);">${act.content}</span>
-+          </div>
-+          <div class="activity-feed-time">${formatDateTime(act.createdAt)} (${timeAgo(act.createdAt)})</div>
-+        </div>
-+      </div>
-+    `;
-+  }).join('') || '<div class="activity-feed-empty">No activities recorded.</div>';
-+
-+  return `
-+    <div class="content-inner">
-+      <div class="deal-detail-header">
-+        <div>
-+          <h1 class="deal-detail-title">${deal.title}</h1>
-+          <div class="deal-detail-value">${formatCurrency(deal.value, deal.currency)}</div>
-+          <span class="badge badge-neutral">Priority: ${deal.priority}</span>
-+        </div>
-+        ${actionHtml}
-+      </div>
-+
-+      <div class="dashboard-section">
-+        <h4 class="dashboard-section-title">SOP Progress</h4>
-+        <div class="sop-progress">
-+          ${sopProgressHtml}
-+        </div>
-+      </div>
-+
-+      <div class="dashboard-section">
-+        <h4 class="dashboard-section-title">Activity History</h4>
-+        <div class="activity-feed">
-+          <div class="activity-feed-list">
-+            ${activitiesHtml}
-+          </div>
-+        </div>
-+      </div>
-+    </div>
-+  `;
-+}
-+
-+export function bindDealDetailEvents() {
-+  const content = document.getElementById('content-area');
-+  if (!content) return;
-+
-+  content.addEventListener('click', (e) => {
-+    // Next Stage button (Employee/TL)
-+    if (e.target.id === 'btn-next-stage') {
-+      const dealId = e.target.dataset.dealId;
-+      const nextStage = e.target.dataset.nextStage;
-+      executeStageChange(dealId, nextStage);
-+    }
-+    
-+    // Override Stage button (Manager)
-+    if (e.target.id === 'btn-override-stage') {
-+      const dealId = e.target.dataset.dealId;
-+      const select = document.getElementById('override-stage-select');
-+      if (select) {
-+        const toStage = select.value;
-+        const deal = Store.getDealById(dealId);
-+        if (deal && deal.stage !== toStage) {
-+          executeStageChange(dealId, toStage, true);
-+        }
-+      }
-+    }
-+  });
-+}
-+
-+function executeStageChange(dealId, toStage, isOverride = false) {
-+  const user = Auth.getCurrentUser();
-+  const deal = Store.getDealById(dealId);
-+  if (!deal || !user) return;
-+
-+  const fromStage = deal.stage;
-+  const fromIndex = SOP_STAGES.findIndex(s => s.key === fromStage);
-+  const toIndex = SOP_STAGES.findIndex(s => s.key === toStage);
-+
-+  if (toIndex === -1) {
-+    Toast.error('Invalid Stage', 'The selected stage does not exist.');
-+    return;
-+  }
-+
-+  if (fromIndex === toIndex) {
-+    return; // Target is same as current, do nothing
-+  }
-+
-+  // Permission validation
-+  if (user.role !== 'manager') {
-+    if (!Auth.canEditRecord(deal)) {
-+      Toast.error('Permission Denied', 'You do not have permission to edit this deal.');
-+      return;
-+    }
-+    if (isOverride) {
-+      Toast.error('Permission Denied', 'Only Managers can override deal stages.');
-+      return;
-+    }
-+    if (toIndex !== fromIndex + 1) {
-+      Toast.error('Invalid Move', 'You can only move a deal exactly one stage forward.');
-+      return;
-+    }
-+  }
-+
-+  Store.updateDeal(deal.id, { stage: toStage });
-+
-+  Store.createActivity({
-+    id: 'act_' + Date.now().toString(36),
-+    dealId: deal.id,
-+    type: 'stage_change',
-+    content: `Deal ${isOverride ? 'overridden' : 'moved'} from ${SOP_STAGES[fromIndex].label} to ${SOP_STAGES[toIndex].label}`,
-+    fromStage: fromStage,
-+    toStage: toStage,
-+    createdBy: user.id,
-+    createdAt: new Date().toISOString()
-+  });
-+
-+  Toast.success('Stage Updated', `Deal is now in ${SOP_STAGES[toIndex].label}`);
-+  
-+  // Re-render
-+  const contentEl = document.getElementById('content-area');
-+  if (contentEl) {
-+    contentEl.innerHTML = renderDealDetail({ id: dealId });
-+  }
-+}
-diff --git a/js/pages/pipeline.js b/js/pages/pipeline.js
-new file mode 100644
-index 0000000..f27524b
---- /dev/null
-+++ b/js/pages/pipeline.js
-@@ -0,0 +1,171 @@
-+// ============================================================
-+// TechnoEdge CRM ΓÇö Pipeline Page
-+// Kanban board for SOP deal stages
-+// ============================================================
-+
-+import { Store } from '../store.js';
-+import { Auth } from '../auth.js';
-+import { SOP_STAGES, formatCurrency, getInitials, timeAgo } from '../utils.js';
-+import { Router } from '../router.js';
-+import { Toast } from '../components/toast.js';
-+
-+export function renderPipeline() {
++export function renderLeads() {
 +  const user = Auth.getCurrentUser();
 +  if (!user) return '';
 +
-+  const deals = Store.getDealsForUser(user);
-+
-+  // Group deals by stage
-+  const dealsByStage = {};
-+  SOP_STAGES.forEach(s => { dealsByStage[s.key] = []; });
++  const allLeads = Store.getLeadsForUser(user);
 +  
-+  deals.forEach(deal => {
-+    if (dealsByStage[deal.stage]) {
-+      dealsByStage[deal.stage].push(deal);
++  // Apply filters
++  const filteredLeads = allLeads.filter(lead => {
++    if (currentFilters.status && lead.status !== currentFilters.status) return false;
++    if (currentFilters.source && lead.source !== currentFilters.source) return false;
++    
++    if (currentFilters.search) {
++      const q = currentFilters.search.toLowerCase();
++      const matchName = lead.name.toLowerCase().includes(q);
++      const matchCompany = lead.company.toLowerCase().includes(q);
++      const matchEmail = (lead.email || '').toLowerCase().includes(q);
++      if (!matchName && !matchCompany && !matchEmail) return false;
 +    }
++    return true;
 +  });
 +
-+  const columnsHTML = SOP_STAGES.map((stage, index) => {
-+    const stageDeals = dealsByStage[stage.key];
-+    const nextStageObj = index < SOP_STAGES.length - 1 ? SOP_STAGES[index + 1] : null;
-+    
-+    const cardsHTML = stageDeals.map(deal => buildDealCard(deal, user, nextStageObj)).join('');
++  // Sort by newest
++  filteredLeads.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 +
-+    return `
-+      <div class="pipeline-column">
-+        <div class="pipeline-column-header">
-+          <div class="pipeline-column-title">
-+            <span class="stage-badge stage-badge-${stage.key}" style="width: 12px; height: 12px; padding: 0;"></span>
-+            ${stage.label}
-+          </div>
-+          <span class="pipeline-column-count">${stageDeals.length}</span>
-+        </div>
-+        <div class="pipeline-column-body">
-+          ${cardsHTML}
-+        </div>
-+      </div>
-+    `;
-+  }).join('');
++  const rowsHtml = filteredLeads.map(lead => buildLeadRow(lead, user)).join('');
++  const emptyHtml = filteredLeads.length === 0 ? `<tr><td colspan="8" class="text-center" style="padding: 2rem;">No leads found.</td></tr>` : '';
 +
 +  return `
-+    <div class="content-inner" style="max-width: none;">
++    <div class="content-inner">
 +      <div class="page-header">
-+        <h1 class="page-header-title">Pipeline</h1>
-+        <p class="page-header-subtitle">Manage deals across standard operating procedure stages.</p>
++        <div>
++          <h1 class="page-header-title">Leads</h1>
++          <p class="page-header-subtitle">Manage potential deals and prospects.</p>
++        </div>
++        <button class="btn btn-primary" id="btn-new-lead">New Lead</button>
 +      </div>
-+      <div class="pipeline-board">
-+        ${columnsHTML}
++
++      <div class="card" style="margin-bottom: var(--space-lg)">
++        <div class="filter-bar" style="display: flex; gap: 1rem; padding: 1rem; border-bottom: 1px solid var(--color-border);">
++          <input type="text" class="login-input" id="filter-search" placeholder="Search name, company, email..." style="max-width: 300px;" value="${currentFilters.search}">
++          <select class="login-input" id="filter-status" style="max-width: 200px;">
++            <option value="">All Statuses</option>
++            <option value="new" ${currentFilters.status === 'new' ? 'selected' : ''}>New</option>
++            <option value="contacted" ${currentFilters.status === 'contacted' ? 'selected' : ''}>Contacted</option>
++            <option value="qualified" ${currentFilters.status === 'qualified' ? 'selected' : ''}>Qualified</option>
++            <option value="unqualified" ${currentFilters.status === 'unqualified' ? 'selected' : ''}>Unqualified</option>
++            <option value="converted" ${currentFilters.status === 'converted' ? 'selected' : ''}>Converted</option>
++          </select>
++          <select class="login-input" id="filter-source" style="max-width: 200px;">
++            <option value="">All Sources</option>
++            <option value="website" ${currentFilters.source === 'website' ? 'selected' : ''}>Website</option>
++            <option value="referral" ${currentFilters.source === 'referral' ? 'selected' : ''}>Referral</option>
++            <option value="cold_call" ${currentFilters.source === 'cold_call' ? 'selected' : ''}>Cold Call</option>
++            <option value="event" ${currentFilters.source === 'event' ? 'selected' : ''}>Event</option>
++            <option value="social" ${currentFilters.source === 'social' ? 'selected' : ''}>Social</option>
++          </select>
++          <button class="btn btn-secondary" id="btn-clear-filters">Clear</button>
++        </div>
++
++        <div style="overflow-x: auto;">
++          <table class="data-table">
++            <thead>
++              <tr>
++                <th>Name</th>
++                <th>Company</th>
++                <th>Contact</th>
++                <th>Source</th>
++                <th>Status</th>
++                <th>Assigned To</th>
++                <th>Created</th>
++                <th style="text-align: right;">Actions</th>
++              </tr>
++            </thead>
++            <tbody>
++              ${rowsHtml}
++              ${emptyHtml}
++            </tbody>
++          </table>
++        </div>
 +      </div>
++    </div>
++    
++    <!-- Modals -->
++    <div id="modal-overlay" class="modal-overlay" style="display: none;"></div>
++    <div id="lead-modal" class="modal" style="display: none;">
++      <!-- Content populated dynamically -->
 +    </div>
 +  `;
 +}
 +
-+function buildDealCard(deal, user, nextStageObj) {
-+  const assignee = deal.assignedTo ? Store.getUserById(deal.assignedTo) : null;
-+  const initials = getInitials(assignee ? assignee.name : '?');
-+  const avatarBg = assignee ? assignee.avatarColor : 'var(--color-muted)';
++function buildLeadRow(lead, user) {
++  const assignee = lead.assignedTo ? Store.getUserById(lead.assignedTo) : null;
++  const canEdit = user.role === 'manager' || Auth.canEditRecord(lead);
++  const canDelete = user.role === 'manager';
++  const canConvert = lead.status !== 'converted' && (user.role === 'manager' || user.role === 'team_lead');
 +
-+  let actionHtml = '';
-+  const canMove = nextStageObj && (user.role === 'manager' || Auth.canEditRecord(deal));
++  let actionsHtml = `<div class="table-actions">`;
 +  
-+  if (canMove) {
-+    actionHtml = `
-+      <div class="deal-card-actions">
-+        <button class="btn btn-primary btn-sm btn-full move-forward-btn" data-deal-id="${deal.id}" data-next-stage="${nextStageObj.key}">Move to ${nextStageObj.label}</button>
-+      </div>
-+    `;
++  if (canEdit) {
++    actionsHtml += `<button class="btn btn-sm btn-secondary btn-edit-lead" data-id="${lead.id}">Edit</button>`;
++  }
++  
++  if (canConvert) {
++    actionsHtml += `<button class="btn btn-sm btn-primary btn-convert-lead" data-id="${lead.id}">Convert</button>`;
++  } else if (lead.status !== 'converted' && user.role === 'employee') {
++    // Employee placeholder for convert
++    actionsHtml += `<button class="btn btn-sm btn-secondary" disabled title="Only Managers or Team Leads can convert">Convert</button>`;
 +  }
 +
++  if (canDelete) {
++    actionsHtml += `<button class="btn btn-sm btn-danger btn-delete-lead" data-id="${lead.id}">Delete</button>`;
++  }
++  
++  actionsHtml += `</div>`;
++
 +  return `
-+    <div class="deal-card" data-deal-id="${deal.id}">
-+      <div class="deal-card-header">
-+        <h4 class="deal-card-title">${deal.title}</h4>
-+      </div>
-+      <div class="deal-card-value">${formatCurrency(deal.value, deal.currency)}</div>
-+      <div style="margin-bottom: var(--space-xs)">
-+        <span class="badge badge-neutral">${deal.priority}</span>
-+      </div>
-+      <div class="deal-card-footer">
-+        <span class="deal-card-time">Updated ${timeAgo(deal.updatedAt)}</span>
-+        <div class="avatar avatar-sm" style="background-color: ${avatarBg}" title="Assigned to ${assignee ? assignee.name : 'Unassigned'}">${initials}</div>
-+      </div>
-+      ${actionHtml}
-+    </div>
++    <tr>
++      <td style="font-weight: 500;">${lead.name}</td>
++      <td>${lead.company}</td>
++      <td>
++        <div style="font-size: 0.85rem;">
++          <a href="mailto:${lead.email}" class="text-link">${lead.email}</a><br>
++          <span style="color: var(--color-muted)">${lead.phone}</span>
++        </div>
++      </td>
++      <td>${capitalize(lead.source)}</td>
++      <td><span class="badge badge-neutral">${capitalize(lead.status)}</span></td>
++      <td>
++        ${assignee ? `
++          <div style="display: flex; align-items: center; gap: 0.5rem;">
++            <div class="avatar avatar-sm" style="background: ${assignee.avatarColor}">${getInitials(assignee.name)}</div>
++            <span style="font-size: 0.85rem;">${assignee.name}</span>
++          </div>
++        ` : '<span style="color: var(--color-muted)">Unassigned</span>'}
++      </td>
++      <td style="font-size: 0.85rem; color: var(--color-muted);">
++        ${formatDate(lead.createdAt)}
++      </td>
++      <td style="text-align: right;">
++        ${actionsHtml}
++      </td>
++    </tr>
 +  `;
 +}
 +
-+export function bindPipelineEvents() {
++export function bindLeadsEvents() {
 +  const content = document.getElementById('content-area');
 +  if (!content) return;
 +
-+  content.addEventListener('click', (e) => {
-+    const moveBtn = e.target.closest('.move-forward-btn');
-+    const card = e.target.closest('.deal-card');
++  // Filters
++  content.addEventListener('input', (e) => {
++    if (e.target.id === 'filter-search') {
++      currentFilters.search = e.target.value;
++      reRenderLeadsOnly();
++    }
++  });
 +
-+    if (moveBtn) {
-+      e.stopPropagation();
-+      const dealId = moveBtn.dataset.dealId;
-+      const nextStage = moveBtn.dataset.nextStage;
-+      handleStageMove(dealId, nextStage);
-+    } else if (card) {
-+      // Navigate to deal detail
-+      Router.navigate('#/deals/' + card.dataset.dealId);
++  content.addEventListener('change', (e) => {
++    if (e.target.id === 'filter-status') {
++      currentFilters.status = e.target.value;
++      reRenderLeadsOnly();
++    }
++    if (e.target.id === 'filter-source') {
++      currentFilters.source = e.target.value;
++      reRenderLeadsOnly();
++    }
++  });
++
++  content.addEventListener('click', (e) => {
++    // Clear Filters
++    if (e.target.id === 'btn-clear-filters') {
++      currentFilters = { search: '', status: '', source: '' };
++      reRenderLeadsFull();
++      return;
++    }
++
++    // New Lead
++    if (e.target.id === 'btn-new-lead') {
++      openLeadModal();
++      return;
++    }
++
++    // Edit Lead
++    const editBtn = e.target.closest('.btn-edit-lead');
++    if (editBtn) {
++      openLeadModal(editBtn.dataset.id);
++      return;
++    }
++
++    // Delete Lead
++    const deleteBtn = e.target.closest('.btn-delete-lead');
++    if (deleteBtn) {
++      if (confirm('Are you sure you want to delete this lead?')) {
++        const user = Auth.getCurrentUser();
++        if (!user || user.role !== 'manager') {
++          Toast.error('Permission Denied', 'Only managers can delete leads.');
++          return;
++        }
++        const id = deleteBtn.dataset.id;
++        Store.deleteLead(id);
++        Toast.success('Deleted', 'Lead has been removed.');
++        reRenderLeadsFull();
++      }
++      return;
++    }
++
++    // Convert Lead
++    const convertBtn = e.target.closest('.btn-convert-lead');
++    if (convertBtn) {
++      if (confirm('Convert this lead to a Deal?')) {
++        handleConvertLead(convertBtn.dataset.id);
++      }
++      return;
++    }
++    
++    // Modal actions
++    if (e.target.id === 'modal-overlay' || e.target.closest('.btn-close-modal')) {
++      closeModal();
++      return;
++    }
++
++    if (e.target.id === 'btn-save-lead') {
++      saveLead();
++      return;
 +    }
 +  });
 +}
 +
-+function handleStageMove(dealId, toStage) {
++function reRenderLeadsOnly() {
++  // Re-render without losing focus if possible, but simplest is full replacement
++  // We'll debounce full render for input
++  clearTimeout(window.filterDebounce);
++  window.filterDebounce = setTimeout(() => {
++    reRenderLeadsFull();
++  }, 300);
++}
++
++function reRenderLeadsFull() {
++  const contentEl = document.getElementById('content-area');
++  if (contentEl) {
++    contentEl.innerHTML = renderLeads();
++  }
++}
++
++function getAssignableUsers() {
++  const currentUser = Auth.getCurrentUser();
++  if (currentUser.role === 'manager') {
++    return Store.getUsers();
++  } else if (currentUser.role === 'team_lead') {
++    const users = Store.getUsersByTeam(currentUser.teamId);
++    if (!users.find(u => u.id === currentUser.id)) users.push(currentUser);
++    return users;
++  } else {
++    return [currentUser];
++  }
++}
++
++function openLeadModal(leadId = null) {
++  const modal = document.getElementById('lead-modal');
++  const overlay = document.getElementById('modal-overlay');
 +  const user = Auth.getCurrentUser();
-+  const deal = Store.getDealById(dealId);
-+  if (!deal || !user) return;
++  
++  let lead = { name: '', company: '', email: '', phone: '', source: 'website', status: 'new', assignedTo: user.role === 'employee' ? user.id : '' };
++  
++  if (leadId) {
++    lead = Store.getLeadById(leadId);
++    if (!lead || !Auth.canEditRecord(lead)) {
++      Toast.error('Error', 'Cannot edit this lead.');
++      return;
++    }
++  }
 +
-+  const fromStage = deal.stage;
++  const isEdit = !!leadId;
++  const title = isEdit ? 'Edit Lead' : 'New Lead';
++  const assignableUsers = getAssignableUsers();
++  
++  const userOptions = assignableUsers.map(u => 
++    `<option value="${u.id}" ${lead.assignedTo === u.id ? 'selected' : ''}>${u.name}</option>`
++  ).join('');
 +
-+  // Find indexes
-+  const fromIndex = SOP_STAGES.findIndex(s => s.key === fromStage);
-+  const toIndex = SOP_STAGES.findIndex(s => s.key === toStage);
++  modal.innerHTML = `
++    <div class="modal-header">
++      <h3 style="margin:0">${title}</h3>
++      <button class="btn btn-sm btn-close-modal" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
++    </div>
++    <div class="modal-body" style="padding: 1.5rem;">
++      <input type="hidden" id="form-lead-id" value="${leadId || ''}">
++      
++      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
++        <div>
++          <label style="display:block; margin-bottom:0.5rem; font-weight:500;">Name *</label>
++          <input type="text" id="form-lead-name" class="login-input" value="${lead.name}" required>
++        </div>
++        <div>
++          <label style="display:block; margin-bottom:0.5rem; font-weight:500;">Company *</label>
++          <input type="text" id="form-lead-company" class="login-input" value="${lead.company}" required>
++        </div>
++      </div>
 +
-+  if (toIndex === -1) {
-+    Toast.error('Invalid Stage', 'The selected stage does not exist.');
++      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
++        <div>
++          <label style="display:block; margin-bottom:0.5rem; font-weight:500;">Email</label>
++          <input type="email" id="form-lead-email" class="login-input" value="${lead.email}">
++        </div>
++        <div>
++          <label style="display:block; margin-bottom:0.5rem; font-weight:500;">Phone</label>
++          <input type="text" id="form-lead-phone" class="login-input" value="${lead.phone}">
++        </div>
++      </div>
++
++      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
++        <div>
++          <label style="display:block; margin-bottom:0.5rem; font-weight:500;">Source</label>
++          <select id="form-lead-source" class="login-input">
++            <option value="website" ${lead.source === 'website' ? 'selected' : ''}>Website</option>
++            <option value="referral" ${lead.source === 'referral' ? 'selected' : ''}>Referral</option>
++            <option value="cold_call" ${lead.source === 'cold_call' ? 'selected' : ''}>Cold Call</option>
++            <option value="event" ${lead.source === 'event' ? 'selected' : ''}>Event</option>
++            <option value="social" ${lead.source === 'social' ? 'selected' : ''}>Social</option>
++          </select>
++        </div>
++        <div>
++          <label style="display:block; margin-bottom:0.5rem; font-weight:500;">Status</label>
++          <select id="form-lead-status" class="login-input" ${lead.status === 'converted' ? 'disabled' : ''}>
++            <option value="new" ${lead.status === 'new' ? 'selected' : ''}>New</option>
++            <option value="contacted" ${lead.status === 'contacted' ? 'selected' : ''}>Contacted</option>
++            <option value="qualified" ${lead.status === 'qualified' ? 'selected' : ''}>Qualified</option>
++            <option value="unqualified" ${lead.status === 'unqualified' ? 'selected' : ''}>Unqualified</option>
++            <option value="converted" ${lead.status === 'converted' ? 'selected' : ''}>Converted</option>
++          </select>
++        </div>
++        <div>
++          <label style="display:block; margin-bottom:0.5rem; font-weight:500;">Assigned To</label>
++          <select id="form-lead-assigned" class="login-input">
++            ${user.role !== 'employee' ? '<option value="">Unassigned</option>' : ''}
++            ${userOptions}
++          </select>
++        </div>
++      </div>
++      
++      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
++        <button class="btn btn-secondary btn-close-modal">Cancel</button>
++        <button class="btn btn-primary" id="btn-save-lead">Save Lead</button>
++      </div>
++    </div>
++  `;
++
++  overlay.style.display = 'block';
++  modal.style.display = 'block';
++}
++
++function closeModal() {
++  document.getElementById('modal-overlay').style.display = 'none';
++  document.getElementById('lead-modal').style.display = 'none';
++}
++
++function saveLead() {
++  const user = Auth.getCurrentUser();
++  if (!user) return;
++
++  const id = document.getElementById('form-lead-id').value;
++  const name = document.getElementById('form-lead-name').value.trim();
++  const company = document.getElementById('form-lead-company').value.trim();
++  
++  if (!name || !company) {
++    Toast.error('Validation Error', 'Name and Company are required.');
 +    return;
 +  }
 +
-+  if (fromIndex === toIndex) {
-+    return; // Target is same as current, do nothing
-+  }
++  let assignedTo = document.getElementById('form-lead-assigned').value || null;
 +
-+  // Validation
-+  if (user.role !== 'manager') {
-+    if (!Auth.canEditRecord(deal)) {
-+      Toast.error('Permission Denied', 'You do not have permission to edit this deal.');
-+      return;
-+    }
-+    if (toIndex !== fromIndex + 1) {
-+      Toast.error('Invalid Move', 'You can only move a deal exactly one stage forward.');
++  // Enforce assignment rules
++  if (user.role === 'employee') {
++    assignedTo = user.id; // Employees can only assign to themselves
++  } else if (user.role === 'team_lead' && assignedTo && assignedTo !== user.id) {
++    const isTeamMember = Store.getUsersByTeam(user.teamId).some(u => u.id === assignedTo);
++    if (!isTeamMember) {
++      Toast.error('Permission Denied', 'Team Leads can only assign to their own team members or leave unassigned.');
 +      return;
 +    }
 +  }
 +
-+  // Update deal
-+  Store.updateDeal(deal.id, { stage: toStage });
++  // Validate edit permissions
++  if (id) {
++    const existingLead = Store.getLeadById(id);
++    if (!existingLead || !Auth.canEditRecord(existingLead)) {
++      Toast.error('Permission Denied', 'You do not have permission to edit this lead.');
++      return;
++    }
++  }
 +
-+  // Log activity
-+  Store.createActivity({
-+    id: 'act_' + Date.now().toString(36),
-+    dealId: deal.id,
-+    type: 'stage_change',
-+    content: `Deal moved from ${SOP_STAGES[fromIndex].label} to ${SOP_STAGES[toIndex].label}`,
-+    fromStage: fromStage,
-+    toStage: toStage,
-+    createdBy: user.id,
-+    createdAt: new Date().toISOString()
-+  });
++  const leadData = {
++    name,
++    company,
++    email: document.getElementById('form-lead-email').value.trim(),
++    phone: document.getElementById('form-lead-phone').value.trim(),
++    source: document.getElementById('form-lead-source').value,
++    status: document.getElementById('form-lead-status') ? document.getElementById('form-lead-status').value : 'converted',
++    assignedTo: assignedTo
++  };
 +
-+  Toast.success('Stage Updated', `Moved to ${SOP_STAGES[toIndex].label}`);
++  if (id) {
++    Store.updateLead(id, leadData);
++    Toast.success('Success', 'Lead updated.');
++  } else {
++    leadData.id = generateId();
++    leadData.createdBy = Auth.getCurrentUser().id;
++    leadData.createdAt = new Date().toISOString();
++    leadData.updatedAt = leadData.createdAt;
++    Store.createLead(leadData);
++    Toast.success('Success', 'Lead created.');
++  }
++
++  closeModal();
++  reRenderLeadsFull();
++}
++
++function handleConvertLead(leadId) {
++  const lead = Store.getLeadById(leadId);
++  const user = Auth.getCurrentUser();
++  if (!lead || !user) return;
++
++  if (lead.status === 'converted') {
++    Toast.error('Already Converted', 'This lead has already been converted.');
++    return;
++  }
++
++  if (user.role === 'employee') {
++    Toast.error('Permission Denied', 'Employees cannot convert leads.');
++    return;
++  }
++
++  if (user.role !== 'manager' && !Auth.canEditRecord(lead)) {
++    Toast.error('Permission Denied', 'You do not have permission to convert this lead.');
++    return;
++  }
++
++  // Determine teamId for the new deal
++  let targetTeamId = null;
++  if (lead.assignedTo) {
++    const assignee = Store.getUserById(lead.assignedTo);
++    if (assignee && assignee.teamId) {
++      targetTeamId = assignee.teamId;
++    }
++  }
++  if (!targetTeamId && user.role === 'team_lead') {
++    targetTeamId = user.teamId;
++  }
++
++  // Create minimal deal
++  const deal = {
++    id: 'deal_' + generateId(),
++    title: `${lead.company} Deal`,
++    leadId: lead.id,
++    contactId: null, // Full contact creation is out of scope for Phase 1C
++    value: 0,
++    currency: 'INR',
++    stage: 'sales',
++    status: 'active',
++    assignedTo: lead.assignedTo,
++    teamId: targetTeamId,
++    priority: 'medium',
++    createdAt: new Date().toISOString(),
++    updatedAt: new Date().toISOString()
++  };
++
++  Store.createDeal(deal);
++  Store.updateLead(lead.id, { status: 'converted' });
 +  
-+  // Re-render
-+  const contentEl = document.getElementById('content-area');
-+  if (contentEl) {
-+    contentEl.innerHTML = renderPipeline();
-+  }
++  Toast.success('Lead Converted', 'A new deal has been created in the pipeline.');
++  reRenderLeadsFull();
 +}
 ```
 
 ## Tests Run
 ```text
-Browser preview performed externally: Manager and Employee pipeline/deal-detail role behavior checked
+Browser preview performed externally: Manager, Team Lead, and Employee leads visibility/actions checked
 ```
 
 ## Risks / Pending Checks

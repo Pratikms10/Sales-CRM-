@@ -13,6 +13,7 @@ import { renderLoginPage, bindLoginEvents } from './pages/login.js';
 import { renderDashboard } from './pages/dashboard.js';
 import { renderPipeline, bindPipelineEvents } from './pages/pipeline.js';
 import { renderDealDetail, bindDealDetailEvents } from './pages/deal-detail.js';
+import { renderLeads, bindLeadsEvents } from './pages/leads.js';
 
 // ── DOM References ──────────────────────────────────────────
 
@@ -106,6 +107,8 @@ function renderPage(pageId, params) {
       }
       break;
     case 'leads':
+      contentEl.innerHTML = renderLeads();
+      break;
     case 'contacts':
     case 'team':
     case 'reports':
@@ -122,6 +125,7 @@ function renderPage(pageId, params) {
 // Since we completely replace innerHTML, we can bind on the document or contentEl.
 bindPipelineEvents();
 bindDealDetailEvents();
+bindLeadsEvents();
 
 // ── Bootstrap ───────────────────────────────────────────────
 
