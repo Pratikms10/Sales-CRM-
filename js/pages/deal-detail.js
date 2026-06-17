@@ -8,6 +8,7 @@ import { Auth } from '../auth.js';
 import { SOP_STAGES, formatCurrency, timeAgo, formatDateTime } from '../utils.js';
 import { Router } from '../router.js';
 import { Toast } from '../components/toast.js';
+import { renderActivityModal } from './activities.js';
 
 export function renderDealDetail(params) {
   const user = Auth.getCurrentUser();
@@ -30,13 +31,13 @@ export function renderDealDetail(params) {
   }
 
   const currentStageIndex = SOP_STAGES.findIndex(s => s.key === deal.stage);
-  
+
   // Build SOP Progress Bar
   const sopProgressHtml = SOP_STAGES.map((stage, index) => {
     let stateClass = '';
     if (index < currentStageIndex) stateClass = 'is-completed';
     else if (index === currentStageIndex) stateClass = 'is-current';
-    
+
     return `
       <div class="sop-step ${stateClass}">
         <div class="sop-step-dot"></div>
@@ -48,7 +49,7 @@ export function renderDealDetail(params) {
   // Action Controls
   let actionHtml = '';
   const canMoveForward = currentStageIndex < SOP_STAGES.length - 1 && (user.role === 'manager' || Auth.canEditRecord(deal));
-  
+
   if (user.role === 'manager') {
     const CHEVRON_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
     const options = SOP_STAGES.map(s => `<option value="${s.key}" ${s.key === deal.stage ? 'selected' : ''}>${s.label}</option>`).join('');
@@ -74,17 +75,34 @@ export function renderDealDetail(params) {
     `;
   }
 
-  // Activities
   const activities = Store.getActivitiesForDeal(deal.id);
+  const ACTIVITY_ICONS = { call: '📞', email: '✉️', meeting: '🤝', whatsapp: '💬', linkedin: '🔗', note: '📝', follow_up: '⏰', stage_change: '🔄', assignment: '👤' };
+
   const activitiesHtml = activities.map(act => {
     const creator = Store.getUserById(act.createdBy);
+    const rawType = act.type || 'note';
+    const icon = ACTIVITY_ICONS[rawType] || '📌';
+    const typeLabel = rawType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+    let extraHtml = '';
+    if (act.status && act.status !== 'completed' && act.status !== 'cancelled') {
+      extraHtml += `<span class="badge badge-warning" style="margin-right:4px;">Open</span>`;
+    }
+    if (act.dueAt) {
+      extraHtml += `<span style="font-size:0.75rem; color:var(--color-muted); margin-right:4px;">Due: ${new Date(act.dueAt).toLocaleDateString()}</span>`;
+    }
+    if (act.outcome) {
+      extraHtml += `<div style="margin-top:4px; font-size:0.8rem; font-style:italic;">Outcome: ${act.outcome}</div>`;
+    }
+
     return `
       <div class="activity-feed-item">
         <span class="activity-feed-dot"></span>
         <div class="activity-feed-content">
           <div class="activity-feed-text">
-            <strong>${creator ? creator.name : 'Unknown'}</strong><br>
-            <span style="color: var(--color-muted);">${act.content}</span>
+            <strong>${creator ? creator.name : 'Unknown'}</strong> <span style="color:var(--color-muted); font-size:0.85rem;">logged ${typeLabel}</span><br>
+            <span style="color: var(--color-ink);">${icon} ${act.content}</span>
+            ${extraHtml}
           </div>
           <div class="activity-feed-time">${formatDateTime(act.createdAt)} (${timeAgo(act.createdAt)})</div>
         </div>
@@ -111,7 +129,10 @@ export function renderDealDetail(params) {
       </div>
 
       <div class="dashboard-section">
-        <h4 class="dashboard-section-title">Activity History</h4>
+        <div class="dashboard-section-header" style="justify-content:space-between; align-items:center;">
+          <h4 class="dashboard-section-title" style="margin:0;">Activity History</h4>
+          <button class="btn btn-secondary btn-sm" id="btn-deal-log-activity" data-deal-id="${deal.id}">Log Activity</button>
+        </div>
         <div class="activity-feed">
           <div class="activity-feed-list">
             ${activitiesHtml}
@@ -133,7 +154,7 @@ export function bindDealDetailEvents() {
       const nextStage = e.target.dataset.nextStage;
       executeStageChange(dealId, nextStage);
     }
-    
+
     // Override Stage button (Manager)
     if (e.target.id === 'btn-override-stage') {
       const dealId = e.target.dataset.dealId;
@@ -145,6 +166,11 @@ export function bindDealDetailEvents() {
           executeStageChange(dealId, toStage, true);
         }
       }
+    }
+
+    // Log Activity button
+    if (e.target.id === 'btn-deal-log-activity') {
+      renderActivityModal(null, { linkedType: 'deal', linkedId: e.target.dataset.dealId });
     }
   });
 }
@@ -197,7 +223,7 @@ function executeStageChange(dealId, toStage, isOverride = false) {
   });
 
   Toast.success('Stage Updated', `Deal is now in ${SOP_STAGES[toIndex].label}`);
-  
+
   // Re-render
   const contentEl = document.getElementById('content-area');
   if (contentEl) {

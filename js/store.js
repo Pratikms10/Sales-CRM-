@@ -138,6 +138,8 @@ export const Store = {
   getActivities()        { return getAll(KEYS.activities); },
   getActivityById(id)    { return getById(KEYS.activities, id); },
   createActivity(a)      { return create(KEYS.activities, a); },
+  updateActivity(id, a)  { return update(KEYS.activities, id, a); },
+  deleteActivity(id)     { return remove(KEYS.activities, id); },
 
   getActivitiesForDeal(dealId) {
     return getAll(KEYS.activities)
@@ -145,15 +147,62 @@ export const Store = {
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   },
 
-  getRecentActivities(user, limit = 10) {
-    let activities = getAll(KEYS.activities);
+  getActivitiesForUser(user) {
+    if (!user) return [];
+    const activities = getAll(KEYS.activities);
+    if (user.role === 'manager') return activities;
 
-    if (user.role !== 'manager') {
-      const deals = Store.getDealsForUser(user);
-      const dealIds = new Set(deals.map(d => d.id));
-      activities = activities.filter(a => dealIds.has(a.dealId));
+    const deals = Store.getDealsForUser(user);
+    const dealIds = new Set(deals.map(d => d.id));
+    const leads = Store.getLeadsForUser(user);
+    const leadIds = new Set(leads.map(l => l.id));
+
+    if (user.role === 'team_lead') {
+      const teamUserIds = new Set(Store.getUsersByTeam(user.teamId).map(u => u.id));
+      teamUserIds.add(user.id);
+
+      return activities.filter(a => {
+        if (a.teamId === user.teamId) return true;
+        if (teamUserIds.has(a.assignedTo) || teamUserIds.has(a.createdBy)) return true;
+        if (a.dealId && dealIds.has(a.dealId)) return true;
+        if (a.leadId && leadIds.has(a.leadId)) return true;
+        return false;
+      });
     }
 
+    // Employee
+    return activities.filter(a => {
+      if (a.assignedTo === user.id || a.createdBy === user.id) return true;
+      if (a.dealId && dealIds.has(a.dealId)) return true;
+      if (a.leadId && leadIds.has(a.leadId)) return true;
+      return false;
+    });
+  },
+
+  getFollowUpsForUser(user) {
+    if (!user) return [];
+    return Store.getActivitiesForUser(user)
+      .filter(a => a.dueAt && a.status !== 'completed' && a.status !== 'cancelled');
+  },
+
+  canUserViewActivity(activity, user) {
+    if (!activity || !user) return false;
+    if (user.role === 'manager') return true;
+    const activities = Store.getActivitiesForUser(user);
+    return activities.some(a => a.id === activity.id);
+  },
+
+  canUserEditActivity(activity, user) {
+    if (!activity || !user) return false;
+    if (user.role === 'manager') return true;
+    if (user.role === 'team_lead') {
+      return Store.canUserViewActivity(activity, user);
+    }
+    return activity.assignedTo === user.id || activity.createdBy === user.id;
+  },
+
+  getRecentActivities(user, limit = 10) {
+    const activities = Store.getActivitiesForUser(user);
     return activities
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, limit);

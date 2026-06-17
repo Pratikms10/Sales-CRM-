@@ -19,6 +19,7 @@ import { renderDeals, bindDealsEvents } from './pages/deals.js';
 import { renderTeam, bindTeamEvents } from './pages/team.js';
 import { renderReports, bindReportsEvents } from './pages/reports.js';
 import { renderSettings, bindSettingsEvents } from './pages/settings.js';
+import { renderActivities, bindActivitiesEvents } from './pages/activities.js';
 
 // ── DOM References ──────────────────────────────────────────
 
@@ -117,6 +118,9 @@ function renderPage(pageId, params) {
     case 'contacts':
       contentEl.innerHTML = renderContacts();
       break;
+    case 'activities':
+      contentEl.innerHTML = renderActivities();
+      break;
     case 'team':
       contentEl.innerHTML = renderTeam();
       break;
@@ -142,6 +146,7 @@ bindDealsEvents();
 bindTeamEvents();
 bindReportsEvents();
 bindSettingsEvents();
+bindActivitiesEvents();
 
 // ── Bootstrap ───────────────────────────────────────────────
 

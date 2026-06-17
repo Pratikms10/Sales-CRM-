@@ -58,6 +58,28 @@ export function renderDashboard() {
   // Activity feed
   const activityFeed = buildActivityFeed(activities);
 
+  const followUps = Store.getFollowUpsForUser(user);
+  let overdue = 0; let today = 0; let upcoming = 0;
+  const now = new Date();
+
+  followUps.forEach(f => {
+    const due = new Date(f.dueAt);
+    if (isNaN(due.getTime())) return;
+
+    if (due.getFullYear() === now.getFullYear() &&
+        due.getMonth() === now.getMonth() &&
+        due.getDate() === now.getDate()) {
+      today++;
+    } else if (due < now) {
+      overdue++;
+    } else {
+      upcoming++;
+    }
+  });
+
+  const sortedFollowUps = followUps.sort((a, b) => new Date(a.dueAt) - new Date(b.dueAt)).slice(0, 5);
+  const followUpsWidget = buildFollowUpsWidget(sortedFollowUps, overdue, today, upcoming);
+
   return `
     <div class="content-inner">
       <div class="dashboard-greeting">
@@ -70,11 +92,21 @@ export function renderDashboard() {
 
       ${statCards}
 
-      <div class="dashboard-section">
-        <div class="dashboard-section-header">
-          <h4 class="dashboard-section-title">Pipeline Overview</h4>
+      <div style="display:flex; gap:1.5rem; flex-wrap:wrap; margin-bottom:1.5rem;">
+        <div class="dashboard-section" style="flex:1; min-width:300px; margin-bottom:0;">
+          <div class="dashboard-section-header">
+            <h4 class="dashboard-section-title">Follow-ups</h4>
+            <a href="#/activities" class="btn-link" style="font-size:0.85rem;">View All</a>
+          </div>
+          ${followUpsWidget}
         </div>
-        ${pipelineMini}
+
+        <div class="dashboard-section" style="flex:2; min-width:400px; margin-bottom:0;">
+          <div class="dashboard-section-header">
+            <h4 class="dashboard-section-title">Pipeline Overview</h4>
+          </div>
+          ${pipelineMini}
+        </div>
       </div>
 
       <div class="dashboard-section">
@@ -160,6 +192,54 @@ function buildPipelineMini(activeDeals) {
       <div class="pipeline-mini-legend">${legendItems}</div>
     </div>
   `;
+}
+
+// ── Follow-ups Widget ───────────────────────────────────────
+
+function buildFollowUpsWidget(followUps, overdue, today, upcoming) {
+  const summaryHtml = `
+    <div style="display:flex; justify-content:space-between; margin-bottom:1rem; font-size:0.85rem; font-weight:600; text-align:center;">
+      <div style="flex:1;">
+        <div style="color:var(--color-error); font-size:1.2rem;">${overdue}</div>
+        <div style="color:var(--color-muted); font-size:0.75rem;">Overdue</div>
+      </div>
+      <div style="flex:1;">
+        <div style="color:var(--color-warning); font-size:1.2rem;">${today}</div>
+        <div style="color:var(--color-muted); font-size:0.75rem;">Today</div>
+      </div>
+      <div style="flex:1;">
+        <div style="color:var(--color-primary); font-size:1.2rem;">${upcoming}</div>
+        <div style="color:var(--color-muted); font-size:0.75rem;">Upcoming</div>
+      </div>
+    </div>
+  `;
+
+  if (followUps.length === 0) {
+    return summaryHtml + `<div style="text-align:center; color:var(--color-muted); font-size:0.85rem; padding:1rem 0;">No open follow-ups.</div>`;
+  }
+
+  const itemsHtml = followUps.map(f => {
+    const owner = Store.getUserById(f.assignedTo || f.createdBy);
+    const ownerName = owner ? owner.name : 'Unknown';
+    let recordLabel = 'No Link';
+    if (f.dealId) { const d = Store.getDealById(f.dealId); if (d) recordLabel = d.title; }
+    else if (f.leadId) { const l = Store.getLeadById(f.leadId); if (l) recordLabel = l.name; }
+    else if (f.contactId) { const c = Store.getContactById(f.contactId); if (c) recordLabel = c.name; }
+
+    return `
+      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--color-hairline-soft); padding:0.5rem 0;">
+        <div style="max-width:200px;">
+          <div style="font-weight:600; font-size:0.85rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${f.content}">${f.content}</div>
+          <div style="font-size:0.75rem; color:var(--color-muted);">${recordLabel} • ${ownerName}</div>
+        </div>
+        <div style="font-size:0.75rem; text-align:right;">
+          <div style="font-weight:600;">${new Date(f.dueAt).toLocaleDateString()}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  return summaryHtml + itemsHtml;
 }
 
 // ── Activity Feed ───────────────────────────────────────────

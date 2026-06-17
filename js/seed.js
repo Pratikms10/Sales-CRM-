@@ -349,6 +349,31 @@ export function seedData() {
       content: 'Deal moved from Sales to Requirement',
       fromStage: 'sales', toStage: 'requirement',
       createdBy: 'usr_emp_02', createdAt: daysAgo(5)
+    },
+    // Follow-ups
+    {
+      id: generateId(), dealId: 'deal_01', type: 'follow_up',
+      content: 'Follow up with Rajesh on vendor shortlisting decision.',
+      status: 'open', dueAt: daysAgo(1), // Overdue
+      assignedTo: 'usr_emp_01', createdBy: 'usr_emp_01', createdAt: daysAgo(2)
+    },
+    {
+      id: generateId(), dealId: 'deal_03', type: 'call',
+      content: 'Call TCS to confirm server provisioning details.',
+      status: 'open', dueAt: new Date().toISOString(), // Due Today
+      assignedTo: 'usr_emp_03', createdBy: 'usr_emp_03', createdAt: daysAgo(1)
+    },
+    {
+      id: generateId(), leadId: leads[3].id, type: 'email',
+      content: 'Send product demo link to Divya.',
+      status: 'open', dueAt: new Date(Date.now() + 86400000 * 2).toISOString(), // Upcoming (in 2 days)
+      assignedTo: 'usr_emp_02', createdBy: 'usr_emp_02', createdAt: daysAgo(1)
+    },
+    {
+      id: generateId(), contactId: contacts[1].id, type: 'meeting',
+      content: 'On-site sync with Meera regarding proposal revisions.',
+      status: 'completed', dueAt: daysAgo(3), completedAt: daysAgo(2), outcome: 'Proposal approved with minor tweaks.',
+      assignedTo: 'usr_emp_04', createdBy: 'usr_emp_04', createdAt: daysAgo(4)
     }
   ];
 
