@@ -14,6 +14,7 @@ import { renderDashboard } from './pages/dashboard.js';
 import { renderPipeline, bindPipelineEvents } from './pages/pipeline.js';
 import { renderDealDetail, bindDealDetailEvents } from './pages/deal-detail.js';
 import { renderLeads, bindLeadsEvents } from './pages/leads.js';
+import { renderContacts, bindContactsEvents } from './pages/contacts.js';
 
 // ── DOM References ──────────────────────────────────────────
 
@@ -110,6 +111,8 @@ function renderPage(pageId, params) {
       contentEl.innerHTML = renderLeads();
       break;
     case 'contacts':
+      contentEl.innerHTML = renderContacts();
+      break;
     case 'team':
     case 'reports':
     case 'settings':
@@ -126,6 +129,7 @@ function renderPage(pageId, params) {
 bindPipelineEvents();
 bindDealDetailEvents();
 bindLeadsEvents();
+bindContactsEvents();
 
 // ── Bootstrap ───────────────────────────────────────────────
 
