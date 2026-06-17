@@ -11,6 +11,8 @@ import { renderSidebar, bindSidebarEvents } from './components/sidebar.js';
 import { renderTopbar } from './components/topbar.js';
 import { renderLoginPage, bindLoginEvents } from './pages/login.js';
 import { renderDashboard } from './pages/dashboard.js';
+import { renderPipeline, bindPipelineEvents } from './pages/pipeline.js';
+import { renderDealDetail, bindDealDetailEvents } from './pages/deal-detail.js';
 
 // ── DOM References ──────────────────────────────────────────
 
@@ -94,9 +96,17 @@ function renderPage(pageId, params) {
       contentEl.innerHTML = renderDashboard();
       break;
     case 'pipeline':
+      contentEl.innerHTML = renderPipeline();
+      break;
+    case 'deals':
+      if (params && params.id) {
+        contentEl.innerHTML = renderDealDetail(params);
+      } else {
+        contentEl.innerHTML = renderComingSoon(pageId);
+      }
+      break;
     case 'leads':
     case 'contacts':
-    case 'deals':
     case 'team':
     case 'reports':
     case 'settings':
@@ -106,6 +116,12 @@ function renderPage(pageId, params) {
       contentEl.innerHTML = renderComingSoon(pageId);
   }
 }
+
+// ── Event Delegation for Main Content ──────────────────────
+// Bind events that live inside the content-area once, or within the render calls.
+// Since we completely replace innerHTML, we can bind on the document or contentEl.
+bindPipelineEvents();
+bindDealDetailEvents();
 
 // ── Bootstrap ───────────────────────────────────────────────
 

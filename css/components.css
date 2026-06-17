@@ -621,3 +621,215 @@
   color: var(--color-muted);
   max-width: 400px;
 }
+
+/* -- Pipeline Board (Kanban) ------------------------------- */
+.pipeline-board {
+  display: flex;
+  gap: var(--space-md);
+  overflow-x: auto;
+  padding-bottom: var(--space-base);
+  min-height: 500px;
+  align-items: flex-start;
+}
+
+.pipeline-column {
+  flex: 0 0 320px;
+  background: var(--color-surface-strong);
+  border-radius: var(--rounded-md);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 200px);
+}
+
+.pipeline-column-header {
+  padding: var(--space-md);
+  border-bottom: 2px solid transparent;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: var(--rounded-md) var(--rounded-md) 0 0;
+  background: var(--color-canvas);
+}
+
+.pipeline-column-title {
+  font: var(--text-title-sm);
+  color: var(--color-ink);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.pipeline-column-count {
+  font: var(--text-badge);
+  background: var(--color-surface-strong);
+  color: var(--color-muted);
+  padding: 2px 8px;
+  border-radius: var(--rounded-full);
+}
+
+.pipeline-column-body {
+  padding: var(--space-sm);
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+/* -- Deal Card --------------------------------------------- */
+.deal-card {
+  background: var(--color-canvas);
+  border-radius: var(--rounded-sm);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-md);
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  border: 1px solid var(--color-hairline-soft);
+}
+
+.deal-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-dropdown);
+}
+
+.deal-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--space-xs);
+}
+
+.deal-card-title {
+  font: var(--text-title-sm);
+  color: var(--color-ink);
+  margin: 0;
+}
+
+.deal-card-value {
+  font: var(--text-body-sm);
+  font-weight: 600;
+  color: var(--color-success);
+  margin-bottom: var(--space-sm);
+}
+
+.deal-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--color-hairline-soft);
+}
+
+.deal-card-time {
+  font: var(--text-caption-sm);
+  color: var(--color-muted);
+}
+
+.deal-card-actions {
+  display: flex;
+  gap: var(--space-xs);
+  margin-top: var(--space-sm);
+}
+
+/* -- Deal Detail Page -------------------------------------- */
+.deal-detail-header {
+  background: var(--color-canvas);
+  padding: var(--space-xl);
+  border-radius: var(--rounded-md);
+  box-shadow: var(--shadow-card);
+  margin-bottom: var(--space-xl);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.deal-detail-title {
+  font: var(--text-display-lg);
+  color: var(--color-ink);
+  margin-bottom: var(--space-xs);
+}
+
+.deal-detail-value {
+  font: var(--text-display-md);
+  color: var(--color-success);
+  margin-bottom: var(--space-md);
+}
+
+/* SOP Progress Bar */
+.sop-progress {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin: var(--space-lg) 0;
+  background: var(--color-surface-strong);
+  padding: var(--space-md);
+  border-radius: var(--rounded-lg);
+}
+
+.sop-step {
+  flex: 1;
+  text-align: center;
+  position: relative;
+}
+
+.sop-step-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--rounded-full);
+  background: var(--color-surface-soft);
+  border: 2px solid var(--color-hairline);
+  margin: 0 auto var(--space-xs);
+  z-index: 2;
+  position: relative;
+  transition: all var(--transition-fast);
+}
+
+.sop-step-label {
+  font: var(--text-caption-sm);
+  color: var(--color-muted);
+}
+
+.sop-step.is-completed .sop-step-dot {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.sop-step.is-current .sop-step-dot {
+  background: var(--color-canvas);
+  border-color: var(--color-primary);
+  border-width: 4px;
+}
+
+.sop-step.is-completed .sop-step-label {
+  color: var(--color-ink);
+  font-weight: 500;
+}
+
+.sop-step.is-current .sop-step-label {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* Line connecting steps */
+.sop-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--color-hairline);
+  z-index: 1;
+}
+
+.sop-step.is-completed:not(:last-child)::after {
+  background: var(--color-primary);
+}
+
+.deal-actions-bar {
+  display: flex;
+  gap: var(--space-md);
+  align-items: center;
+}
+
