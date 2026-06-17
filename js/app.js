@@ -15,6 +15,7 @@ import { renderPipeline, bindPipelineEvents } from './pages/pipeline.js';
 import { renderDealDetail, bindDealDetailEvents } from './pages/deal-detail.js';
 import { renderLeads, bindLeadsEvents } from './pages/leads.js';
 import { renderContacts, bindContactsEvents } from './pages/contacts.js';
+import { renderDeals, bindDealsEvents } from './pages/deals.js';
 
 // ── DOM References ──────────────────────────────────────────
 
@@ -104,7 +105,7 @@ function renderPage(pageId, params) {
       if (params && params.id) {
         contentEl.innerHTML = renderDealDetail(params);
       } else {
-        contentEl.innerHTML = renderComingSoon(pageId);
+        contentEl.innerHTML = renderDeals();
       }
       break;
     case 'leads':
@@ -130,6 +131,7 @@ bindPipelineEvents();
 bindDealDetailEvents();
 bindLeadsEvents();
 bindContactsEvents();
+bindDealsEvents();
 
 // ── Bootstrap ───────────────────────────────────────────────
 
