@@ -94,7 +94,7 @@ function buildSessionCard() {
           </div>
           <div class="settings-info-row">
             <span class="settings-info-label">App Phase</span>
-            <span class="settings-info-value"><span class="badge badge-primary">Phase 1H Basic CRM</span></span>
+            <span class="settings-info-value"><span class="badge badge-primary">Phase 2G MVP Polish</span></span>
           </div>
         </div>
       </div>
@@ -458,6 +458,13 @@ function handleSavePreferences() {
   const settings = Store.getSettings();
   settings.compactTables = compactTables;
   Store.updateSettings(settings);
+
+  if (compactTables) {
+    document.body.classList.add('compact-tables');
+  } else {
+    document.body.classList.remove('compact-tables');
+  }
+
   Toast.success('Saved', 'Workspace preferences updated.');
 }
 

@@ -1,456 +1,467 @@
 ﻿# AI Change Audit Report
 
 ## Generated On
-2026-06-18_12-24-38
+2026-06-18_12-46-25
 
 ## Branch
 main
 
 ## Baseline Commit
-d246a37
+0eee9c1
 
 ## Task Summary
-Phase 2F Global Search and Navigation Polish with role-scoped cross-module search, grouped dropdown results, keyboard navigation, safe escaping, page title mapping, and non-duplicating event bindings
+Phase 2G MVP Responsive Polish and Shell Usability with mobile sidebar drawer, responsive topbar, compact table preference, table overflow handling, modal wrapping, responsive grids, and settings phase label update
 
 ## Git Status
 ```text
+ M css/components.css
  M css/layout.css
  M js/app.js
- A js/components/global-search.js
  M js/components/topbar.js
+ M js/pages/settings.js
 ```
 
 ## Files Changed
 ```text
+M	css/components.css
 M	css/layout.css
 M	js/app.js
-A	js/components/global-search.js
 M	js/components/topbar.js
+M	js/pages/settings.js
 ```
 
 ## Change Summary
 ```text
- css/layout.css                 |  94 ++++++++++++++++
- js/app.js                      |   4 +
- js/components/global-search.js | 241 +++++++++++++++++++++++++++++++++++++++++
- js/components/topbar.js        |  22 ++--
- 4 files changed, 353 insertions(+), 8 deletions(-)
+ css/components.css      | 78 +++++++++++++++++++++++++++++++++++++++++++-
+ css/layout.css          | 76 +++++++++++++++++++++++++++++++++++++++++-
+ js/app.js               | 87 ++++++++++++++++++++++++++++++++++++++++++++++++-
+ js/components/topbar.js |  3 ++
+ js/pages/settings.js    |  9 ++++-
+ 5 files changed, 249 insertions(+), 4 deletions(-)
 ```
 
 ## Full Diff
 ```diff
+diff --git a/css/components.css b/css/components.css
+index f0cc1ee..a142db4 100644
+--- a/css/components.css
++++ b/css/components.css
+@@ -630,10 +630,13 @@
+   padding-bottom: var(--space-base);
+   min-height: 500px;
+   align-items: flex-start;
++  /* Make horizontal scrolling smoother on mobile */
++  -webkit-overflow-scrolling: touch;
+ }
+ 
+ .pipeline-column {
+   flex: 0 0 320px;
++  min-width: 280px;
+   background: var(--color-surface-strong);
+   border-radius: var(--rounded-md);
+   display: flex;
+@@ -834,10 +837,17 @@
+ }
+ 
+ /* -- Data Tables ------------------------------------------- */
++.table-container {
++  overflow-x: auto;
++  -webkit-overflow-scrolling: touch;
++  border-radius: var(--rounded-sm);
++}
++
+ .data-table {
+   width: 100%;
+   border-collapse: collapse;
+   text-align: left;
++  min-width: 800px; /* Safe minimum for dense operational tables */
+ }
+ 
+ .data-table th {
+@@ -870,6 +880,20 @@
+   justify-content: flex-end;
+ }
+ 
++/* -- Compact Tables Preference ----------------------------- */
++body.compact-tables .data-table th {
++  padding: 8px 12px;
++}
++body.compact-tables .data-table td {
++  padding: 8px 12px;
++}
++body.compact-tables .data-table .btn-sm,
++body.compact-tables .table-actions .btn-sm {
++  height: 32px;
++  padding: 6px 12px;
++  font-size: var(--text-caption-sm);
++}
++
+ /* -- Modals ------------------------------------------------ */
+ .modal-overlay {
+   position: fixed;
+@@ -894,7 +918,29 @@
+   width: 90%;
+   max-width: 600px;
+   max-height: 90vh;
++  display: flex;
++  flex-direction: column;
++}
++
++.modal-body {
+   overflow-y: auto;
++  flex: 1;
++}
++
++@media (max-width: 744px) {
++  .modal {
++    width: calc(100% - 32px);
++    max-height: calc(100vh - 32px);
++  }
++}
++
++.modal-footer {
++  padding: var(--space-md) var(--space-lg);
++  border-top: 1px solid var(--color-hairline-soft);
++  display: flex;
++  justify-content: flex-end;
++  gap: var(--space-md);
++  flex-wrap: wrap;
+ }
+ 
+ .modal-header {
+@@ -925,7 +971,7 @@
+ 
+ @media (max-width: 768px) {
+   .report-grid-2 {
+-    grid-template-columns: 1fr;
++    grid-template-columns: 1fr !important;
+   }
+ }
+ 
+@@ -938,6 +984,13 @@
+   border-bottom: 1px solid var(--color-hairline-soft);
+ }
+ 
++@media (max-width: 744px) {
++  .report-metric-row {
++    grid-template-columns: 1fr;
++    gap: var(--space-xs);
++  }
++}
++
+ .report-metric-row:last-child {
+   border-bottom: none;
+ }
+@@ -1032,6 +1085,29 @@
+   margin-bottom: var(--space-lg);
+ }
+ 
++.hygiene-stat-grid {
++  display: grid;
++  grid-template-columns: repeat(3, 1fr);
++  gap: var(--space-lg);
++  margin-bottom: var(--space-xl);
++}
++
++@media (max-width: 768px) {
++  .dashboard-grid {
++    grid-template-columns: 1fr 1fr !important;
++  }
++}
++
++@media (max-width: 744px) {
++  .settings-info-grid,
++  .activity-kpi-grid,
++  .hygiene-stat-grid,
++  .stats-grid,
++  .dashboard-grid {
++    grid-template-columns: 1fr !important;
++  }
++}
++
+ .followup-board {
+   display: grid;
+   grid-template-columns: repeat(3, 1fr);
 diff --git a/css/layout.css b/css/layout.css
-index 8e4e264..0bb5bb2 100644
+index 0bb5bb2..825f4f5 100644
 --- a/css/layout.css
 +++ b/css/layout.css
-@@ -320,6 +320,100 @@
+@@ -231,6 +231,31 @@
    fill: currentColor;
  }
  
-+/* ΓöÇΓöÇ Global Search Dropdown ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
-+.topbar-search-dropdown {
-+  position: absolute;
-+  top: 100%;
++/* ΓöÇΓöÇ Sidebar Overlay ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
++.sidebar-overlay {
++  position: fixed;
++  top: 0;
++  left: 0;
 +  right: 0;
-+  left: auto;
-+  width: max-content;
-+  min-width: 320px;
-+  max-width: 90vw;
-+  max-height: 400px;
-+  overflow-y: auto;
-+  background-color: var(--color-canvas);
-+  border: 1px solid var(--color-hairline);
-+  border-radius: var(--rounded-md);
-+  box-shadow: var(--shadow-dropdown);
-+  margin-top: 8px;
-+  z-index: 200;
++  bottom: 0;
++  background-color: rgba(0, 0, 0, 0.5);
++  z-index: 95;
 +  display: none;
++  opacity: 0;
++  transition: opacity var(--transition-fast);
 +}
 +
-+.topbar-search-dropdown.is-open {
++.sidebar-overlay.is-visible {
 +  display: block;
-+  animation: slideDown var(--transition-fast);
++  opacity: 1;
 +}
 +
-+.search-result-group {
-+  padding: 8px 12px;
-+  font: var(--text-micro-label);
-+  color: var(--color-muted-soft);
-+  text-transform: uppercase;
-+  letter-spacing: 0.5px;
-+  background-color: var(--color-surface-soft);
-+  border-bottom: 1px solid var(--color-hairline-soft);
++@media (min-width: 745px) {
++  .sidebar-overlay {
++    display: none !important;
++  }
 +}
 +
-+.search-result-item {
-+  display: flex;
-+  align-items: center;
-+  justify-content: space-between;
-+  gap: 12px;
-+  padding: 10px 12px;
-+  border-bottom: 1px solid var(--color-hairline-soft);
-+  cursor: pointer;
-+  transition: background-color var(--transition-fast);
-+}
-+
-+.search-result-item:last-child {
-+  border-bottom: none;
-+}
-+
-+.search-result-item:hover,
-+.search-result-item.active {
-+  background-color: var(--color-surface-soft);
-+}
-+
-+.search-result-content {
-+  flex: 1;
-+  min-width: 0;
-+}
-+
-+.search-result-title {
-+  font: var(--text-body-sm);
-+  font-weight: 500;
-+  color: var(--color-ink);
-+  white-space: nowrap;
-+  overflow: hidden;
-+  text-overflow: ellipsis;
-+}
-+
-+.search-result-subtitle {
-+  font: var(--text-caption-sm);
-+  color: var(--color-muted);
-+  white-space: nowrap;
-+  overflow: hidden;
-+  text-overflow: ellipsis;
-+  margin-top: 2px;
-+}
-+
-+.search-result-badge {
-+  font: var(--text-badge);
-+  background-color: var(--color-primary-disabled);
-+  color: var(--color-primary);
-+  padding: 2px 6px;
-+  border-radius: var(--rounded-sm);
-+  flex-shrink: 0;
-+}
-+
-+.search-empty-state {
-+  padding: 24px 12px;
-+  text-align: center;
-+  color: var(--color-muted);
-+  font: var(--text-body-sm);
-+}
-+
- .topbar-user {
+ /* ΓöÇΓöÇ Topbar ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
+ .topbar {
+   position: fixed;
+@@ -251,7 +276,31 @@
+ .topbar-left {
    display: flex;
    align-items: center;
+-  gap: var(--space-base);
++  gap: var(--space-sm);
++}
++
++.topbar-mobile-menu {
++  display: none;
++  background: transparent;
++  border: none;
++  color: var(--color-ink);
++  cursor: pointer;
++  padding: 4px;
++  border-radius: var(--rounded-sm);
++}
++
++.topbar-mobile-menu:hover {
++  background: var(--color-surface-soft);
++}
++
++.topbar-mobile-menu svg {
++  width: 24px;
++  height: 24px;
++  fill: none;
++  stroke: currentColor;
++  stroke-width: 2;
++  stroke-linecap: round;
++  stroke-linejoin: round;
+ }
+ 
+ .topbar-breadcrumb {
+@@ -676,9 +725,34 @@
+ 
+   .topbar {
+     left: 0;
++    padding: 0 var(--space-md);
++  }
++
++  .topbar-mobile-menu {
++    display: flex;
++  }
++
++  .topbar-breadcrumb span:first-child,
++  .topbar-breadcrumb-separator {
++    display: none;
++  }
++
++  .topbar-search {
++    width: 140px;
++  }
++
++  .topbar-user {
++    padding: 4px;
++    border: none;
++  }
++
++  .topbar-role-badge,
++  .topbar-user-name {
++    display: none;
+   }
+ 
+   .content-area {
+     margin-left: 0;
++    padding: var(--space-md);
+   }
+ }
 diff --git a/js/app.js b/js/app.js
-index ec4ff60..bf38cf3 100644
+index bf38cf3..be13a34 100644
 --- a/js/app.js
 +++ b/js/app.js
-@@ -25,6 +25,7 @@ import { renderProposals, bindProposalsEvents } from './pages/proposals.js';
- import { renderHandoffs, bindHandoffsEvents, initHandoffsPage } from './pages/handoffs.js';
+@@ -26,6 +26,7 @@ import { renderHandoffs, bindHandoffsEvents, initHandoffsPage } from './pages/ha
  import { renderBilling, bindBillingEvents, initBillingPage } from './pages/billing.js';
  import { renderHygiene, bindHygieneEvents, initHygienePage } from './pages/hygiene.js';
-+import { initGlobalSearch } from './components/global-search.js';
+ import { initGlobalSearch } from './components/global-search.js';
++import { Store } from './store.js';
  
  // ΓöÇΓöÇ DOM References ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
  
-@@ -102,6 +103,9 @@ function renderPage(pageId, params) {
+@@ -35,7 +36,16 @@ const sidebarEl  = document.getElementById('sidebar-root');
+ const topbarEl   = document.getElementById('topbar-root');
+ const contentEl  = document.getElementById('content-area');
+ 
+-// ΓöÇΓöÇ Coming Soon page (placeholder for unbuilt pages) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++// Ensure overlay exists
++let sidebarOverlayEl = document.getElementById('sidebar-overlay');
++if (!sidebarOverlayEl && document.getElementById('app-shell')) {
++  sidebarOverlayEl = document.createElement('div');
++  sidebarOverlayEl.id = 'sidebar-overlay';
++  sidebarOverlayEl.className = 'sidebar-overlay';
++  document.getElementById('app-shell').appendChild(sidebarOverlayEl);
++}
++
++// ΓöÇΓöÇ Authentication & Routing ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+ 
+ const COMING_SOON_ICONS = {
+   pipeline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>',
+@@ -74,12 +84,32 @@ function renderComingSoon(pageId) {
+   `;
+ }
+ 
++// ΓöÇΓöÇ Centralized Drawer Logic ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++function openMobileSidebar() {
++  const sb = document.querySelector('.sidebar');
++  const ov = document.getElementById('sidebar-overlay');
++  const btn = document.getElementById('btn-mobile-menu');
++  if (sb) sb.classList.add('is-open');
++  if (ov) ov.classList.add('is-visible');
++  if (btn) btn.setAttribute('aria-expanded', 'true');
++}
++
++function closeMobileSidebar() {
++  const sb = document.querySelector('.sidebar');
++  const ov = document.getElementById('sidebar-overlay');
++  const btn = document.getElementById('btn-mobile-menu');
++  if (sb) sb.classList.remove('is-open');
++  if (ov) ov.classList.remove('is-visible');
++  if (btn) btn.setAttribute('aria-expanded', 'false');
++}
++
+ // ΓöÇΓöÇ Page Rendering ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+ 
+ function renderPage(pageId, params) {
+ 
+   // ΓöÇΓöÇ LOGIN PAGE (no shell) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+   if (pageId === 'login') {
++    closeMobileSidebar();
+     shellEl.classList.add('is-login');
+     appEl.innerHTML = renderLoginPage();
+     bindLoginEvents((user) => {
+@@ -98,11 +128,66 @@ function renderPage(pageId, params) {
+ 
+   // Bind sidebar logout
+   bindSidebarEvents(() => {
++    closeMobileSidebar();
+     Auth.logout();
+     Toast.info('Signed out', 'You have been logged out.');
      Router.navigate('#/login');
    });
  
-+  // Initialize global search in topbar
-+  initGlobalSearch();
-+
-   // Render page content
-   switch (pageId) {
-     case 'dashboard':
-diff --git a/js/components/global-search.js b/js/components/global-search.js
-new file mode 100644
-index 0000000..9d69edc
---- /dev/null
-+++ b/js/components/global-search.js
-@@ -0,0 +1,241 @@
-+// ============================================================
-+// TechnoEdge CRM ΓÇö Global Search
-+// ============================================================
-+
-+import { Store } from '../store.js';
-+import { Auth } from '../auth.js';
-+
-+let debounceTimeout;
-+let activeIndex = -1;
-+
-+function escapeHtml(unsafe) {
-+  return (unsafe || '').toString()
-+    .replace(/&/g, "&amp;")
-+    .replace(/</g, "&lt;")
-+    .replace(/>/g, "&gt;")
-+    .replace(/"/g, "&quot;")
-+    .replace(/'/g, "&#039;");
-+}
-+
-+function normalize(str) {
-+  return String(str || '').toLowerCase();
-+}
-+
-+function matchFields(query, item, fields) {
-+  return fields.some(f => normalize(item[f]).includes(query));
-+}
-+
-+// Ensure the document-level click handler is bound only once per app lifecycle
-+if (!window.__globalSearchDocumentClickBound) {
-+  window.__globalSearchDocumentClickBound = true;
-+  document.addEventListener('click', (e) => {
-+    const container = document.querySelector('.topbar-search');
-+    // If we clicked outside the topbar-search container entirely
-+    if (container && !container.contains(e.target)) {
-+      const dropdown = container.querySelector('.topbar-search-dropdown');
-+      if (dropdown && dropdown.classList.contains('is-open')) {
-+        dropdown.classList.remove('is-open');
-+        dropdown.innerHTML = '';
-+        activeIndex = -1; // Reset active index since dropdown closed
-+      }
-+    }
-+  });
-+}
-+
-+// Ensure global hotkey is bound only once per app lifecycle
-+if (!window.__globalSearchHotkeyBound) {
-+  window.__globalSearchHotkeyBound = true;
-+  document.addEventListener('keydown', (e) => {
-+    if (e.key === '/') {
-+      const activeEl = document.activeElement;
-+      if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT' || activeEl.isContentEditable)) {
-+        return;
-+      }
-+      e.preventDefault();
-+      const input = document.getElementById('topbar-search');
-+      if (input) input.focus();
-+    }
-+  });
-+}
-+
-+export function initGlobalSearch() {
-+  const input = document.getElementById('topbar-search');
-+  if (!input) return;
-+  if (input.dataset.searchInitialized) return;
-+  input.dataset.searchInitialized = 'true';
-+
-+  const container = input.closest('.topbar-search');
-+  if (!container) return;
-+
-+  let dropdown = container.querySelector('.topbar-search-dropdown');
-+  if (!dropdown) {
-+    dropdown = document.createElement('div');
-+    dropdown.className = 'topbar-search-dropdown';
-+    container.appendChild(dropdown);
++  // Handle Mobile Menu and Overlay
++  const btnMobileMenu = document.getElementById('btn-mobile-menu');
++  if (btnMobileMenu && sidebarOverlayEl) {
++    btnMobileMenu.onclick = openMobileSidebar;
++    sidebarOverlayEl.onclick = closeMobileSidebar;
 +  }
 +
-+  function closeSearch() {
-+    dropdown.classList.remove('is-open');
-+    dropdown.innerHTML = '';
-+    activeIndex = -1;
-+  }
-+
-+  function performSearch(query) {
-+    const user = Auth.getCurrentUser();
-+    if (!user) return closeSearch();
-+
-+    const q = query.toLowerCase().trim();
-+    if (q.length < 2) return closeSearch();
-+
-+    let totalCount = 0;
-+    let resultsHtml = '';
-+
-+    const addGroup = (title, items, type) => {
-+      const validItems = items.filter(item => item && item.id !== undefined && item.id !== null && String(item.id).trim() !== '');
-+      if (validItems.length === 0 || totalCount >= 20) return;
-+
-+      const limited = validItems.slice(0, Math.min(5, 20 - totalCount));
-+      if (limited.length === 0) return;
-+
-+      totalCount += limited.length;
-+
-+      resultsHtml += `<div class="search-result-group">${escapeHtml(title)}</div>`;
-+      limited.forEach((item) => {
-+        const safeId = escapeHtml(String(item.id));
-+        const titleText = escapeHtml(item.title || item.name || 'Untitled');
-+        const subText = escapeHtml(item.company || item.companyName || item.email || item.summary || item.content || '');
-+        const badgeText = escapeHtml(item.status || item.stage || item.deliveryStatus || item.paymentStatus || item.requirementType || item.type || '');
-+
-+        resultsHtml += `
-+          <div class="search-result-item" data-type="${type}" data-id="${safeId}">
-+            <div class="search-result-content">
-+              <div class="search-result-title">${titleText}</div>
-+              ${subText ? `<div class="search-result-subtitle">${subText}</div>` : ''}
-+            </div>
-+            ${badgeText ? `<div class="search-result-badge">${badgeText}</div>` : ''}
-+          </div>
-+        `;
-+      });
-+    };
-+
-+    // Leads
-+    const leads = Store.getLeadsForUser(user).filter(l => matchFields(q, l, ['name', 'company', 'email', 'phone', 'source', 'status']));
-+    addGroup('Leads', leads, 'lead');
-+
-+    // Deals
-+    const deals = Store.getDealsForUser(user).filter(d => matchFields(q, d, ['title', 'companyName', 'stage', 'status', 'value']));
-+    addGroup('Deals', deals, 'deal');
-+
-+    // Contacts
-+    const contacts = Store.getContacts().filter(c => matchFields(q, c, ['name', 'company', 'email', 'phone', 'designation', 'tags']));
-+    addGroup('Contacts', contacts, 'contact');
-+
-+    // Requirements
-+    const reqs = Store.getRequirementsForUser(user).filter(r => matchFields(q, r, ['title', 'summary', 'requirementType', 'status', 'priority']));
-+    addGroup('Requirements', reqs, 'requirement');
-+
-+    // Proposals
-+    const props = Store.getProposalsForUser(user).filter(p => matchFields(q, p, ['title', 'status', 'approvalStatus', 'grandTotal']));
-+    addGroup('Proposals', props, 'proposal');
-+
-+    // Handoffs
-+    const handoffs = Store.getHandoffsForUser(user).filter(h => matchFields(q, h, ['title', 'companyName', 'deliveryStatus', 'projectBrief']));
-+    addGroup('Project Handoffs', handoffs, 'handoff');
-+
-+    // Billings
-+    const billings = Store.getBillingsForUser(user).filter(b => matchFields(q, b, ['title', 'companyName', 'invoiceNumber', 'paymentStatus', 'renewalStatus']));
-+    addGroup('Billing & Renewals', billings, 'billing');
-+
-+    // Activities
-+    const activities = Store.getActivitiesForUser(user).filter(a => matchFields(q, a, ['title', 'content', 'type', 'status']));
-+    addGroup('Activities', activities, 'activity');
-+
-+    if (totalCount === 0) {
-+      resultsHtml = '<div class="search-empty-state">No matching records found.</div>';
-+    }
-+
-+    dropdown.innerHTML = resultsHtml;
-+    dropdown.classList.add('is-open');
-+    activeIndex = -1;
-+  }
-+
-+  input.addEventListener('input', (e) => {
-+    clearTimeout(debounceTimeout);
-+    debounceTimeout = setTimeout(() => {
-+      performSearch(e.target.value);
-+    }, 200);
-+  });
-+
-+  input.addEventListener('focus', (e) => {
-+    if (e.target.value.trim().length >= 2) {
-+      performSearch(e.target.value);
-+    }
-+  });
-+
-+  input.addEventListener('keydown', (e) => {
-+    if (!dropdown.classList.contains('is-open')) return;
-+    const items = dropdown.querySelectorAll('.search-result-item');
-+    if (items.length === 0) {
-+      if (e.key === 'Escape') closeSearch();
-+      return;
-+    }
-+
-+    if (e.key === 'ArrowDown') {
-+      e.preventDefault();
-+      activeIndex = (activeIndex + 1) % items.length;
-+      updateActiveItem(items);
-+    } else if (e.key === 'ArrowUp') {
-+      e.preventDefault();
-+      activeIndex = (activeIndex - 1 + items.length) % items.length;
-+      updateActiveItem(items);
-+    } else if (e.key === 'Enter') {
-+      e.preventDefault();
-+      if (activeIndex >= 0 && activeIndex < items.length) {
-+        items[activeIndex].click();
-+      } else {
-+        items[0].click(); // Auto-select first if none explicitly focused
-+      }
-+    } else if (e.key === 'Escape') {
-+      closeSearch();
-+      input.blur();
-+    }
-+  });
-+
-+  function updateActiveItem(items) {
-+    items.forEach((item, idx) => {
-+      if (idx === activeIndex) {
-+        item.classList.add('active');
-+        item.scrollIntoView({ block: 'nearest' });
-+      } else {
-+        item.classList.remove('active');
++  // Bind close behavior on sidebar nav link clicks
++  const sidebarNav = document.querySelector('.sidebar');
++  if (sidebarNav) {
++    sidebarNav.addEventListener('click', (e) => {
++      if (e.target.closest('.sidebar-nav-item')) {
++        closeMobileSidebar();
 +      }
 +    });
 +  }
 +
-+  dropdown.addEventListener('click', (e) => {
-+    const item = e.target.closest('.search-result-item');
-+    if (item) {
-+      const type = item.getAttribute('data-type');
-+      const id = item.getAttribute('data-id');
-+
-+      const map = {
-+        'lead': '#/leads',
-+        'contact': '#/contacts',
-+        'deal': `#/deals/${id}`,
-+        'requirement': '#/requirements',
-+        'proposal': '#/proposals',
-+        'handoff': '#/handoffs',
-+        'billing': '#/billing',
-+        'activity': '#/activities'
-+      };
-+
-+      const route = map[type];
-+      if (route) {
-+        closeSearch();
-+        input.value = '';
-+        input.blur();
-+        import('../router.js').then(m => m.Router.navigate(route));
++  // Handle Escape key for sidebar
++  if (!window.__sidebarEscapeBound) {
++    window.__sidebarEscapeBound = true;
++    document.addEventListener('keydown', (e) => {
++      if (e.key === 'Escape') {
++        const sb = document.querySelector('.sidebar');
++        if (sb && sb.classList.contains('is-open')) {
++          closeMobileSidebar();
++        }
 +      }
++    });
++  }
++
++  // Desktop resize safety
++  if (!window.__sidebarResizeBound) {
++    window.__sidebarResizeBound = true;
++    const mediaQuery = window.matchMedia('(min-width: 745px)');
++    const handler = (e) => {
++      if (e.matches) {
++        closeMobileSidebar();
++      }
++    };
++    if (mediaQuery.addEventListener) {
++      mediaQuery.addEventListener('change', handler);
++    } else if (mediaQuery.addListener) {
++      mediaQuery.addListener(handler);
 +    }
-+  });
-+}
++  }
++
++  // Apply compact tables preference
++  const settings = Store.getSettings();
++  if (settings && settings.compactTables) {
++    document.body.classList.add('compact-tables');
++  } else {
++    document.body.classList.remove('compact-tables');
++  }
++
+   // Initialize global search in topbar
+   initGlobalSearch();
+ 
 diff --git a/js/components/topbar.js b/js/components/topbar.js
-index e41774d..c8dbc96 100644
+index c8dbc96..5487e45 100644
 --- a/js/components/topbar.js
 +++ b/js/components/topbar.js
-@@ -9,14 +9,20 @@ import { getInitials, formatRole } from '../utils.js';
- const SEARCH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+@@ -37,6 +37,9 @@ export function renderTopbar(pageId) {
+   return `
+     <header class="topbar" id="topbar">
+       <div class="topbar-left">
++        <button type="button" class="topbar-mobile-menu" id="btn-mobile-menu" aria-label="Toggle menu" aria-expanded="false" aria-controls="sidebar">
++          <svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
++        </button>
+         <nav class="topbar-breadcrumb" aria-label="Breadcrumb">
+           <span>TechnoEdge CRM</span>
+           <span class="topbar-breadcrumb-separator">/</span>
+diff --git a/js/pages/settings.js b/js/pages/settings.js
+index 3cf6986..7c90aeb 100644
+--- a/js/pages/settings.js
++++ b/js/pages/settings.js
+@@ -94,7 +94,7 @@ function buildSessionCard() {
+           </div>
+           <div class="settings-info-row">
+             <span class="settings-info-label">App Phase</span>
+-            <span class="settings-info-value"><span class="badge badge-primary">Phase 1H Basic CRM</span></span>
++            <span class="settings-info-value"><span class="badge badge-primary">Phase 2G MVP Polish</span></span>
+           </div>
+         </div>
+       </div>
+@@ -458,6 +458,13 @@ function handleSavePreferences() {
+   const settings = Store.getSettings();
+   settings.compactTables = compactTables;
+   Store.updateSettings(settings);
++
++  if (compactTables) {
++    document.body.classList.add('compact-tables');
++  } else {
++    document.body.classList.remove('compact-tables');
++  }
++
+   Toast.success('Saved', 'Workspace preferences updated.');
+ }
  
- const PAGE_TITLES = {
--  dashboard: 'Dashboard',
--  pipeline:  'Pipeline',
--  leads:     'Leads',
--  contacts:  'Contacts',
--  deals:     'Deals',
--  team:      'Team',
--  reports:   'Reports',
--  settings:  'Settings'
-+  dashboard:    'Dashboard',
-+  pipeline:     'Pipeline',
-+  leads:        'Leads',
-+  contacts:     'Contacts',
-+  deals:        'Deals',
-+  team:         'Team',
-+  reports:      'Reports',
-+  settings:     'Settings',
-+  activities:   'Activities',
-+  requirements: 'Requirements',
-+  proposals:    'Proposals',
-+  handoffs:     'Project Handoff',
-+  billing:      'Billing & Renewals',
-+  hygiene:      'CRM Hygiene'
- };
- 
- export function renderTopbar(pageId) {
 ```
 
 ## Tests Run
 ```text
-Browser preview performed externally: Manager, Team Lead, and Employee global search visibility checked; slash focus, arrow navigation, Enter routing, Escape close, outside click close, and result navigation checked
+Browser preview performed externally: Manager, Team Lead, and Employee responsive shell checked; mobile drawer open/close, overlay click, Escape close, nav close, compact tables, table overflow, modal wrapping, and responsive grids checked
 ```
 
 ## Risks / Pending Checks

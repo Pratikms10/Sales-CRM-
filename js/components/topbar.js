@@ -37,6 +37,9 @@ export function renderTopbar(pageId) {
   return `
     <header class="topbar" id="topbar">
       <div class="topbar-left">
+        <button type="button" class="topbar-mobile-menu" id="btn-mobile-menu" aria-label="Toggle menu" aria-expanded="false" aria-controls="sidebar">
+          <svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
         <nav class="topbar-breadcrumb" aria-label="Breadcrumb">
           <span>TechnoEdge CRM</span>
           <span class="topbar-breadcrumb-separator">/</span>

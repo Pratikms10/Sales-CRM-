@@ -26,6 +26,7 @@ import { renderHandoffs, bindHandoffsEvents, initHandoffsPage } from './pages/ha
 import { renderBilling, bindBillingEvents, initBillingPage } from './pages/billing.js';
 import { renderHygiene, bindHygieneEvents, initHygienePage } from './pages/hygiene.js';
 import { initGlobalSearch } from './components/global-search.js';
+import { Store } from './store.js';
 
 // ── DOM References ──────────────────────────────────────────
 
@@ -35,7 +36,16 @@ const sidebarEl  = document.getElementById('sidebar-root');
 const topbarEl   = document.getElementById('topbar-root');
 const contentEl  = document.getElementById('content-area');
 
-// ── Coming Soon page (placeholder for unbuilt pages) ────────
+// Ensure overlay exists
+let sidebarOverlayEl = document.getElementById('sidebar-overlay');
+if (!sidebarOverlayEl && document.getElementById('app-shell')) {
+  sidebarOverlayEl = document.createElement('div');
+  sidebarOverlayEl.id = 'sidebar-overlay';
+  sidebarOverlayEl.className = 'sidebar-overlay';
+  document.getElementById('app-shell').appendChild(sidebarOverlayEl);
+}
+
+// ── Authentication & Routing ────────────────────────────────
 
 const COMING_SOON_ICONS = {
   pipeline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>',
@@ -74,12 +84,32 @@ function renderComingSoon(pageId) {
   `;
 }
 
+// ── Centralized Drawer Logic ─────────────────────────────────
+function openMobileSidebar() {
+  const sb = document.querySelector('.sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  const btn = document.getElementById('btn-mobile-menu');
+  if (sb) sb.classList.add('is-open');
+  if (ov) ov.classList.add('is-visible');
+  if (btn) btn.setAttribute('aria-expanded', 'true');
+}
+
+function closeMobileSidebar() {
+  const sb = document.querySelector('.sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  const btn = document.getElementById('btn-mobile-menu');
+  if (sb) sb.classList.remove('is-open');
+  if (ov) ov.classList.remove('is-visible');
+  if (btn) btn.setAttribute('aria-expanded', 'false');
+}
+
 // ── Page Rendering ──────────────────────────────────────────
 
 function renderPage(pageId, params) {
 
   // ── LOGIN PAGE (no shell) ────────────────────────────
   if (pageId === 'login') {
+    closeMobileSidebar();
     shellEl.classList.add('is-login');
     appEl.innerHTML = renderLoginPage();
     bindLoginEvents((user) => {
@@ -98,10 +128,65 @@ function renderPage(pageId, params) {
 
   // Bind sidebar logout
   bindSidebarEvents(() => {
+    closeMobileSidebar();
     Auth.logout();
     Toast.info('Signed out', 'You have been logged out.');
     Router.navigate('#/login');
   });
+
+  // Handle Mobile Menu and Overlay
+  const btnMobileMenu = document.getElementById('btn-mobile-menu');
+  if (btnMobileMenu && sidebarOverlayEl) {
+    btnMobileMenu.onclick = openMobileSidebar;
+    sidebarOverlayEl.onclick = closeMobileSidebar;
+  }
+
+  // Bind close behavior on sidebar nav link clicks
+  const sidebarNav = document.querySelector('.sidebar');
+  if (sidebarNav) {
+    sidebarNav.addEventListener('click', (e) => {
+      if (e.target.closest('.sidebar-nav-item')) {
+        closeMobileSidebar();
+      }
+    });
+  }
+
+  // Handle Escape key for sidebar
+  if (!window.__sidebarEscapeBound) {
+    window.__sidebarEscapeBound = true;
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const sb = document.querySelector('.sidebar');
+        if (sb && sb.classList.contains('is-open')) {
+          closeMobileSidebar();
+        }
+      }
+    });
+  }
+
+  // Desktop resize safety
+  if (!window.__sidebarResizeBound) {
+    window.__sidebarResizeBound = true;
+    const mediaQuery = window.matchMedia('(min-width: 745px)');
+    const handler = (e) => {
+      if (e.matches) {
+        closeMobileSidebar();
+      }
+    };
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handler);
+    } else if (mediaQuery.addListener) {
+      mediaQuery.addListener(handler);
+    }
+  }
+
+  // Apply compact tables preference
+  const settings = Store.getSettings();
+  if (settings && settings.compactTables) {
+    document.body.classList.add('compact-tables');
+  } else {
+    document.body.classList.remove('compact-tables');
+  }
 
   // Initialize global search in topbar
   initGlobalSearch();
