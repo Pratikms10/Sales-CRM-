@@ -1,29 +1,24 @@
 ﻿# AI Change Audit Report
 
 ## Generated On
-2026-06-18_10-55-56
+2026-06-18_12-10-01
 
 ## Branch
 main
 
 ## Baseline Commit
-33db6db
+4f316a2
 
 ## Task Summary
-Phase 2D Billing, Payment, and Renewal Tracker with role-scoped invoices, payment guardrails, renewal tracking, deal-detail billing creation, and settings export/import support
+Phase 2E CRM Hygiene and Data Quality Dashboard with role-scoped issue detection, missing field/stale/duplicate/overdue checks, guarded owner assignment, follow-up creation, reviewed issue hiding, and manager-only duplicate deletion
 
 ## Git Status
 ```text
- M audits/CHANGE_AUDIT.md
  M js/app.js
  M js/auth.js
  M js/components/sidebar.js
- A js/pages/billing.js
- M js/pages/deal-detail.js
- M js/pages/settings.js
+ A js/pages/hygiene.js
  M js/router.js
- M js/seed.js
- M js/store.js
 ```
 
 ## Files Changed
@@ -31,12 +26,8 @@ Phase 2D Billing, Payment, and Renewal Tracker with role-scoped invoices, paymen
 M	js/app.js
 M	js/auth.js
 M	js/components/sidebar.js
-A	js/pages/billing.js
-M	js/pages/deal-detail.js
-M	js/pages/settings.js
+A	js/pages/hygiene.js
 M	js/router.js
-M	js/seed.js
-M	js/store.js
 ```
 
 ## Change Summary
@@ -44,174 +35,505 @@ M	js/store.js
  js/app.js                |   6 +
  js/auth.js               |   1 +
  js/components/sidebar.js |   1 +
- js/pages/billing.js      | 949 +++++++++++++++++++++++++++++++++++++++++++++++
- js/pages/deal-detail.js  |  59 +++
- js/pages/settings.js     |   8 +-
- js/router.js             |   1 +
- js/seed.js               | 101 +++++
- js/store.js              |  60 ++-
- 9 files changed, 1182 insertions(+), 4 deletions(-)
+ js/pages/hygiene.js      | 855 +++++++++++++++++++++++++++++++++++++++++++++++
+ js/router.js             |   3 +-
+ 5 files changed, 865 insertions(+), 1 deletion(-)
 ```
 
 ## Full Diff
 ```diff
 diff --git a/js/app.js b/js/app.js
-index 80c1727..e634561 100644
+index e634561..ec4ff60 100644
 --- a/js/app.js
 +++ b/js/app.js
-@@ -23,6 +23,7 @@ import { renderActivities, bindActivitiesEvents } from './pages/activities.js';
- import { renderRequirements, bindRequirementsEvents } from './pages/requirements.js';
+@@ -24,6 +24,7 @@ import { renderRequirements, bindRequirementsEvents } from './pages/requirements
  import { renderProposals, bindProposalsEvents } from './pages/proposals.js';
  import { renderHandoffs, bindHandoffsEvents, initHandoffsPage } from './pages/handoffs.js';
-+import { renderBilling, bindBillingEvents, initBillingPage } from './pages/billing.js';
+ import { renderBilling, bindBillingEvents, initBillingPage } from './pages/billing.js';
++import { renderHygiene, bindHygieneEvents, initHygienePage } from './pages/hygiene.js';
  
  // ΓöÇΓöÇ DOM References ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
  
-@@ -143,6 +144,10 @@ function renderPage(pageId, params) {
-       contentEl.innerHTML = renderHandoffs();
-       initHandoffsPage();
+@@ -148,6 +149,10 @@ function renderPage(pageId, params) {
+       contentEl.innerHTML = renderBilling();
+       initBillingPage();
        break;
-+    case 'billing':
-+      contentEl.innerHTML = renderBilling();
-+      initBillingPage();
++    case 'hygiene':
++      contentEl.innerHTML = renderHygiene();
++      initHygienePage();
 +      break;
      default:
        contentEl.innerHTML = renderComingSoon(pageId);
    }
-@@ -163,6 +168,7 @@ bindActivitiesEvents();
- bindRequirementsEvents();
+@@ -169,6 +174,7 @@ bindRequirementsEvents();
  bindProposalsEvents();
  bindHandoffsEvents();
-+bindBillingEvents();
+ bindBillingEvents();
++bindHygieneEvents();
  
  // ΓöÇΓöÇ Bootstrap ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
  
 diff --git a/js/auth.js b/js/auth.js
-index b2a2475..dba8941 100644
+index dba8941..aaeb353 100644
 --- a/js/auth.js
 +++ b/js/auth.js
-@@ -17,6 +17,7 @@ const NAV_ITEMS = [
-   { id: 'requirements',label: 'Requirements', hash: '#/requirements',icon: 'requirements',roles: ['manager', 'team_lead', 'employee'] },
+@@ -18,6 +18,7 @@ const NAV_ITEMS = [
    { id: 'proposals',   label: 'Proposals',  hash: '#/proposals', icon: 'proposals', roles: ['manager', 'team_lead', 'employee'] },
    { id: 'handoffs',    label: 'Project Handoff',hash: '#/handoffs',  icon: 'handoffs',  roles: ['manager', 'team_lead', 'employee'] },
-+  { id: 'billing',     label: 'Billing & Renewals',hash: '#/billing',icon: 'billing',   roles: ['manager', 'team_lead', 'employee'] },
+   { id: 'billing',     label: 'Billing & Renewals',hash: '#/billing',icon: 'billing',   roles: ['manager', 'team_lead', 'employee'] },
++  { id: 'hygiene',     label: 'CRM Hygiene',hash: '#/hygiene',   icon: 'hygiene',   roles: ['manager', 'team_lead', 'employee'] },
    { id: 'team',      label: 'Team',       hash: '#/team',      icon: 'team',      roles: ['manager', 'team_lead'] },
    { id: 'reports',   label: 'Reports',    hash: '#/reports',   icon: 'reports',   roles: ['manager'] },
    { id: 'settings',  label: 'Settings',   hash: '#/settings',  icon: 'settings',  roles: ['manager', 'team_lead', 'employee'] }
 diff --git a/js/components/sidebar.js b/js/components/sidebar.js
-index be95498..207e4ea 100644
+index 207e4ea..e461269 100644
 --- a/js/components/sidebar.js
 +++ b/js/components/sidebar.js
-@@ -17,6 +17,7 @@ const NAV_ICONS = {
-   requirements: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>',
+@@ -18,6 +18,7 @@ const NAV_ICONS = {
    proposals: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="M8 14h.01"></path><path d="M12 14h.01"></path><path d="M16 14h.01"></path><path d="M8 18h.01"></path><path d="M12 18h.01"></path><path d="M16 18h.01"></path></svg>',
    handoffs:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>',
-+  billing:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>',
+   billing:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>',
++  hygiene:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5"/><path d="M9 7V2"/><path d="M15 7V2"/><path d="M12 7v5"/><path d="M22 12h-5"/><path d="M7 12H2"/><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10z"/></svg>',
    team:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
    reports:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
    settings:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>'
-diff --git a/js/pages/billing.js b/js/pages/billing.js
+diff --git a/js/pages/hygiene.js b/js/pages/hygiene.js
 new file mode 100644
-index 0000000..b0006b0
+index 0000000..f22e76b
 --- /dev/null
-+++ b/js/pages/billing.js
-@@ -0,0 +1,949 @@
++++ b/js/pages/hygiene.js
+@@ -0,0 +1,855 @@
 +// ============================================================
-+// TechnoEdge CRM ΓÇö Invoice, Payment & Renewal Tracker
++// TechnoEdge CRM ΓÇö Hygiene Dashboard
 +// ============================================================
 +
 +import { Store } from '../store.js';
 +import { Auth } from '../auth.js';
-+import { generateId, formatDate, formatCurrency } from '../utils.js';
 +import { Toast } from '../components/toast.js';
++import { formatDate } from '../utils.js';
 +
-+const PAYMENT_STATUSES = [
-+  { key: 'draft', label: 'Draft' },
-+  { key: 'invoiced', label: 'Invoiced' },
-+  { key: 'partially_paid', label: 'Partially Paid' },
-+  { key: 'paid', label: 'Paid' },
-+  { key: 'overdue', label: 'Overdue' },
-+  { key: 'cancelled', label: 'Cancelled' }
-+];
++let eventsBound = false;
++let currentIssues = [];
 +
-+const PAYMENT_MODES = [
-+  { key: 'not_recorded', label: 'Not Recorded' },
-+  { key: 'bank_transfer', label: 'Bank Transfer' },
-+  { key: 'upi', label: 'UPI' },
-+  { key: 'cheque', label: 'Cheque' },
-+  { key: 'cash', label: 'Cash' },
-+  { key: 'card', label: 'Card' }
-+];
++function getHiddenIds() {
++  const data = sessionStorage.getItem('technoedge_hygiene_hidden');
++  if (!data) return [];
++  try {
++    return JSON.parse(data);
++  } catch (e) {
++    return [];
++  }
++}
 +
-+const RENEWAL_STATUSES = [
-+  { key: 'none', label: 'None' },
-+  { key: 'renewal_due', label: 'Renewal Due' },
-+  { key: 'renewal_contacted', label: 'Renewal Contacted' },
-+  { key: 'renewal_interested', label: 'Renewal Interested' },
-+  { key: 'renewed', label: 'Renewed' },
-+  { key: 'not_renewing', label: 'Not Renewing' }
-+];
++function addHiddenId(id) {
++  const hidden = getHiddenIds();
++  if (!hidden.includes(id)) {
++    hidden.push(id);
++    sessionStorage.setItem('technoedge_hygiene_hidden', JSON.stringify(hidden));
++  }
++}
 +
-+let currentBillingId = null;
++function diffDays(isoString) {
++  if (!isoString) return 0;
++  const d = new Date(isoString);
++  if (isNaN(d.getTime())) return 0;
++  const now = new Date();
++  const diffTime = now - d;
++  if (diffTime < 0) return 0;
++  return Math.floor(diffTime / (1000 * 60 * 60 * 24));
++}
 +
-+export function renderBilling() {
++function isPast(isoString) {
++  if (!isoString) return false;
++  const d = new Date(isoString);
++  if (isNaN(d.getTime())) return false;
++  const now = new Date();
++  now.setHours(0,0,0,0);
++  return d < now;
++}
++
++function isWithin30Days(isoString) {
++  if (!isoString) return false;
++  const d = new Date(isoString);
++  if (isNaN(d.getTime())) return false;
++  const now = new Date();
++  now.setHours(0,0,0,0);
++  const diffTime = d - now;
++  const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
++  return days <= 30; // Could be past, which is <= 30
++}
++
++function hasOpenActivity(linkedId, allActivities) {
++  return allActivities.some(a =>
++    (a.linkedId === linkedId || a.dealId === linkedId || a.leadId === linkedId || a.sourceEntityId === linkedId) &&
++    !['completed', 'cancelled'].includes(a.status) &&
++    a.dueAt
++  );
++}
++
++function normalize(str) {
++  return (str || '').toLowerCase().trim().replace(/[^a-z0-9]/g, '');
++}
++
++function generateIssues(user) {
++  const issues = [];
++  const addIssue = (id, type, entityType, entityId, entityTitle, severity, message, assignedTo, fixAction, rawDate) => {
++    let suggestedFix = '';
++    if (type === 'missing_field') suggestedFix = 'Fill required fields';
++    else if (type === 'stale_record') suggestedFix = 'Update record or add activity';
++    else if (type === 'overdue_followup') suggestedFix = 'Complete or reschedule follow-up';
++    else if (type === 'no_next_action') suggestedFix = 'Create follow-up';
++    else if (type === 'duplicate_record') suggestedFix = 'Review duplicate candidate';
++    else if (type === 'unassigned_record') suggestedFix = 'Assign owner';
++    else if (type === 'invalid_link') suggestedFix = 'Review broken reference';
++    else if (type === 'overdue_payment') suggestedFix = 'Collect/update payment';
++    else if (type === 'renewal_due') suggestedFix = 'Contact client for renewal';
++
++    const dateLabel = rawDate ? formatDate(rawDate) : '-';
++
++    issues.push({ id, type, entityType, entityId, entityTitle, severity, message, assignedTo, fixAction, dateLabel, suggestedFix });
++  };
++
++  const leads = Store.getLeadsForUser(user);
++  const contacts = Store.getContacts();
++  const deals = Store.getDealsForUser(user);
++  const requirements = Store.getRequirementsForUser(user);
++  const proposals = Store.getProposalsForUser(user);
++  const handoffs = Store.getHandoffsForUser(user);
++  const billings = Store.getBillingsForUser(user);
++  const activities = Store.getActivitiesForUser(user);
++  const allActivities = Store.getActivities();
++
++  const issueId = (eType, eId, iType, key) => `${eType}_${eId}_${iType}_${key}`;
++
++  // 1. Missing required fields
++  leads.forEach(l => {
++    if (!l.name || !l.company || !l.assignedTo || !l.status || !l.source || (!l.email && !l.phone)) {
++      addIssue(issueId('lead', l.id, 'missing_field', 'all'), 'missing_field', 'lead', l.id, l.name || 'Unknown', 'high', 'Missing critical fields (Name, Company, Assigned, Status, Source, or Email+Phone)', l.assignedTo, 'view', l.updatedAt);
++    }
++    if (!l.assignedTo) {
++      addIssue(issueId('lead', l.id, 'unassigned_record', 'owner'), 'unassigned_record', 'lead', l.id, l.name || 'Unknown', 'high', 'Lead has no assigned owner.', l.assignedTo, 'fix_owner', l.updatedAt);
++    }
++  });
++
++  contacts.forEach(c => {
++    if (!c.name || !c.company || (!c.email && !c.phone)) {
++      addIssue(issueId('contact', c.id, 'missing_field', 'all'), 'missing_field', 'contact', c.id, c.name || 'Unknown', 'medium', 'Missing Name, Company, or Contact info (Email+Phone)', null, 'view', c.updatedAt);
++    }
++  });
++
++  deals.forEach(d => {
++    if (!d.title || d.value === undefined || !d.stage || !d.assignedTo) {
++      addIssue(issueId('deal', d.id, 'missing_field', 'all'), 'missing_field', 'deal', d.id, d.title || 'Unknown', 'high', 'Missing Title, Value, Stage, or Assigned To', d.assignedTo, 'view', d.updatedAt);
++    }
++    if (!d.assignedTo) {
++      addIssue(issueId('deal', d.id, 'unassigned_record', 'owner'), 'unassigned_record', 'deal', d.id, d.title || 'Unknown', 'high', 'Deal has no assigned owner.', d.assignedTo, 'fix_owner', d.updatedAt);
++    }
++  });
++
++  requirements.forEach(r => {
++    if (!r.title || !r.summary || !r.requirementType || !r.status || !r.assignedTo) {
++      addIssue(issueId('requirement', r.id, 'missing_field', 'all'), 'missing_field', 'requirement', r.id, r.title || 'Unknown', 'high', 'Missing Title, Summary, Type, Status, or Assigned To', r.assignedTo, 'view', r.updatedAt);
++    }
++    if (!r.assignedTo) {
++      addIssue(issueId('requirement', r.id, 'unassigned_record', 'owner'), 'unassigned_record', 'requirement', r.id, r.title || 'Unknown', 'high', 'Requirement has no assigned owner.', r.assignedTo, 'fix_owner', r.updatedAt);
++    }
++  });
++
++  proposals.forEach(p => {
++    if (!p.title || !p.status || !p.lineItems || p.lineItems.length === 0 || p.grandTotal === undefined || !p.assignedTo) {
++      addIssue(issueId('proposal', p.id, 'missing_field', 'all'), 'missing_field', 'proposal', p.id, p.title || 'Unknown', 'high', 'Missing Title, Status, Line Items, Grand Total, or Assigned To', p.assignedTo, 'view', p.updatedAt);
++    }
++    if (!p.assignedTo) {
++      addIssue(issueId('proposal', p.id, 'unassigned_record', 'owner'), 'unassigned_record', 'proposal', p.id, p.title || 'Unknown', 'high', 'Proposal has no assigned owner.', p.assignedTo, 'fix_owner', p.updatedAt);
++    }
++  });
++
++  handoffs.forEach(h => {
++    if (!h.title || !h.companyName || !h.projectBrief || !h.assignedTo || !h.deliveryStatus) {
++      addIssue(issueId('handoff', h.id, 'missing_field', 'all'), 'missing_field', 'handoff', h.id, h.title || 'Unknown', 'high', 'Missing Title, Company, Brief, Assigned To, or Status', h.assignedTo, 'view', h.updatedAt);
++    }
++    if (!h.assignedTo) {
++      addIssue(issueId('handoff', h.id, 'unassigned_record', 'owner'), 'unassigned_record', 'handoff', h.id, h.title || 'Unknown', 'high', 'Handoff has no assigned owner.', h.assignedTo, 'fix_owner', h.updatedAt);
++    }
++  });
++
++  billings.forEach(b => {
++    if (!b.title || !b.companyName || b.grandTotal === undefined || !b.paymentStatus || !b.assignedTo) {
++      addIssue(issueId('billing', b.id, 'missing_field', 'all'), 'missing_field', 'billing', b.id, b.title || 'Unknown', 'high', 'Missing Title, Company, Total, Payment Status, or Assigned To', b.assignedTo, 'view', b.updatedAt);
++    }
++    if (!b.assignedTo) {
++      addIssue(issueId('billing', b.id, 'unassigned_record', 'owner'), 'unassigned_record', 'billing', b.id, b.title || 'Unknown', 'high', 'Billing record has no assigned owner.', b.assignedTo, 'fix_owner', b.updatedAt);
++    }
++  });
++
++  activities.forEach(a => {
++    if (!a.assignedTo) {
++      addIssue(issueId('activity', a.id, 'unassigned_record', 'owner'), 'unassigned_record', 'activity', a.id, a.title || 'Unknown', 'medium', 'Activity has no assigned owner.', a.assignedTo, 'fix_owner', a.updatedAt);
++    }
++  });
++
++  // 2. Stale Records
++  leads.forEach(l => {
++    if (!['converted', 'lost', 'won'].includes(l.status) && diffDays(l.updatedAt) >= 14) {
++      addIssue(issueId('lead', l.id, 'stale_record', 'time'), 'stale_record', 'lead', l.id, l.name || 'Unknown', 'medium', 'Lead active but not updated in 14+ days.', l.assignedTo, 'view', l.updatedAt);
++    }
++  });
++  deals.forEach(d => {
++    if (!['closed_won', 'closed_lost'].includes(d.status) && diffDays(d.updatedAt) >= 14) {
++      addIssue(issueId('deal', d.id, 'stale_record', 'time'), 'stale_record', 'deal', d.id, d.title || 'Unknown', 'high', 'Deal active but not updated in 14+ days.', d.assignedTo, 'view', d.updatedAt);
++    }
++  });
++  requirements.forEach(r => {
++    if (['draft', 'captured'].includes(r.status) && diffDays(r.updatedAt) >= 10) {
++      addIssue(issueId('requirement', r.id, 'stale_record', 'time'), 'stale_record', 'requirement', r.id, r.title || 'Unknown', 'medium', 'Requirement stuck in Draft/Captured for 10+ days.', r.assignedTo, 'view', r.updatedAt);
++    }
++  });
++  proposals.forEach(p => {
++    if (['draft', 'sent'].includes(p.status) && diffDays(p.updatedAt) >= 10) {
++      addIssue(issueId('proposal', p.id, 'stale_record', 'time'), 'stale_record', 'proposal', p.id, p.title || 'Unknown', 'medium', 'Proposal stuck in Draft/Sent for 10+ days.', r.assignedTo, 'view', p.updatedAt);
++    }
++  });
++  handoffs.forEach(h => {
++    if (!['completed', 'cancelled', 'blocked'].includes(h.deliveryStatus) && diffDays(h.updatedAt) >= 10) {
++      addIssue(issueId('handoff', h.id, 'stale_record', 'time'), 'stale_record', 'handoff', h.id, h.title || 'Unknown', 'high', 'Handoff active but not updated in 10+ days.', h.assignedTo, 'view', h.updatedAt);
++    }
++  });
++  billings.forEach(b => {
++    if (['invoiced', 'partially_paid'].includes(b.paymentStatus)) {
++      if ((b.dueDate && isPast(b.dueDate)) || diffDays(b.updatedAt) >= 14) {
++        addIssue(issueId('billing', b.id, 'stale_record', 'time'), 'stale_record', 'billing', b.id, b.title || 'Unknown', 'high', 'Billing stuck in Invoiced/Partial state for 14+ days or past due.', b.assignedTo, 'view', b.updatedAt);
++      }
++    }
++  });
++
++  // 3. Overdue follow-ups
++  activities.forEach(a => {
++    if (a.dueAt && isPast(a.dueAt) && !['completed', 'cancelled'].includes(a.status)) {
++      addIssue(issueId('activity', a.id, 'overdue_followup', 'time'), 'overdue_followup', 'activity', a.id, a.title || 'Unknown', 'high', 'Activity due date has passed.', a.assignedTo, 'view', a.dueAt);
++    }
++  });
++  billings.forEach(b => {
++    if (b.dueDate && isPast(b.dueDate) && b.balanceDue > 0) {
++      addIssue(issueId('billing', b.id, 'overdue_payment', 'time'), 'overdue_payment', 'billing', b.id, b.title || 'Unknown', 'high', 'Payment is overdue.', b.assignedTo, 'view', b.dueDate);
++    }
++    if (b.renewalDate && isWithin30Days(b.renewalDate) && !['renewed', 'not_renewing'].includes(b.renewalStatus)) {
++      addIssue(issueId('billing', b.id, 'renewal_due', 'time'), 'renewal_due', 'billing', b.id, b.title || 'Unknown', 'medium', 'Renewal is due within 30 days or already passed.', b.assignedTo, 'view', b.renewalDate);
++    }
++  });
++
++  // 4. No next action
++  leads.forEach(l => {
++    if (!['converted', 'lost', 'won'].includes(l.status) && !hasOpenActivity(l.id, allActivities)) {
++      addIssue(issueId('lead', l.id, 'no_next_action', 'act'), 'no_next_action', 'lead', l.id, l.name || 'Unknown', 'high', 'Lead has no open follow-up activity.', l.assignedTo, 'create_followup', l.updatedAt);
++    }
++  });
++  deals.forEach(d => {
++    if (!['closed_won', 'closed_lost'].includes(d.status) && !hasOpenActivity(d.id, allActivities)) {
++      addIssue(issueId('deal', d.id, 'no_next_action', 'act'), 'no_next_action', 'deal', d.id, d.title || 'Unknown', 'high', 'Deal has no open follow-up activity.', d.assignedTo, 'create_followup', d.updatedAt);
++    }
++  });
++  proposals.forEach(p => {
++    if (['draft', 'sent'].includes(p.status) && !hasOpenActivity(p.id, allActivities)) {
++      addIssue(issueId('proposal', p.id, 'no_next_action', 'act'), 'no_next_action', 'proposal', p.id, p.title || 'Unknown', 'medium', 'Active proposal has no open follow-up activity.', p.assignedTo, 'create_followup', p.updatedAt);
++    }
++  });
++  handoffs.forEach(h => {
++    if (!['completed', 'cancelled'].includes(h.deliveryStatus) && !hasOpenActivity(h.id, allActivities)) {
++      addIssue(issueId('handoff', h.id, 'no_next_action', 'act'), 'no_next_action', 'handoff', h.id, h.title || 'Unknown', 'medium', 'Active handoff has no open follow-up activity.', h.assignedTo, 'create_followup', h.updatedAt);
++    }
++  });
++
++  // 5. Duplicate Records
++  const allContacts = Store.getContacts();
++  const allLeads = Store.getLeads();
++  const emailMap = {}, phoneMap = {}, companyMap = {};
++
++  allContacts.forEach(c => {
++    if (user.role !== 'manager') {
++       const hasLinkedDeal = deals.some(d => d.contactId === c.id || d.clientContactId === c.id);
++       const hasLinkedReq = requirements.some(r => r.contactId === c.id);
++       const hasLinkedProp = proposals.some(p => p.contactId === c.id);
++       const hasLinkedHandoff = handoffs.some(h => h.clientContactId === c.id);
++       const hasLinkedBilling = billings.some(b => b.clientContactId === c.id);
++       const hasLinkedAct = activities.some(a => a.contactId === c.id);
++       if (!hasLinkedDeal && !hasLinkedReq && !hasLinkedProp && !hasLinkedHandoff && !hasLinkedBilling && !hasLinkedAct) {
++           return;
++       }
++    }
++    if (c.email) { emailMap[c.email] = emailMap[c.email] || []; emailMap[c.email].push({ type: 'contact', id: c.id, name: c.name, assignedTo: null, rawDate: c.createdAt }); }
++    if (c.phone) { phoneMap[c.phone] = phoneMap[c.phone] || []; phoneMap[c.phone].push({ type: 'contact', id: c.id, name: c.name, assignedTo: null, rawDate: c.createdAt }); }
++    if (c.company) {
++      const norm = normalize(c.company);
++      if (norm) { companyMap[norm] = companyMap[norm] || []; companyMap[norm].push({ type: 'contact', id: c.id, name: c.name, assignedTo: null, rawDate: c.createdAt }); }
++    }
++  });
++  allLeads.forEach(l => {
++    if (l.email) { emailMap[l.email] = emailMap[l.email] || []; emailMap[l.email].push({ type: 'lead', id: l.id, name: l.name, assignedTo: l.assignedTo, rawDate: l.createdAt }); }
++    if (l.phone) { phoneMap[l.phone] = phoneMap[l.phone] || []; phoneMap[l.phone].push({ type: 'lead', id: l.id, name: l.name, assignedTo: l.assignedTo, rawDate: l.createdAt }); }
++    if (l.company) {
++      const norm = normalize(l.company);
++      if (norm) { companyMap[norm] = companyMap[norm] || []; companyMap[norm].push({ type: 'lead', id: l.id, name: l.name, assignedTo: l.assignedTo, rawDate: l.createdAt }); }
++    }
++  });
++
++  const pushDup = (map, severity, reason) => {
++    for (const key in map) {
++      if (map[key].length > 1) {
++        map[key].forEach(rec => {
++          if (rec.type === 'lead') {
++            if (!leads.some(l => l.id === rec.id)) return;
++          }
++          addIssue(issueId(rec.type, rec.id, 'duplicate_record', key.replace(/\s+/g,'')), 'duplicate_record', rec.type, rec.id, rec.name || 'Unknown', severity, `Duplicate detected (Same ${reason}: ${key}).`, rec.assignedTo, 'delete_dup', rec.rawDate);
++        });
++      }
++    }
++  };
++
++  pushDup(emailMap, 'high', 'Email');
++  pushDup(phoneMap, 'high', 'Phone');
++  pushDup(companyMap, 'low', 'Company');
++
++  // 6. Invalid Links
++  const checkLink = (entityType, eId, eTitle, linkType, linkId, assignedTo, rawDate) => {
++    if (linkId) {
++      let valid = false;
++      if (linkType === 'deal') valid = !!Store.getDealById(linkId);
++      if (linkType === 'lead') valid = !!Store.getLeadById(linkId);
++      if (linkType === 'contact') valid = !!Store.getContactById(linkId);
++      if (linkType === 'requirement') valid = !!Store.getRequirementById(linkId);
++      if (linkType === 'proposal') valid = !!Store.getProposalById(linkId);
++      if (linkType === 'handoff') valid = !!Store.getHandoffById(linkId);
++
++      if (!valid) {
++        addIssue(issueId(entityType, eId, 'invalid_link', linkId), 'invalid_link', entityType, eId, eTitle || 'Unknown', 'high', `Broken reference to ${linkType} (ID: ${linkId})`, assignedTo, 'view', rawDate);
++      }
++    }
++  };
++
++  proposals.forEach(p => {
++    checkLink('proposal', p.id, p.title, 'requirement', p.requirementId, p.assignedTo, p.updatedAt);
++    checkLink('proposal', p.id, p.title, 'deal', p.dealId, p.assignedTo, p.updatedAt);
++    checkLink('proposal', p.id, p.title, 'contact', p.contactId, p.assignedTo, p.updatedAt);
++  });
++  requirements.forEach(r => {
++    checkLink('requirement', r.id, r.title, 'deal', r.dealId, r.assignedTo, r.updatedAt);
++    checkLink('requirement', r.id, r.title, 'lead', r.leadId, r.assignedTo, r.updatedAt);
++    checkLink('requirement', r.id, r.title, 'contact', r.contactId, r.assignedTo, r.updatedAt);
++  });
++  handoffs.forEach(h => {
++    checkLink('handoff', h.id, h.title, 'deal', h.dealId, h.assignedTo, h.updatedAt);
++    checkLink('handoff', h.id, h.title, 'proposal', h.proposalId, h.assignedTo, h.updatedAt);
++    checkLink('handoff', h.id, h.title, 'contact', h.clientContactId, h.assignedTo, h.updatedAt);
++  });
++  billings.forEach(b => {
++    checkLink('billing', b.id, b.title, 'deal', b.dealId, b.assignedTo, b.updatedAt);
++    checkLink('billing', b.id, b.title, 'proposal', b.proposalId, b.assignedTo, b.updatedAt);
++    checkLink('billing', b.id, b.title, 'handoff', b.handoffId, b.assignedTo, b.updatedAt);
++    checkLink('billing', b.id, b.title, 'contact', b.clientContactId, b.assignedTo, b.updatedAt);
++  });
++  activities.forEach(a => {
++    if (a.linkedType && a.linkedId) {
++      checkLink('activity', a.id, a.title, a.linkedType, a.linkedId, a.assignedTo, a.updatedAt);
++    }
++    checkLink('activity', a.id, a.title, 'deal', a.dealId, a.assignedTo, a.updatedAt);
++    checkLink('activity', a.id, a.title, 'lead', a.leadId, a.assignedTo, a.updatedAt);
++    checkLink('activity', a.id, a.title, 'contact', a.contactId, a.assignedTo, a.updatedAt);
++  });
++
++  return issues;
++}
++
++export function renderHygiene() {
 +  const user = Auth.getCurrentUser();
 +  if (!user) return '';
 +
-+  const billings = Store.getBillingsForUser(user);
++  const hiddenIds = getHiddenIds();
++  const rawIssues = generateIssues(user);
 +
-+  const total = billings.length;
-+  const outstanding = billings.reduce((sum, b) => sum + (Number(b.balanceDue) || 0), 0);
-+  const revenue = billings.reduce((sum, b) => sum + (Number(b.amountPaid) || 0), 0);
-+  const overdueCount = billings.filter(b => b.paymentStatus === 'overdue').length;
-+  const renewalDueCount = billings.filter(b => b.renewalStatus === 'renewal_due').length;
++  const uniqueMap = new Map();
++  rawIssues.forEach(i => uniqueMap.set(i.id, i));
++  currentIssues = Array.from(uniqueMap.values()).filter(i => !hiddenIds.includes(i.id));
++
++  const total = currentIssues.length;
++  const missing = currentIssues.filter(i => i.type === 'missing_field').length;
++  const stale = currentIssues.filter(i => i.type === 'stale_record').length;
++  const overdue = currentIssues.filter(i => i.type === 'overdue_followup' || i.type === 'overdue_payment' || i.type === 'renewal_due').length;
++  const duplicates = currentIssues.filter(i => i.type === 'duplicate_record').length;
++  const unassigned = currentIssues.filter(i => i.type === 'unassigned_record').length;
 +
 +  return `
 +    <div class="content-inner">
 +      <div class="page-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
 +        <div>
-+          <h1 class="page-header-title">Billing & Renewals</h1>
-+          <div class="page-header-subtitle">Track invoices, payments, and upcoming renewals</div>
++          <h1 class="page-header-title">CRM Hygiene</h1>
++          <div class="page-header-subtitle">Identify and fix data quality issues in your workspace</div>
 +        </div>
-+        <button class="btn btn-primary" id="btn-new-billing">
-+          <span class="icon">Γ₧ò</span> New Record
++        <button class="btn btn-secondary" id="btn-refresh-hygiene">
++          <span class="icon">Γå╗</span> Refresh
 +        </button>
 +      </div>
 +
-+      <div class="dashboard-grid" style="grid-template-columns: repeat(5, 1fr); margin-bottom: 2rem;">
++      <div class="dashboard-grid" style="grid-template-columns: repeat(6, 1fr); margin-bottom: 2rem;">
 +        <div class="stat-card">
-+          <div class="stat-card-label">Total Records</div>
++          <div class="stat-card-label">Total Issues</div>
 +          <div class="stat-card-value">${total}</div>
 +        </div>
 +        <div class="stat-card">
-+          <div class="stat-card-label">Outstanding</div>
-+          <div class="stat-card-value" style="color:var(--color-error);">${formatCurrency(outstanding, 'INR')}</div>
++          <div class="stat-card-label">Missing Info</div>
++          <div class="stat-card-value" style="color:var(--color-error);">${missing}</div>
 +        </div>
 +        <div class="stat-card">
-+          <div class="stat-card-label">Paid Revenue</div>
-+          <div class="stat-card-value" style="color:var(--color-success);">${formatCurrency(revenue, 'INR')}</div>
++          <div class="stat-card-label">Stale Records</div>
++          <div class="stat-card-value" style="color:var(--color-stage-invoice);">${stale}</div>
 +        </div>
 +        <div class="stat-card">
 +          <div class="stat-card-label">Overdue</div>
-+          <div class="stat-card-value" style="color:var(--color-error);">${overdueCount}</div>
++          <div class="stat-card-value" style="color:var(--color-error);">${overdue}</div>
 +        </div>
 +        <div class="stat-card">
-+          <div class="stat-card-label">Renewal Due</div>
-+          <div class="stat-card-value" style="color:var(--color-primary);">${renewalDueCount}</div>
++          <div class="stat-card-label">Duplicates</div>
++          <div class="stat-card-value" style="color:var(--color-stage-sales);">${duplicates}</div>
++        </div>
++        <div class="stat-card">
++          <div class="stat-card-label">Unassigned</div>
++          <div class="stat-card-value" style="color:var(--color-primary);">${unassigned}</div>
 +        </div>
 +      </div>
 +
 +      <div class="filters-bar" style="display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap; background:var(--color-surface-card); padding:1rem; border-radius:8px; border:1px solid var(--color-hairline-soft);">
-+        <input type="text" class="login-input" id="billing-filter-search" placeholder="Search invoice or company..." style="flex:1; min-width:200px;">
-+        <select class="login-input" id="billing-filter-status" style="width:160px;">
-+          <option value="all">All Statuses</option>
-+          ${PAYMENT_STATUSES.map(s => `<option value="${s.key}">${s.label}</option>`).join('')}
++        <input type="text" class="login-input" id="hygiene-filter-search" placeholder="Search issues..." style="flex:1; min-width:200px;">
++        <select class="login-input" id="hygiene-filter-type" style="width:160px;">
++          <option value="all">All Issue Types</option>
++          <option value="missing_field">Missing Fields</option>
++          <option value="stale_record">Stale Records</option>
++          <option value="overdue_followup">Overdue Follow-ups</option>
++          <option value="no_next_action">No Next Action</option>
++          <option value="duplicate_record">Duplicates</option>
++          <option value="unassigned_record">Unassigned</option>
++          <option value="invalid_link">Invalid Links</option>
++          <option value="overdue_payment">Overdue Payment</option>
++          <option value="renewal_due">Renewal Due</option>
 +        </select>
-+        <select class="login-input" id="billing-filter-renewal" style="width:160px;">
-+          <option value="all">All Renewals</option>
-+          ${RENEWAL_STATUSES.map(s => `<option value="${s.key}">${s.label}</option>`).join('')}
++        <select class="login-input" id="hygiene-filter-entity" style="width:140px;">
++          <option value="all">All Entities</option>
++          <option value="lead">Leads</option>
++          <option value="deal">Deals</option>
++          <option value="activity">Activities</option>
++          <option value="requirement">Requirements</option>
++          <option value="proposal">Proposals</option>
++          <option value="handoff">Handoffs</option>
++          <option value="billing">Billings</option>
++          <option value="contact">Contacts</option>
 +        </select>
-+        <select class="login-input" id="billing-filter-owner" style="width:160px;">
++        <select class="login-input" id="hygiene-filter-severity" style="width:120px;">
++          <option value="all">All Severities</option>
++          <option value="high">High</option>
++          <option value="medium">Medium</option>
++          <option value="low">Low</option>
++        </select>
++        <select class="login-input" id="hygiene-filter-owner" style="width:140px;">
++          <!-- Populated dynamically -->
 +        </select>
 +      </div>
 +
@@ -219,196 +541,33 @@ index 0000000..b0006b0
 +        <table class="data-table" style="width:100%; text-align:left; border-collapse:collapse;">
 +          <thead>
 +            <tr style="border-bottom:1px solid var(--color-hairline-soft);">
-+              <th style="padding:1rem;">Invoice / Company</th>
-+              <th style="padding:1rem;">Linked Record</th>
-+              <th style="padding:1rem;">Timeline</th>
-+              <th style="padding:1rem;">Status</th>
-+              <th style="padding:1rem;">Financials</th>
-+              <th style="padding:1rem;">Renewal</th>
-+              <th style="padding:1rem;">Assigned To</th>
++              <th style="padding:1rem;">Issue</th>
++              <th style="padding:1rem;">Entity</th>
++              <th style="padding:1rem;">Severity</th>
++              <th style="padding:1rem;">Owner</th>
++              <th style="padding:1rem;">Last Updated / Due Date</th>
++              <th style="padding:1rem;">Suggested Fix</th>
 +              <th style="padding:1rem; text-align:right;">Actions</th>
 +            </tr>
 +          </thead>
-+          <tbody id="billings-tbody">
-+            <!-- Rendered via loadTable() -->
++          <tbody id="hygiene-tbody">
++            <!-- Rendered via loadHygieneTable() -->
 +          </tbody>
 +        </table>
-+      </div>
-+    </div>
-+
-+    <!-- Billing Modal -->
-+    <div id="billing-modal" class="modal-overlay" style="display:none;">
-+      <div class="modal" style="max-width:850px; width:90%;">
-+        <div class="modal-header">
-+          <h2 id="modal-billing-heading">Create Billing Record</h2>
-+          <button class="modal-close" id="btn-close-billing-modal">&times;</button>
-+        </div>
-+        <div class="modal-body" style="max-height:70vh; overflow-y:auto;">
-+
-+          <div style="margin-bottom:1.5rem; padding:1rem; background:var(--color-surface-soft); border-radius:8px; border:1px solid var(--color-hairline-soft);">
-+            <h4 style="margin:0 0 1rem 0;">Link Record</h4>
-+            <div class="form-grid" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem;">
-+              <div class="form-group">
-+                <label>Deal (Closed Won)</label>
-+                <select class="login-input" id="modal-billing-deal">
-+                  <option value="">-- Select Deal --</option>
-+                </select>
-+              </div>
-+              <div class="form-group">
-+                <label>Proposal (Accepted)</label>
-+                <select class="login-input" id="modal-billing-proposal">
-+                  <option value="">-- Select Proposal --</option>
-+                </select>
-+              </div>
-+              <div class="form-group">
-+                <label>Project Handoff (Active)</label>
-+                <select class="login-input" id="modal-billing-handoff">
-+                  <option value="">-- Select Handoff --</option>
-+                </select>
-+              </div>
-+            </div>
-+            <div style="display:flex; justify-content:flex-end; margin-top:0.5rem;">
-+              <button class="btn btn-sm btn-secondary" id="btn-autofill-billing">Auto-Fill from Selection</button>
-+            </div>
-+          </div>
-+
-+          <div class="form-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
-+            <div class="form-group" style="grid-column: 1 / -1;">
-+              <label>Record Title *</label>
-+              <input type="text" class="login-input" id="modal-billing-title" placeholder="e.g. AWS Training Phase 1 Invoice">
-+            </div>
-+
-+            <div class="form-group">
-+              <label>Company Name *</label>
-+              <input type="text" class="login-input" id="modal-billing-company">
-+            </div>
-+            <div class="form-group">
-+              <label>Client Contact</label>
-+              <select class="login-input" id="modal-billing-contact">
-+                <option value="">-- Select Contact --</option>
-+              </select>
-+            </div>
-+
-+            <div class="form-group">
-+              <label>Invoice Number</label>
-+              <input type="text" class="login-input" id="modal-billing-invoice-number">
-+            </div>
-+            <div class="form-group">
-+              <label>Currency</label>
-+              <select class="login-input" id="modal-billing-currency">
-+                <option value="INR">INR (Γé╣)</option>
-+                <option value="USD">USD ($)</option>
-+                <option value="EUR">EUR (Γé¼)</option>
-+                <option value="GBP">GBP (┬ú)</option>
-+              </select>
-+            </div>
-+
-+            <div class="form-group">
-+              <label>Invoice Date</label>
-+              <input type="date" class="login-input" id="modal-billing-invoice-date">
-+            </div>
-+            <div class="form-group">
-+              <label>Due Date</label>
-+              <input type="date" class="login-input" id="modal-billing-due-date">
-+            </div>
-+
-+            <!-- Financials Section -->
-+            <div style="grid-column: 1 / -1; margin-top: 1rem;">
-+              <h4 style="margin:0 0 1rem 0; border-bottom:1px solid var(--color-hairline-soft); padding-bottom:0.5rem;">Financials</h4>
-+            </div>
-+
-+            <div class="form-group">
-+              <label>Subtotal *</label>
-+              <input type="number" step="0.01" class="login-input" id="modal-billing-subtotal" value="0">
-+            </div>
-+            <div class="form-group">
-+              <label>Discount Total</label>
-+              <input type="number" step="0.01" class="login-input" id="modal-billing-discount" value="0">
-+            </div>
-+            <div class="form-group">
-+              <label>Tax Total</label>
-+              <input type="number" step="0.01" class="login-input" id="modal-billing-tax" value="0">
-+            </div>
-+            <div class="form-group">
-+              <label>Grand Total *</label>
-+              <input type="number" step="0.01" class="login-input" id="modal-billing-grand-total" value="0">
-+            </div>
-+
-+            <!-- Payments Section -->
-+            <div style="grid-column: 1 / -1; margin-top: 1rem;">
-+              <h4 style="margin:0 0 1rem 0; border-bottom:1px solid var(--color-hairline-soft); padding-bottom:0.5rem;">Payment Tracking</h4>
-+            </div>
-+
-+            <div class="form-group">
-+              <label>Amount Paid</label>
-+              <input type="number" step="0.01" class="login-input" id="modal-billing-amount-paid" value="0">
-+            </div>
-+            <div class="form-group">
-+              <label>Payment Mode</label>
-+              <select class="login-input" id="modal-billing-payment-mode">
-+                ${PAYMENT_MODES.map(m => `<option value="${m.key}">${m.label}</option>`).join('')}
-+              </select>
-+            </div>
-+            <div class="form-group">
-+              <label>Payment Status *</label>
-+              <select class="login-input" id="modal-billing-payment-status">
-+                ${PAYMENT_STATUSES.map(s => `<option value="${s.key}">${s.label}</option>`).join('')}
-+              </select>
-+            </div>
-+            <div class="form-group">
-+              <label>Calculated Balance Due</label>
-+              <input type="number" class="login-input" id="modal-billing-balance-due" disabled>
-+            </div>
-+
-+            <!-- Renewals Section -->
-+            <div style="grid-column: 1 / -1; margin-top: 1rem;">
-+              <h4 style="margin:0 0 1rem 0; border-bottom:1px solid var(--color-hairline-soft); padding-bottom:0.5rem;">Renewal Tracking</h4>
-+            </div>
-+
-+            <div class="form-group">
-+              <label>Renewal Status</label>
-+              <select class="login-input" id="modal-billing-renewal-status">
-+                ${RENEWAL_STATUSES.map(s => `<option value="${s.key}">${s.label}</option>`).join('')}
-+              </select>
-+            </div>
-+            <div class="form-group">
-+              <label>Renewal Date</label>
-+              <input type="date" class="login-input" id="modal-billing-renewal-date">
-+            </div>
-+            <div class="form-group">
-+              <label>Expected Renewal Value</label>
-+              <input type="number" step="0.01" class="login-input" id="modal-billing-renewal-value">
-+            </div>
-+
-+            <div class="form-group" style="grid-column: 1 / -1; margin-top: 1rem;">
-+              <label>Assigned To *</label>
-+              <select class="login-input" id="modal-billing-assigned"></select>
-+            </div>
-+
-+            <div class="form-group" style="grid-column: 1 / -1;">
-+              <label>Internal Notes</label>
-+              <textarea class="login-input" id="modal-billing-notes" rows="2" placeholder="Private team notes..."></textarea>
-+            </div>
-+
-+          </div>
-+        </div>
-+        <div class="modal-footer">
-+          <button class="btn btn-secondary" id="btn-cancel-billing">Cancel</button>
-+          <button class="btn btn-primary" id="btn-save-billing">Save Record</button>
-+        </div>
 +      </div>
 +    </div>
 +  `;
 +}
 +
-+function loadTable() {
-+  const tbody = document.getElementById('billings-tbody');
-+  const searchInput = document.getElementById('billing-filter-search');
-+  const statusFilter = document.getElementById('billing-filter-status');
-+  const renewalFilter = document.getElementById('billing-filter-renewal');
-+  const ownerFilter = document.getElementById('billing-filter-owner');
++export function loadHygieneTable() {
++  const tbody = document.getElementById('hygiene-tbody');
++  const searchInput = document.getElementById('hygiene-filter-search');
++  const typeFilter = document.getElementById('hygiene-filter-type');
++  const entityFilter = document.getElementById('hygiene-filter-entity');
++  const severityFilter = document.getElementById('hygiene-filter-severity');
++  const ownerFilter = document.getElementById('hygiene-filter-owner');
 +
-+  if (!tbody || !searchInput || !statusFilter || !renewalFilter || !ownerFilter) return;
++  if (!tbody || !searchInput || !typeFilter || !entityFilter || !severityFilter || !ownerFilter) return;
 +
 +  const user = Auth.getCurrentUser();
 +  if (!user) return;
@@ -426,81 +585,66 @@ index 0000000..b0006b0
 +      const allUsers = Store.getUsers().filter(u => u.isActive);
 +      ownerOptions += allUsers.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
 +    }
++    ownerOptions += '<option value="unassigned">Unassigned</option>';
 +    ownerFilter.innerHTML = ownerOptions;
 +  }
 +
-+  const billings = Store.getBillingsForUser(user);
 +  const search = searchInput.value.toLowerCase();
-+  const statusVal = statusFilter.value;
-+  const renewalVal = renewalFilter.value;
++  const typeVal = typeFilter.value;
++  const entityVal = entityFilter.value;
++  const severityVal = severityFilter.value;
 +  const ownerVal = ownerFilter.value;
 +
-+  const filtered = billings.filter(b => {
-+    const matchSearch = String(b.title || '').toLowerCase().includes(search) ||
-+                        String(b.companyName || '').toLowerCase().includes(search) ||
-+                        String(b.invoiceNumber || '').toLowerCase().includes(search);
-+    const matchStatus = statusVal === 'all' || b.paymentStatus === statusVal;
-+    const matchRenewal = renewalVal === 'all' || b.renewalStatus === renewalVal;
-+    const matchOwner = ownerVal === 'all' || b.assignedTo === ownerVal;
-+    return matchSearch && matchStatus && matchRenewal && matchOwner;
++  const filtered = currentIssues.filter(i => {
++    const matchSearch = String(i.message || '').toLowerCase().includes(search) || String(i.entityTitle || '').toLowerCase().includes(search);
++    const matchType = typeVal === 'all' || i.type === typeVal;
++    const matchEntity = entityVal === 'all' || i.entityType === entityVal;
++    const matchSeverity = severityVal === 'all' || i.severity === severityVal;
++
++    let matchOwner = false;
++    if (ownerVal === 'all') matchOwner = true;
++    else if (ownerVal === 'unassigned') matchOwner = !i.assignedTo;
++    else matchOwner = i.assignedTo === ownerVal;
++
++    return matchSearch && matchType && matchEntity && matchSeverity && matchOwner;
 +  });
 +
 +  if (filtered.length === 0) {
-+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:2rem; color:var(--color-muted);">No billing records found.</td></tr>';
++    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:2rem; color:var(--color-muted);">No hygiene issues found matching your filters. Great job! ≡ƒÄë</td></tr>';
 +    return;
 +  }
 +
-+  tbody.innerHTML = filtered.map(b => {
-+    const deal = b.dealId ? Store.getDealById(b.dealId) : null;
-+    const prop = b.proposalId ? Store.getProposalById(b.proposalId) : null;
-+    const handoff = b.handoffId ? Store.getHandoffById(b.handoffId) : null;
-+    const owner = Store.getUserById(b.assignedTo);
-+
-+    const pLabel = PAYMENT_STATUSES.find(s => s.key === b.paymentStatus)?.label || b.paymentStatus;
-+    const rLabel = RENEWAL_STATUSES.find(s => s.key === b.renewalStatus)?.label || b.renewalStatus;
-+
-+    let statusBadgeClass = 'badge-neutral';
-+    if (b.paymentStatus === 'paid') statusBadgeClass = 'badge-success';
-+    else if (b.paymentStatus === 'overdue' || b.paymentStatus === 'cancelled') statusBadgeClass = 'badge-error';
-+    else if (b.paymentStatus === 'partially_paid') statusBadgeClass = 'badge-primary';
++  tbody.innerHTML = filtered.map(i => {
++    const owner = i.assignedTo ? Store.getUserById(i.assignedTo) : null;
++    let sevColor = 'var(--color-muted)';
++    if (i.severity === 'high') sevColor = 'var(--color-error)';
++    if (i.severity === 'medium') sevColor = 'var(--color-stage-invoice)';
 +
 +    const actions = [];
-+    if (Store.canUserEditBilling(b, user)) {
-+      actions.push(`<button class="btn btn-sm btn-secondary edit-billing" data-id="${b.id}">Edit</button>`);
-+    }
-+    if (user.role === 'manager') {
-+      actions.push(`<button class="btn btn-sm btn-secondary delete-billing" style="color:var(--color-error); border-color:var(--color-error);" data-id="${b.id}">Delete</button>`);
++    actions.push(`<button class="btn btn-sm btn-secondary act-view" data-type="${i.entityType}" data-id="${i.entityId}">View</button>`);
++    actions.push(`<button class="btn btn-sm btn-secondary act-hide" data-issue-id="${i.id}">Mark Reviewed</button>`);
++
++    if (i.fixAction === 'fix_owner') {
++      actions.push(`<button class="btn btn-sm btn-primary act-fix-owner" data-type="${i.entityType}" data-id="${i.entityId}">Assign Owner</button>`);
++    } else if (i.fixAction === 'create_followup') {
++      actions.push(`<button class="btn btn-sm btn-primary act-followup" data-type="${i.entityType}" data-id="${i.entityId}" data-title="${encodeURIComponent(i.entityTitle)}" data-owner="${i.assignedTo}">Follow-up</button>`);
++    } else if (i.fixAction === 'delete_dup' && user.role === 'manager') {
++      actions.push(`<button class="btn btn-sm btn-secondary act-delete-dup" style="color:var(--color-error); border-color:var(--color-error);" data-type="${i.entityType}" data-id="${i.entityId}">Delete</button>`);
 +    }
 +
 +    return `
 +      <tr style="border-bottom:1px solid var(--color-hairline-soft);">
 +        <td style="padding:1rem;">
-+          <div style="font-weight:600;">${b.title}</div>
-+          <div style="font-size:0.8rem; color:var(--color-muted);">${b.companyName}</div>
-+          ${b.invoiceNumber ? `<div style="font-size:0.8rem;">Inv: ${b.invoiceNumber}</div>` : ''}
++          <div style="font-weight:600;">${i.message}</div>
++          <div style="font-size:0.8rem; color:var(--color-muted);">${i.entityTitle}</div>
 +        </td>
++        <td style="padding:1rem; text-transform:capitalize;">${i.entityType}</td>
 +        <td style="padding:1rem;">
-+          ${deal ? `<div style="font-size:0.85rem;">Deal: <a href="#/deals/${deal.id}">${deal.title}</a></div>` : ''}
-+          ${prop ? `<div style="font-size:0.8rem; color:var(--color-muted);">Prop: ${prop.title}</div>` : ''}
-+          ${handoff ? `<div style="font-size:0.8rem; color:var(--color-muted);">Handoff: ${handoff.title}</div>` : ''}
++          <span class="badge" style="background:${sevColor}; color:white;">${i.severity}</span>
 +        </td>
-+        <td style="padding:1rem; font-size:0.85rem; color:var(--color-muted);">
-+          <div>Inv: ${b.invoiceDate ? formatDate(b.invoiceDate) : '-'}</div>
-+          <div>Due: ${b.dueDate ? formatDate(b.dueDate) : '-'}</div>
-+        </td>
-+        <td style="padding:1rem;">
-+          <span class="badge ${statusBadgeClass}">${pLabel}</span>
-+        </td>
-+        <td style="padding:1rem; font-size:0.85rem;">
-+          <div>Total: ${formatCurrency(b.grandTotal, b.currency)}</div>
-+          <div style="color:var(--color-success);">Paid: ${formatCurrency(b.amountPaid, b.currency)}</div>
-+          <div style="color:var(--color-error);">Due: ${formatCurrency(b.balanceDue, b.currency)}</div>
-+        </td>
-+        <td style="padding:1rem; font-size:0.85rem;">
-+          <div><span class="badge badge-neutral">${rLabel}</span></div>
-+          ${b.renewalDate ? `<div style="color:var(--color-muted); margin-top:4px;">Date: ${formatDate(b.renewalDate)}</div>` : ''}
-+        </td>
-+        <td style="padding:1rem;">${owner ? owner.name : 'Unassigned'}</td>
++        <td style="padding:1rem;">${owner ? owner.name : '<span style="color:var(--color-error);">Unassigned</span>'}</td>
++        <td style="padding:1rem;">${i.dateLabel}</td>
++        <td style="padding:1rem;">${i.suggestedFix}</td>
 +        <td style="padding:1rem; text-align:right;">
 +          <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
 +            ${actions.join('')}
@@ -511,441 +655,179 @@ index 0000000..b0006b0
 +  }).join('');
 +}
 +
-+function updateBalanceUI() {
-+  const grandTotal = Number(document.getElementById('modal-billing-grand-total').value) || 0;
-+  const amountPaid = Number(document.getElementById('modal-billing-amount-paid').value) || 0;
-+  const balanceInput = document.getElementById('modal-billing-balance-due');
-+  balanceInput.value = Math.max(0, grandTotal - amountPaid).toFixed(2);
++function handleRouteAction(type, id) {
++  const map = {
++    'lead': '#/leads',
++    'deal': `#/deals/${id}`,
++    'activity': '#/activities',
++    'requirement': '#/requirements',
++    'proposal': '#/proposals',
++    'handoff': '#/handoffs',
++    'billing': '#/billing',
++    'contact': '#/contacts'
++  };
++  import('../router.js').then(m => m.Router.navigate(map[type] || '#/dashboard'));
 +}
 +
-+function openModal(id = null, defaultData = null) {
-+  const modal = document.getElementById('billing-modal');
-+  if (!modal) return;
-+  const user = Auth.getCurrentUser();
-+  if (!user) return;
-+  currentBillingId = id;
-+
-+  document.getElementById('modal-billing-heading').innerText = id ? 'Edit Billing Record' : 'Create Billing Record';
-+
-+  const deals = Store.getDealsForUser(user).filter(d => d.status === 'closed_won');
-+  const props = Store.getProposalsForUser(user).filter(p => p.status === 'accepted');
-+  const handoffs = Store.getHandoffsForUser(user).filter(h => h.deliveryStatus === 'handed_over' || h.deliveryStatus === 'in_delivery' || h.deliveryStatus === 'completed');
-+  const contacts = Store.getContacts();
-+
-+  document.getElementById('modal-billing-deal').innerHTML = '<option value="">-- Select Deal --</option>' + deals.map(d => `<option value="${d.id}">${d.title}</option>`).join('');
-+  document.getElementById('modal-billing-proposal').innerHTML = '<option value="">-- Select Proposal --</option>' + props.map(p => `<option value="${p.id}">${p.title}</option>`).join('');
-+  document.getElementById('modal-billing-handoff').innerHTML = '<option value="">-- Select Handoff --</option>' + handoffs.map(h => `<option value="${h.id}">${h.title}</option>`).join('');
-+  document.getElementById('modal-billing-contact').innerHTML = '<option value="">-- Select Contact --</option>' + contacts.map(c => `<option value="${c.id}">${c.name} (${c.company})</option>`).join('');
-+
-+  const assignedSelect = document.getElementById('modal-billing-assigned');
-+  if (user.role === 'employee') {
-+    assignedSelect.innerHTML = `<option value="${user.id}">${user.name} (You)</option>`;
-+    assignedSelect.disabled = true;
-+  } else if (user.role === 'team_lead') {
-+    const teamUsers = Store.getUsersByTeam(user.teamId);
-+    teamUsers.push(user);
-+    const uniqueUsers = Array.from(new Map(teamUsers.map(u => [u.id, u])).values());
-+    assignedSelect.innerHTML = uniqueUsers.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
-+    assignedSelect.disabled = false;
-+  } else {
-+    const allUsers = Store.getUsers().filter(u => u.isActive);
-+    assignedSelect.innerHTML = allUsers.map(u => `<option value="${u.id}">${u.name} (${Store.getTeamById(u.teamId)?.name || 'No Team'})</option>`).join('');
-+    assignedSelect.disabled = false;
-+  }
-+
-+  if (id) {
-+    const b = Store.getBillingById(id);
-+    if (!b || !Store.canUserEditBilling(b, user)) {
-+      Toast.error('Error', 'Cannot edit this billing record.');
-+      return;
-+    }
-+    document.getElementById('modal-billing-title').value = b.title || '';
-+    document.getElementById('modal-billing-deal').value = b.dealId || '';
-+    document.getElementById('modal-billing-proposal').value = b.proposalId || '';
-+    document.getElementById('modal-billing-handoff').value = b.handoffId || '';
-+    document.getElementById('modal-billing-company').value = b.companyName || '';
-+    document.getElementById('modal-billing-contact').value = b.clientContactId || '';
-+    document.getElementById('modal-billing-invoice-number').value = b.invoiceNumber || '';
-+    document.getElementById('modal-billing-currency').value = b.currency || 'INR';
-+    document.getElementById('modal-billing-invoice-date').value = b.invoiceDate ? b.invoiceDate.split('T')[0] : '';
-+    document.getElementById('modal-billing-due-date').value = b.dueDate ? b.dueDate.split('T')[0] : '';
-+    document.getElementById('modal-billing-subtotal').value = b.subtotal || 0;
-+    document.getElementById('modal-billing-discount').value = b.discountTotal || 0;
-+    document.getElementById('modal-billing-tax').value = b.taxTotal || 0;
-+    document.getElementById('modal-billing-grand-total').value = b.grandTotal || 0;
-+    document.getElementById('modal-billing-amount-paid').value = b.amountPaid || 0;
-+    document.getElementById('modal-billing-payment-mode').value = b.paymentMode || 'not_recorded';
-+    document.getElementById('modal-billing-payment-status').value = b.paymentStatus || 'draft';
-+    document.getElementById('modal-billing-renewal-status').value = b.renewalStatus || 'none';
-+    document.getElementById('modal-billing-renewal-date').value = b.renewalDate ? b.renewalDate.split('T')[0] : '';
-+    document.getElementById('modal-billing-renewal-value').value = b.renewalValue || '';
-+    document.getElementById('modal-billing-assigned').value = b.assignedTo || user.id;
-+    document.getElementById('modal-billing-notes').value = b.notes || '';
-+
-+    updateBalanceUI();
-+  } else {
-+    document.getElementById('modal-billing-title').value = '';
-+    document.getElementById('modal-billing-deal').value = defaultData?.dealId || '';
-+    document.getElementById('modal-billing-proposal').value = defaultData?.proposalId || '';
-+    document.getElementById('modal-billing-handoff').value = defaultData?.handoffId || '';
-+    document.getElementById('modal-billing-company').value = defaultData?.companyName || '';
-+    document.getElementById('modal-billing-contact').value = defaultData?.contactId || '';
-+    document.getElementById('modal-billing-invoice-number').value = '';
-+    document.getElementById('modal-billing-currency').value = 'INR';
-+    document.getElementById('modal-billing-invoice-date').value = '';
-+    document.getElementById('modal-billing-due-date').value = '';
-+    document.getElementById('modal-billing-subtotal').value = 0;
-+    document.getElementById('modal-billing-discount').value = 0;
-+    document.getElementById('modal-billing-tax').value = 0;
-+    document.getElementById('modal-billing-grand-total').value = 0;
-+    document.getElementById('modal-billing-amount-paid').value = 0;
-+    document.getElementById('modal-billing-payment-mode').value = 'not_recorded';
-+    document.getElementById('modal-billing-payment-status').value = 'draft';
-+    document.getElementById('modal-billing-renewal-status').value = 'none';
-+    document.getElementById('modal-billing-renewal-date').value = '';
-+    document.getElementById('modal-billing-renewal-value').value = '';
-+    document.getElementById('modal-billing-assigned').value = user.id;
-+    document.getElementById('modal-billing-notes').value = '';
-+
-+    updateBalanceUI();
-+
-+    if (defaultData?.dealId || defaultData?.proposalId || defaultData?.handoffId) {
-+       document.getElementById('btn-autofill-billing').click();
-+    }
-+  }
-+
-+  modal.style.display = 'flex';
-+}
-+
-+function closeModal() {
-+  const modal = document.getElementById('billing-modal');
-+  if (modal) modal.style.display = 'none';
-+  currentBillingId = null;
-+}
-+
-+function handleSaveBilling() {
++function handleAssignOwner(entityType, entityId) {
 +  const user = Auth.getCurrentUser();
 +  if (!user) return;
 +
-+  const title = document.getElementById('modal-billing-title').value.trim();
-+  const companyName = document.getElementById('modal-billing-company').value.trim();
-+  const invoiceNumber = document.getElementById('modal-billing-invoice-number').value.trim();
-+  const currency = document.getElementById('modal-billing-currency').value;
-+  let paymentStatus = document.getElementById('modal-billing-payment-status').value;
-+  const paymentMode = document.getElementById('modal-billing-payment-mode').value;
-+  const renewalStatus = document.getElementById('modal-billing-renewal-status').value;
++  const validUsers = user.role === 'employee' ? [user] :
++                     user.role === 'team_lead' ? Store.getUsersByTeam(user.teamId).concat([user]) :
++                     Store.getUsers().filter(u => u.isActive);
 +
-+  if (!title || !companyName) {
-+    return Toast.error('Validation Error', 'Title and Company Name are required.');
-+  }
++  const modalHtml = `
++    <div id="hygiene-owner-modal" class="modal-overlay">
++      <div class="modal" style="max-width:400px; width:90%;">
++        <div class="modal-header">
++          <h2>Assign Owner</h2>
++          <button class="modal-close" id="btn-close-owner">&times;</button>
++        </div>
++        <div class="modal-body">
++          <div class="form-group">
++            <label>Select User</label>
++            <select class="login-input" id="hygiene-new-owner">
++              ${validUsers.map(u => `<option value="${u.id}">${u.name}</option>`).join('')}
++            </select>
++          </div>
++        </div>
++        <div class="modal-footer">
++          <button class="btn btn-secondary" id="btn-cancel-owner">Cancel</button>
++          <button class="btn btn-primary" id="btn-save-owner">Save</button>
++        </div>
++      </div>
++    </div>
++  `;
++  document.body.insertAdjacentHTML('beforeend', modalHtml);
 +
-+  if (!PAYMENT_STATUSES.some(s => s.key === paymentStatus)) return Toast.error('Error', 'Invalid payment status.');
-+  if (!PAYMENT_MODES.some(m => m.key === paymentMode)) return Toast.error('Error', 'Invalid payment mode.');
-+  if (!RENEWAL_STATUSES.some(s => s.key === renewalStatus)) return Toast.error('Error', 'Invalid renewal status.');
++  const removeModal = () => document.getElementById('hygiene-owner-modal')?.remove();
 +
-+  let dealId = document.getElementById('modal-billing-deal').value || null;
-+  let proposalId = document.getElementById('modal-billing-proposal').value || null;
-+  const handoffId = document.getElementById('modal-billing-handoff').value || null;
-+  const contactId = document.getElementById('modal-billing-contact').value || null;
++  document.getElementById('btn-close-owner').addEventListener('click', removeModal);
++  document.getElementById('btn-cancel-owner').addEventListener('click', removeModal);
 +
-+  if (contactId && !Store.getContactById(contactId)) {
-+    return Toast.error('Validation Error', 'Selected contact does not exist.');
-+  }
++  document.getElementById('btn-save-owner').onclick = () => {
++    const newOwnerId = document.getElementById('hygiene-new-owner').value;
++    if (!newOwnerId) return;
 +
-+  let dealTeamId = null;
-+  let requirementTeamId = null;
-+  let handoffTeamId = null;
++    const validTypes = ['lead', 'deal', 'requirement', 'proposal', 'handoff', 'billing', 'activity'];
++    if (!validTypes.includes(entityType)) return Toast.error('Error', 'Invalid entity type.');
 +
-+  // Cascade relations securely
-+  if (handoffId) {
-+    const h = Store.getHandoffById(handoffId);
-+    if (!h) return Toast.error('Error', 'Linked Handoff does not exist.');
-+    if (!Store.canUserViewHandoff(h, user)) return Toast.error('Error', 'Permission denied for linked Handoff.');
-+    if (h.deliveryStatus === 'cancelled' || h.deliveryStatus === 'blocked') {
-+      if (user.role !== 'manager') return Toast.error('Error', 'Cannot create billing from blocked/cancelled handoff.');
-+      if (!confirm('Handoff is blocked/cancelled. Create draft billing anyway?')) return;
-+      paymentStatus = 'draft';
++    const targetUser = Store.getUserById(newOwnerId);
++    if (!targetUser || !targetUser.isActive) return Toast.error('Error', 'Selected user does not exist or is inactive.');
++
++    if (user.role === 'employee' && newOwnerId !== user.id) {
++      return Toast.error('Error', 'Employees can only assign themselves.');
 +    }
-+    if (!dealId && h.dealId) dealId = h.dealId;
-+    if (!proposalId && h.proposalId) proposalId = h.proposalId;
-+    handoffTeamId = h.teamId;
-+  }
-+
-+  if (proposalId) {
-+    const p = Store.getProposalById(proposalId);
-+    if (!p) return Toast.error('Error', 'Linked Proposal does not exist.');
-+    if (!Store.canUserViewProposal(p, user)) return Toast.error('Error', 'Permission denied for linked Proposal.');
-+    if (p.status !== 'accepted') {
-+       if (user.role !== 'manager') return Toast.error('Error', 'Proposal must be Accepted to create billing.');
-+       if (!confirm('Proposal is not accepted. Create draft billing anyway?')) return;
-+       paymentStatus = 'draft';
++    if (user.role === 'team_lead' && targetUser.teamId !== user.teamId && targetUser.id !== user.id) {
++      return Toast.error('Error', 'Team Leads can only assign same-team users.');
 +    }
-+    if (!dealId && p.dealId) dealId = p.dealId;
-+    if (p.requirementId) {
-+      const r = Store.getRequirementById(p.requirementId);
-+      if (!r) return Toast.error('Error', 'Underlying Requirement does not exist.');
-+      if (!Store.canUserViewRequirement(r, user)) return Toast.error('Error', 'Permission denied for underlying Requirement.');
-+      requirementTeamId = r.teamId;
-+    }
-+  }
 +
-+  if (dealId) {
-+    const d = Store.getDealById(dealId);
-+    if (!d) return Toast.error('Error', 'Linked Deal does not exist.');
-+    if (!Auth.canViewRecord(d)) return Toast.error('Error', 'Permission denied for linked Deal.');
-+    if (d.status !== 'closed_won') {
-+       if (user.role !== 'manager') return Toast.error('Error', 'Deal must be Closed Won to create billing.');
-+       if (!confirm('Deal is not closed won. Create draft billing anyway?')) return;
-+       paymentStatus = 'draft';
-+    }
-+    dealTeamId = d.teamId;
-+  }
++    let success = false;
++    const Getters = {
++      lead: Store.getLeadById,
++      deal: Store.getDealById,
++      requirement: Store.getRequirementById,
++      proposal: Store.getProposalById,
++      handoff: Store.getHandoffById,
++      billing: Store.getBillingById,
++      activity: Store.getActivityById
++    };
++    const Updaters = {
++      lead: Store.updateLead,
++      deal: Store.updateDeal,
++      requirement: Store.updateRequirement,
++      proposal: Store.updateProposal,
++      handoff: Store.updateHandoff,
++      billing: Store.updateBilling,
++      activity: Store.updateActivity
++    };
 +
-+  // Duplicate Check
-+  if (!currentBillingId) {
-+    const allBillings = Store.getBillings();
-+    const dup = allBillings.find(b =>
-+      (handoffId && b.handoffId === handoffId) ||
-+      (proposalId && b.proposalId === proposalId) ||
-+      (dealId && b.dealId === dealId)
-+    );
-+    if (dup) {
-+      if (user.role !== 'manager') return Toast.error('Duplicate Error', 'An active billing record already exists for this pipeline link.');
-+      if (!confirm('A billing record exists for this pipeline link. Create duplicate?')) return;
-+    }
-+  }
++    const getFn = Getters[entityType];
++    const upFn = Updaters[entityType];
 +
-+  let assignedTo = document.getElementById('modal-billing-assigned').value;
-+  if (user.role === 'employee') {
-+    assignedTo = user.id;
-+  } else if (user.role === 'team_lead') {
-+    const target = Store.getUserById(assignedTo);
-+    if (!target || (target.teamId !== user.teamId && target.id !== user.id)) {
-+      return Toast.error('Error', 'Cannot assign outside your team.');
-+    }
-+  }
++    if (getFn && upFn) {
++      const rec = getFn(entityId);
++      if (rec) {
++        if (rec.assignedTo && rec.assignedTo !== newOwnerId) {
++          if (user.role !== 'manager') return Toast.error('Error', 'Only managers can reassign records that already have an owner.');
++          if (!confirm('This record is already assigned. Are you sure you want to reassign it?')) return;
++        }
 +
-+  const assignedUser = Store.getUserById(assignedTo);
-+  if (!assignedUser) return Toast.error('Error', 'Assigned user does not exist.');
++        let canEdit = false;
++        if (entityType === 'lead' || entityType === 'deal') canEdit = Auth.canEditRecord(rec);
++        else if (entityType === 'requirement') canEdit = Store.canUserEditRequirement(rec, user);
++        else if (entityType === 'proposal') canEdit = Store.canUserEditProposal(rec, user);
++        else if (entityType === 'handoff') canEdit = Store.canUserEditHandoff(rec, user);
++        else if (entityType === 'billing') canEdit = Store.canUserEditBilling(rec, user);
++        else if (entityType === 'activity') canEdit = Store.canUserEditActivity(rec, user);
 +
-+  // Derive Team ID
-+  let finalTeamId = assignedUser.teamId || null;
-+  if (!finalTeamId && handoffTeamId) finalTeamId = handoffTeamId;
-+  if (!finalTeamId && dealTeamId) finalTeamId = dealTeamId;
-+  if (!finalTeamId && requirementTeamId) finalTeamId = requirementTeamId;
-+  if (!finalTeamId) finalTeamId = user.teamId || null;
++        if (!canEdit) return Toast.error('Error', 'Permission denied.');
 +
-+  // Number parses
-+  const subtotalRaw = document.getElementById('modal-billing-subtotal').value;
-+  const discountTotalRaw = document.getElementById('modal-billing-discount').value;
-+  const taxTotalRaw = document.getElementById('modal-billing-tax').value;
-+  const grandTotalRaw = document.getElementById('modal-billing-grand-total').value;
-+  const amountPaidRaw = document.getElementById('modal-billing-amount-paid').value;
-+
-+  const subtotal = Number(subtotalRaw);
-+  const discountTotal = Number(discountTotalRaw);
-+  const taxTotal = Number(taxTotalRaw);
-+  const grandTotal = Number(grandTotalRaw);
-+  const amountPaid = Number(amountPaidRaw);
-+
-+  if (isNaN(subtotal) || subtotal < 0) return Toast.error('Validation Error', 'Invalid subtotal.');
-+  if (isNaN(discountTotal) || discountTotal < 0) return Toast.error('Validation Error', 'Invalid discount total.');
-+  if (isNaN(taxTotal) || taxTotal < 0) return Toast.error('Validation Error', 'Invalid tax total.');
-+  if (isNaN(grandTotal) || grandTotal < 0) return Toast.error('Validation Error', 'Invalid grand total.');
-+  if (isNaN(amountPaid) || amountPaid < 0) return Toast.error('Validation Error', 'Invalid amount paid.');
-+
-+  if (amountPaid > grandTotal) {
-+     if (user.role !== 'manager') return Toast.error('Error', 'Amount paid cannot exceed grand total.');
-+     if (!confirm('Amount paid exceeds grand total. Proceed?')) return;
-+  }
-+
-+  // Strictly calculate balance
-+  const balanceDue = Math.max(0, grandTotal - amountPaid);
-+
-+  // Date parses
-+  const invDateRaw = document.getElementById('modal-billing-invoice-date').value;
-+  const dueDateRaw = document.getElementById('modal-billing-due-date').value;
-+  const renDateRaw = document.getElementById('modal-billing-renewal-date').value;
-+  let invoiceDate = null, dueDate = null, renewalDate = null;
-+
-+  if (invDateRaw) {
-+    const d = new Date(invDateRaw);
-+    if (isNaN(d.getTime())) return Toast.error('Validation Error', 'Invalid invoice date.');
-+    invoiceDate = d.toISOString();
-+  }
-+  if (dueDateRaw) {
-+    const d = new Date(dueDateRaw);
-+    if (isNaN(d.getTime())) return Toast.error('Validation Error', 'Invalid due date.');
-+    dueDate = d.toISOString();
-+  }
-+  if (renDateRaw) {
-+    const d = new Date(renDateRaw);
-+    if (isNaN(d.getTime())) return Toast.error('Validation Error', 'Invalid renewal date.');
-+    renewalDate = d.toISOString();
-+  }
-+
-+  const renewalValueRaw = document.getElementById('modal-billing-renewal-value').value;
-+  let renewalValue = null;
-+  if (renewalValueRaw) {
-+    renewalValue = Number(renewalValueRaw);
-+    if (isNaN(renewalValue) || renewalValue < 0) return Toast.error('Validation Error', 'Invalid renewal value.');
-+  }
-+
-+  // Old Record Check
-+  const oldRecord = currentBillingId ? Store.getBillingById(currentBillingId) : null;
-+  if (currentBillingId) {
-+    if (!oldRecord) return Toast.error('Error', 'Billing record not found.');
-+    if (!Store.canUserEditBilling(oldRecord, user)) return Toast.error('Error', 'Cannot edit this billing record.');
-+  }
-+
-+  // Payment Status Auto-Calculations
-+  if (amountPaid <= 0 && (paymentStatus === 'paid' || paymentStatus === 'partially_paid')) {
-+    return Toast.error('Validation Error', 'Cannot mark paid or partially paid when amount paid is zero.');
-+  }
-+
-+  if (amountPaid >= grandTotal && grandTotal > 0 && paymentStatus !== 'paid') {
-+    if (user.role === 'manager') {
-+      if (!confirm('Amount covers total. Leave status as ' + paymentStatus + '?')) return;
-+    } else {
-+      paymentStatus = 'paid';
-+    }
-+  } else if (amountPaid > 0 && amountPaid < grandTotal && paymentStatus !== 'partially_paid') {
-+    if (user.role === 'manager') {
-+      if (!confirm('Amount is partial. Leave status as ' + paymentStatus + '?')) return;
-+    } else {
-+      paymentStatus = 'partially_paid';
-+    }
-+  }
-+
-+  if (dueDate && balanceDue > 0 && !['overdue', 'draft', 'cancelled'].includes(paymentStatus)) {
-+    const now = new Date();
-+    now.setHours(0,0,0,0);
-+    const dueObj = new Date(dueDate);
-+    if (dueObj < now) {
-+      if (user.role === 'manager') {
-+        if (!confirm('Invoice is overdue. Leave status as ' + paymentStatus + '?')) return;
-+      } else {
-+        paymentStatus = 'overdue';
++        const payload = { assignedTo: newOwnerId, teamId: targetUser.teamId || rec.teamId || user.teamId || null };
++        success = !!upFn(entityId, payload);
 +      }
 +    }
-+  }
 +
-+  let paidAt = oldRecord ? oldRecord.paidAt : null;
-+  if (paymentStatus === 'paid' && (!oldRecord || oldRecord.paymentStatus !== 'paid')) {
-+    paidAt = new Date().toISOString();
-+  } else if (paymentStatus !== 'paid') {
-+    paidAt = null; // Reset if unmarked
-+  }
-+
-+  let cancelledAt = oldRecord ? oldRecord.cancelledAt : null;
-+  if (paymentStatus === 'cancelled' && (!oldRecord || oldRecord.paymentStatus !== 'cancelled')) {
-+    cancelledAt = new Date().toISOString();
-+  } else if (paymentStatus !== 'cancelled') {
-+    cancelledAt = null; // Reset if unmarked
-+  }
-+
-+  const payload = {
-+    title,
-+    dealId,
-+    proposalId,
-+    handoffId,
-+    companyName,
-+    clientContactId: contactId,
-+    invoiceNumber,
-+    invoiceDate,
-+    dueDate,
-+    currency,
-+    subtotal,
-+    taxTotal,
-+    discountTotal,
-+    grandTotal,
-+    amountPaid,
-+    balanceDue,
-+    paymentStatus,
-+    paymentMode,
-+    renewalStatus,
-+    renewalDate,
-+    renewalValue,
-+    assignedTo,
-+    teamId: finalTeamId,
-+    notes: document.getElementById('modal-billing-notes').value.trim(),
-+    paidAt,
-+    cancelledAt
++    if (success) {
++      Toast.success('Updated', 'Owner assigned successfully.');
++      removeModal();
++      import('../router.js').then(m => m.Router.handleRoute());
++    } else {
++      Toast.error('Error', 'Failed to assign owner or permission denied.');
++    }
 +  };
-+
-+  let saved;
-+  if (currentBillingId) {
-+    saved = Store.updateBilling(currentBillingId, payload);
-+    if (!saved) return Toast.error('Error', 'Failed to update billing.');
-+    Toast.success('Updated', 'Billing record updated successfully.');
-+
-+    // Log updates
-+    if (oldRecord.paymentStatus !== saved.paymentStatus) {
-+      Store.createActivity({
-+         id: generateId(),
-+         title: `Invoice marked as ${saved.paymentStatus.replace('_', ' ')}`,
-+         type: 'stage_change',
-+         dealId: saved.dealId || null,
-+         assignedTo: user.id,
-+         teamId: user.teamId,
-+         createdBy: user.id,
-+         createdAt: new Date().toISOString()
-+      });
-+    }
-+    if (oldRecord.renewalStatus !== saved.renewalStatus) {
-+      Store.createActivity({
-+         id: generateId(),
-+         title: `Renewal status changed to ${saved.renewalStatus.replace('_', ' ')}`,
-+         type: 'note',
-+         dealId: saved.dealId || null,
-+         assignedTo: user.id,
-+         teamId: user.teamId,
-+         createdBy: user.id,
-+         createdAt: new Date().toISOString()
-+      });
-+    }
-+    if (oldRecord.assignedTo !== saved.assignedTo) {
-+      Store.createActivity({
-+         id: generateId(),
-+         title: `Billing reassigned to ${assignedUser.name}`,
-+         type: 'note',
-+         dealId: saved.dealId || null,
-+         assignedTo: user.id,
-+         teamId: user.teamId,
-+         createdBy: user.id,
-+         createdAt: new Date().toISOString()
-+      });
-+    }
-+  } else {
-+    payload.id = generateId();
-+    payload.createdBy = user.id;
-+    payload.createdAt = new Date().toISOString();
-+    payload.updatedAt = payload.createdAt;
-+
-+    saved = Store.createBilling(payload);
-+    if (!saved) return Toast.error('Error', 'Failed to create billing.');
-+    Toast.success('Created', 'Billing record created successfully.');
-+
-+    Store.createActivity({
-+       id: generateId(),
-+       title: `Billing Record Created`,
-+       type: 'stage_change',
-+       notes: `Invoice tracked for ${saved.companyName}`,
-+       dealId: saved.dealId || null,
-+       assignedTo: user.id,
-+       teamId: user.teamId,
-+       createdBy: user.id,
-+       createdAt: new Date().toISOString()
-+    });
-+  }
-+
-+  closeModal();
-+  import('../router.js').then(m => m.Router.handleRoute());
 +}
 +
-+let eventsBound = false;
++function handleDeleteDuplicate(entityType, entityId) {
++  const user = Auth.getCurrentUser();
++  if (!user || user.role !== 'manager') return Toast.error('Access Denied', 'Only managers can delete records.');
 +
-+export function bindBillingEvents() {
++  if (!confirm('Are you sure you want to delete this duplicate candidate? This cannot be undone.')) return;
++
++  if (entityType === 'contact') {
++    const c = Store.getContactById(entityId);
++    if (!c) return Toast.error('Error', 'Contact not found.');
++
++    const deals = Store.getDeals().some(d => d.contactId === entityId || d.clientContactId === entityId);
++    const reqs = Store.getRequirements().some(r => r.contactId === entityId);
++    const props = Store.getProposals().some(p => p.contactId === entityId);
++    const handoffs = Store.getHandoffs().some(h => h.clientContactId === entityId);
++    const billings = Store.getBillings().some(b => b.clientContactId === entityId);
++    const acts = Store.getActivities().some(a => a.contactId === entityId);
++
++    if (deals || reqs || props || handoffs || billings || acts) {
++      return Toast.error('Error', 'Cannot delete contact because it is linked to other records.');
++    }
++
++    if (Store.deleteContact(entityId)) {
++      Toast.success('Deleted', 'Duplicate contact removed.');
++      import('../router.js').then(m => m.Router.handleRoute());
++    } else {
++      Toast.error('Error', 'Failed to delete contact.');
++    }
++  } else if (entityType === 'lead') {
++    const l = Store.getLeadById(entityId);
++    if (!l) return Toast.error('Error', 'Lead not found.');
++
++    const deals = Store.getDeals().some(d => d.leadId === entityId);
++    const acts = Store.getActivities().some(a => a.leadId === entityId);
++    const reqs = Store.getRequirements().some(r => r.leadId === entityId);
++
++    if (deals || acts || reqs) {
++      return Toast.error('Error', 'Cannot delete lead because it is linked to other records.');
++    }
++
++    if (Store.deleteLead(entityId)) {
++      Toast.success('Deleted', 'Duplicate lead removed.');
++      import('../router.js').then(m => m.Router.handleRoute());
++    } else {
++      Toast.error('Error', 'Failed to delete lead.');
++    }
++  }
++}
++
++export function bindHygieneEvents() {
 +  if (eventsBound) return;
 +  eventsBound = true;
 +
@@ -953,470 +835,148 @@ index 0000000..b0006b0
 +  if (!content) return;
 +
 +  content.addEventListener('click', e => {
-+    if (e.target.closest('#btn-new-billing')) openModal();
-+    if (e.target.closest('#btn-close-billing-modal') || e.target.closest('#btn-cancel-billing')) closeModal();
-+    if (e.target.closest('#btn-save-billing')) handleSaveBilling();
++    if (e.target.closest('#btn-refresh-hygiene')) {
++      import('../router.js').then(m => m.Router.handleRoute());
++    }
 +
-+    const editBtn = e.target.closest('.edit-billing');
-+    if (editBtn) openModal(editBtn.getAttribute('data-id'));
++    const btnHide = e.target.closest('.act-hide');
++    if (btnHide) {
++      addHiddenId(btnHide.getAttribute('data-issue-id'));
++      import('../router.js').then(m => m.Router.handleRoute());
++    }
 +
-+    const deleteBtn = e.target.closest('.delete-billing');
-+    if (deleteBtn) {
++    const btnView = e.target.closest('.act-view');
++    if (btnView) {
++      handleRouteAction(btnView.getAttribute('data-type'), btnView.getAttribute('data-id'));
++    }
++
++    const btnOwner = e.target.closest('.act-fix-owner');
++    if (btnOwner) {
++      handleAssignOwner(btnOwner.getAttribute('data-type'), btnOwner.getAttribute('data-id'));
++    }
++
++    const btnDel = e.target.closest('.act-delete-dup');
++    if (btnDel) {
++      handleDeleteDuplicate(btnDel.getAttribute('data-type'), btnDel.getAttribute('data-id'));
++    }
++
++    const btnFollow = e.target.closest('.act-followup');
++    if (btnFollow) {
++      const type = btnFollow.getAttribute('data-type');
++      const id = btnFollow.getAttribute('data-id');
++      const title = decodeURIComponent(btnFollow.getAttribute('data-title'));
++      const owner = btnFollow.getAttribute('data-owner');
++
 +      const user = Auth.getCurrentUser();
-+      if (user?.role !== 'manager') {
-+        Toast.error('Access Denied', 'Only managers can delete billing records.');
-+        return;
-+      }
-+      const id = deleteBtn.getAttribute('data-id');
-+      const b = Store.getBillingById(id);
-+      if (!b) return Toast.error('Error', 'Billing record not found.');
++      let canEditSource = false;
++      const Getters = {
++        lead: Store.getLeadById,
++        deal: Store.getDealById,
++        contact: Store.getContactById,
++        requirement: Store.getRequirementById,
++        proposal: Store.getProposalById,
++        handoff: Store.getHandoffById,
++        billing: Store.getBillingById
++      };
++      const rec = Getters[type] ? Getters[type](id) : null;
++      if (!rec) return Toast.error('Error', 'Source record not found.');
 +
-+      if (confirm('Are you sure you want to delete this billing record?')) {
-+        if (Store.deleteBilling(id)) {
-+          Toast.success('Deleted', 'Billing record deleted.');
-+          import('../router.js').then(m => m.Router.handleRoute());
++      if (type === 'contact') canEditSource = true;
++      else if (type === 'lead' || type === 'deal') canEditSource = Auth.canEditRecord(rec);
++      else if (type === 'requirement') canEditSource = Store.canUserEditRequirement(rec, user);
++      else if (type === 'proposal') canEditSource = Store.canUserEditProposal(rec, user);
++      else if (type === 'handoff') canEditSource = Store.canUserEditHandoff(rec, user);
++      else if (type === 'billing') canEditSource = Store.canUserEditBilling(rec, user);
++
++      if (!canEditSource) return Toast.error('Error', 'Permission denied to create follow-up for this record.');
++
++      if (['deal', 'lead', 'contact'].includes(type)) {
++        import('./activities.js').then(m => {
++          m.renderActivityModal(null, { linkedType: type, linkedId: id });
++        });
++      } else {
++        let dealId = null;
++        if (rec && rec.dealId) {
++          const d = Store.getDealById(rec.dealId);
++          if (d && Auth.canEditRecord(d)) dealId = rec.dealId;
++        }
++
++        if (dealId) {
++          import('./activities.js').then(m => {
++            m.renderActivityModal(null, { linkedType: 'deal', linkedId: dealId });
++          });
 +        } else {
-+          Toast.error('Error', 'Failed to delete record.');
-+        }
-+      }
-+    }
-+
-+    if (e.target.id === 'btn-autofill-billing') {
-+      const dealId = document.getElementById('modal-billing-deal').value;
-+      const propId = document.getElementById('modal-billing-proposal').value;
-+      const handoffId = document.getElementById('modal-billing-handoff').value;
-+
-+      let sourceContactId = null;
-+      let sourceCompany = '';
-+      let sourceSubtotal = 0;
-+      let sourceDiscount = 0;
-+      let sourceTax = 0;
-+      let sourceGrand = 0;
-+
-+      // priority order: Proposal -> Handoff -> Deal
-+      if (propId) {
-+        const p = Store.getProposalById(propId);
-+        if (p) {
-+          sourceSubtotal = p.subtotal;
-+          sourceDiscount = p.discountTotal;
-+          sourceTax = p.taxTotal;
-+          sourceGrand = p.grandTotal;
-+          if (p.dealId && !dealId) document.getElementById('modal-billing-deal').value = p.dealId;
-+        }
-+      }
-+
-+      if (handoffId) {
-+        const h = Store.getHandoffById(handoffId);
-+        if (h) {
-+          if (h.clientContactId) sourceContactId = h.clientContactId;
-+          if (h.companyName) sourceCompany = h.companyName;
-+          if (h.dealId && !dealId) document.getElementById('modal-billing-deal').value = h.dealId;
-+          if (h.proposalId && !propId) document.getElementById('modal-billing-proposal').value = h.proposalId;
-+        }
-+      }
-+
-+      // Read current dealId again in case it was cascaded
-+      const activeDealId = document.getElementById('modal-billing-deal').value;
-+      if (activeDealId) {
-+        const d = Store.getDealById(activeDealId);
-+        if (d) {
-+          if (!sourceContactId && d.contactId) sourceContactId = d.contactId;
-+          if (!sourceCompany && d.leadId) {
-+            const l = Store.getLeadById(d.leadId);
-+            if (l) sourceCompany = l.company;
++          let targetOwner = user.id;
++          let targetTeamId = user.teamId;
++          if (owner && owner !== 'null' && owner !== 'undefined' && owner !== '') {
++            const u = Store.getUserById(owner);
++            if (u && u.isActive) {
++              targetOwner = u.id;
++              targetTeamId = u.teamId;
++            }
 +          }
-+          if (sourceGrand === 0 && !propId) {
-+             sourceGrand = d.value;
-+             sourceSubtotal = d.value;
-+          }
++
++          const due = new Date();
++          due.setDate(due.getDate() + 1);
++          const nowIso = new Date().toISOString();
++
++          const payload = {
++            id: 'act_' + Date.now(),
++            title: `Follow up on ${type}: ${title}`,
++            content: `Follow up on ${type}: ${title}`,
++            type: 'follow_up',
++            status: 'open',
++            linkedType: 'none',
++            linkedId: null,
++            sourceEntityType: type,
++            sourceEntityId: id,
++            assignedTo: targetOwner,
++            teamId: targetTeamId,
++            dueAt: due.toISOString(),
++            createdBy: user.id,
++            createdAt: nowIso,
++            updatedAt: nowIso
++          };
++          Store.createActivity(payload);
++          Toast.success('Created', 'Follow-up activity created.');
++          import('../router.js').then(m => m.Router.handleRoute());
 +        }
 +      }
-+
-+      if (sourceCompany) document.getElementById('modal-billing-company').value = sourceCompany;
-+      if (sourceContactId) document.getElementById('modal-billing-contact').value = sourceContactId;
-+
-+      document.getElementById('modal-billing-subtotal').value = sourceSubtotal || 0;
-+      document.getElementById('modal-billing-discount').value = sourceDiscount || 0;
-+      document.getElementById('modal-billing-tax').value = sourceTax || 0;
-+      document.getElementById('modal-billing-grand-total').value = sourceGrand || 0;
-+
-+      updateBalanceUI();
-+      Toast.success('Auto-Filled', 'Data populated from selected links.');
-+    }
-+  });
-+
-+  content.addEventListener('input', e => {
-+    if (e.target.id === 'billing-filter-search') loadTable();
-+    if (['modal-billing-grand-total', 'modal-billing-amount-paid'].includes(e.target.id)) {
-+      updateBalanceUI();
 +    }
 +  });
 +
 +  content.addEventListener('change', e => {
-+    if (['billing-filter-status', 'billing-filter-renewal', 'billing-filter-owner'].includes(e.target.id)) loadTable();
++    if (['hygiene-filter-search', 'hygiene-filter-type', 'hygiene-filter-entity', 'hygiene-filter-severity', 'hygiene-filter-owner'].includes(e.target.id)) {
++      loadHygieneTable();
++    }
++  });
++  content.addEventListener('keyup', e => {
++    if (e.target.id === 'hygiene-filter-search') loadHygieneTable();
 +  });
 +}
 +
-+export function initBillingPage() {
-+  loadTable();
-+  const pendingDealId = sessionStorage.getItem('pendingBillingDealId');
-+  if (pendingDealId) {
-+    sessionStorage.removeItem('pendingBillingDealId');
-+    openModal(null, { dealId: pendingDealId });
-+  }
++export function initHygienePage() {
++  loadHygieneTable();
 +}
-diff --git a/js/pages/deal-detail.js b/js/pages/deal-detail.js
-index 98292e1..6a428f5 100644
---- a/js/pages/deal-detail.js
-+++ b/js/pages/deal-detail.js
-@@ -149,6 +149,56 @@ export function renderDealDetail(params) {
-     </div>
-   `;
- 
-+  // Fetch Billings for this deal
-+  const billings = Store.getBillings().filter(b => b.dealId === deal.id && Store.canUserViewBilling(b, user));
-+  let billingHtml = '';
-+
-+  if (billings.length > 0) {
-+    const b = billings[0];
-+    const pLabel = b.paymentStatus.replace('_', ' ');
-+    const rLabel = b.renewalStatus.replace('_', ' ');
-+    let statusClass = 'badge-neutral';
-+    if (b.paymentStatus === 'paid') statusClass = 'badge-success';
-+    else if (b.paymentStatus === 'overdue' || b.paymentStatus === 'cancelled') statusClass = 'badge-error';
-+    else if (b.paymentStatus === 'partially_paid') statusClass = 'badge-primary';
-+
-+    billingHtml = `
-+      <div style="border:1px solid var(--color-hairline-soft); border-radius:4px; padding:12px; background:var(--color-surface-card);">
-+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-+          <div style="font-weight:600; font-size:1rem;">${b.title}</div>
-+          <span class="badge ${statusClass}">${pLabel}</span>
-+        </div>
-+        <div style="font-size:0.85rem; color:var(--color-muted); margin-bottom:8px;">
-+          Grand Total: ${formatCurrency(b.grandTotal, b.currency)} | Paid: <span style="color:var(--color-success);">${formatCurrency(b.amountPaid, b.currency)}</span> | Due: <span style="color:var(--color-error);">${formatCurrency(b.balanceDue, b.currency)}</span>
-+        </div>
-+        <div style="font-size:0.85rem; color:var(--color-muted); margin-bottom:12px;">
-+          Renewal Status: ${rLabel}
-+        </div>
-+        <a href="#/billing" class="btn btn-sm btn-secondary">Go to Billing</a>
-+      </div>
-+    `;
-+  } else if (deal.status === 'closed_won') {
-+    billingHtml = `
-+      <div style="border:1px dashed var(--color-hairline-soft); border-radius:4px; padding:1rem; text-align:center; background:var(--color-surface-soft);">
-+        <div style="margin-bottom:0.5rem; color:var(--color-muted);">No billing record created yet.</div>
-+        <button class="btn btn-sm btn-primary" data-action="create-billing-from-deal" data-deal-id="${deal.id}">Create Billing</button>
-+      </div>
-+    `;
-+  } else {
-+    billingHtml = `
-+      <div style="border:1px dashed var(--color-hairline-soft); border-radius:4px; padding:1rem; text-align:center; background:var(--color-surface-soft); color:var(--color-muted); font-size:0.85rem;">
-+        Deal must be Closed Won to create a billing record.
-+      </div>
-+    `;
-+  }
-+
-+  const billingSection = `
-+    <div class="dashboard-section" style="margin-top:1.5rem;">
-+      <h4 class="dashboard-section-title">Billing & Renewals</h4>
-+      ${billingHtml}
-+    </div>
-+  `;
-+
-   let handoffHtml = '';
-   if (handoffs.length > 0) {
-     const h = handoffs[0];
-@@ -210,6 +260,7 @@ export function renderDealDetail(params) {
- 
-       ${reqPropSection}
-       ${handoffSection}
-+      ${billingSection}
- 
-       <div class="dashboard-section">
-         <div class="dashboard-section-header" style="justify-content:space-between; align-items:center;">
-@@ -246,6 +297,14 @@ export function bindDealDetailEvents() {
-       import('../router.js').then(m => m.Router.navigate('#/handoffs'));
-     }
- 
-+    // Create Billing button
-+    const billingBtn = e.target.closest('[data-action="create-billing-from-deal"]');
-+    if (billingBtn) {
-+      const dealId = billingBtn.getAttribute('data-deal-id');
-+      sessionStorage.setItem('pendingBillingDealId', dealId);
-+      import('../router.js').then(m => m.Router.navigate('#/billing'));
-+    }
-+
-     // Override Stage button (Manager)
-     if (e.target.id === 'btn-override-stage') {
-       const dealId = e.target.dataset.dealId;
-diff --git a/js/pages/settings.js b/js/pages/settings.js
-index 7e924ba..3cf6986 100644
---- a/js/pages/settings.js
-+++ b/js/pages/settings.js
-@@ -22,7 +22,8 @@ function getDataSummary() {
-     activities: Store.getActivities().length,
-     requirements: Store.getRequirements().length,
-     proposals: Store.getProposals().length,
--    handoffs: Store.getHandoffs().length
-+    handoffs: Store.getHandoffs().length,
-+    billings: Store.getBillings().length
-   };
- }
- 
-@@ -114,7 +115,8 @@ function buildDataSummaryCard(user) {
-     { label: 'Activities', count: summary.activities, color: 'var(--color-stage-invoice)' },
-     { label: 'Requirements', count: summary.requirements, color: 'var(--color-primary)' },
-     { label: 'Proposals', count: summary.proposals, color: 'var(--color-success)' },
--    { label: 'Project Handoffs', count: summary.handoffs, color: 'var(--color-stage-invoice)' }
-+    { label: 'Project Handoffs', count: summary.handoffs, color: 'var(--color-stage-invoice)' },
-+    { label: 'Billing & Renewals', count: summary.billings, color: 'var(--color-stage-sales)' }
-   ];
- 
-   const itemsHtml = items.map(i => `
-@@ -390,7 +392,7 @@ function handleImportJson() {
- 
-     // Validate structure
-     const requiredKeys = ['users', 'teams', 'leads', 'contacts', 'deals', 'activities'];
--    const optionalArrayKeys = ['requirements', 'proposals', 'handoffs'];
-+    const optionalArrayKeys = ['requirements', 'proposals', 'handoffs', 'billings'];
-     for (const key of requiredKeys) {
-       if (!Array.isArray(payload[key])) {
-         Toast.error('Invalid Structure', `Missing or invalid "${key}" array in import file.`);
 diff --git a/js/router.js b/js/router.js
-index 15a7a06..df7ebd5 100644
+index df7ebd5..710a9d3 100644
 --- a/js/router.js
 +++ b/js/router.js
-@@ -18,6 +18,7 @@ const ROUTES = {
-   'requirements':{ pageId: 'requirements',title: 'Requirements' },
-   'proposals': { pageId: 'proposals', title: 'Proposals' },
-   'handoffs':  { pageId: 'handoffs',  title: 'Handoffs' },
-+  'billing':   { pageId: 'billing',   title: 'Billing' },
+@@ -21,7 +21,8 @@ const ROUTES = {
+   'billing':   { pageId: 'billing',   title: 'Billing' },
    'team':      { pageId: 'team',      title: 'Team' },
    'reports':   { pageId: 'reports',   title: 'Reports' },
-   'settings':  { pageId: 'settings',  title: 'Settings' }
-diff --git a/js/seed.js b/js/seed.js
-index 5928583..ad26d13 100644
---- a/js/seed.js
-+++ b/js/seed.js
-@@ -549,6 +549,106 @@ export function seedData() {
-     }
-   ];
+-  'settings':  { pageId: 'settings',  title: 'Settings' }
++  'settings':  { pageId: 'settings',  title: 'Settings' },
++  'hygiene':   { pageId: 'hygiene',   title: 'Hygiene' }
+ };
  
-+  // ΓöÇΓöÇ Billings ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-+  const billings = [
-+    {
-+      id: generateId(),
-+      title: 'Invoice for AWS Training',
-+      dealId: 'deal_01',
-+      proposalId: proposals[0].id,
-+      handoffId: handoffs[0].id,
-+      companyName: 'Infosys',
-+      clientContactId: contacts[0].id,
-+      invoiceNumber: 'INV-2026-001',
-+      invoiceDate: daysAgo(5),
-+      dueDate: daysAgo(2),
-+      currency: 'INR',
-+      subtotal: 25000,
-+      taxTotal: 4365,
-+      discountTotal: 750,
-+      grandTotal: 28615,
-+      amountPaid: 28615,
-+      balanceDue: 0,
-+      paymentStatus: 'paid',
-+      paymentMode: 'bank_transfer',
-+      renewalStatus: 'none',
-+      renewalDate: null,
-+      renewalValue: null,
-+      assignedTo: 'usr_emp_01',
-+      teamId: 'team_01',
-+      createdBy: 'usr_emp_01',
-+      createdAt: daysAgo(5),
-+      updatedAt: daysAgo(1),
-+      paidAt: daysAgo(1),
-+      cancelledAt: null,
-+      notes: 'Payment received successfully via bank transfer.'
-+    },
-+    {
-+      id: generateId(),
-+      title: 'Wipro Analytics Setup - Milestone 1',
-+      dealId: 'deal_03',
-+      proposalId: null,
-+      handoffId: handoffs[1].id,
-+      companyName: 'Wipro',
-+      clientContactId: contacts[2].id,
-+      invoiceNumber: 'INV-2026-002',
-+      invoiceDate: daysAgo(10),
-+      dueDate: new Date(Date.now() + 86400000 * 5).toISOString(),
-+      currency: 'INR',
-+      subtotal: 150000,
-+      taxTotal: 27000,
-+      discountTotal: 0,
-+      grandTotal: 177000,
-+      amountPaid: 50000,
-+      balanceDue: 127000,
-+      paymentStatus: 'partially_paid',
-+      paymentMode: 'upi',
-+      renewalStatus: 'none',
-+      renewalDate: null,
-+      renewalValue: null,
-+      assignedTo: 'usr_emp_03',
-+      teamId: 'team_02',
-+      createdBy: 'usr_emp_03',
-+      createdAt: daysAgo(10),
-+      updatedAt: daysAgo(2),
-+      paidAt: null,
-+      cancelledAt: null,
-+      notes: 'Advance payment received.'
-+    },
-+    {
-+      id: generateId(),
-+      title: 'Freshworks SaaS Annual License',
-+      dealId: 'deal_05',
-+      proposalId: null,
-+      handoffId: handoffs[2].id,
-+      companyName: 'Freshworks',
-+      clientContactId: contacts[5].id,
-+      invoiceNumber: 'INV-2025-099',
-+      invoiceDate: daysAgo(380),
-+      dueDate: daysAgo(350),
-+      currency: 'USD',
-+      subtotal: 5000,
-+      taxTotal: 0,
-+      discountTotal: 0,
-+      grandTotal: 5000,
-+      amountPaid: 0,
-+      balanceDue: 5000,
-+      paymentStatus: 'overdue',
-+      paymentMode: 'not_recorded',
-+      renewalStatus: 'renewal_due',
-+      renewalDate: new Date(Date.now() + 86400000 * 15).toISOString(),
-+      renewalValue: 5500,
-+      assignedTo: 'usr_emp_03',
-+      teamId: 'team_02',
-+      createdBy: 'usr_emp_03',
-+      createdAt: daysAgo(380),
-+      updatedAt: daysAgo(1),
-+      paidAt: null,
-+      cancelledAt: null,
-+      notes: 'Invoice overdue and renewal is approaching.'
-+    }
-+  ];
-+
-   // ΓöÇΓöÇ Persist ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-   users.forEach(u      => Store.createUser(u));
-   teams.forEach(t      => Store.createTeam(t));
-@@ -559,6 +659,7 @@ export function seedData() {
-   requirements.forEach(r => Store.createRequirement(r));
-   proposals.forEach(p => Store.createProposal(p));
-   handoffs.forEach(h => Store.createHandoff(h));
-+  billings.forEach(b => Store.createBilling(b));
- 
-   Store.markSeeded();
-   console.log('TechnoEdge CRM: Demo data seeded successfully.');
-diff --git a/js/store.js b/js/store.js
-index f37844a..ac5e1ba 100644
---- a/js/store.js
-+++ b/js/store.js
-@@ -15,6 +15,7 @@ const KEYS = {
-   requirements: STORAGE_PREFIX + 'requirements',
-   proposals:  STORAGE_PREFIX + 'proposals',
-   handoffs:   STORAGE_PREFIX + 'handoffs',
-+  billings:   STORAGE_PREFIX + 'billings',
-   session:    STORAGE_PREFIX + 'session',
-   settings:   STORAGE_PREFIX + 'settings',
-   seeded:     STORAGE_PREFIX + 'seeded'
-@@ -409,6 +410,61 @@ export const Store = {
-     return handoff.assignedTo === user.id || handoff.createdBy === user.id;
-   },
- 
-+  // ΓöÇΓöÇ Billings ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-+  getBillings() { return getAll(KEYS.billings); },
-+  getBillingById(id) { return getById(KEYS.billings, id); },
-+  createBilling(payload) { return create(KEYS.billings, payload); },
-+  updateBilling(id, updates) { return update(KEYS.billings, id, updates); },
-+  deleteBilling(id) { return remove(KEYS.billings, id); },
-+
-+  getBillingsForUser(user) {
-+    if (!user) return [];
-+    const billings = Store.getBillings();
-+    if (user.role === 'manager') return billings;
-+
-+    const handoffIds = new Set(Store.getHandoffsForUser(user).map(h => h.id));
-+    const dealIds = new Set(Store.getDealsForUser(user).map(d => d.id));
-+    const proposalIds = new Set(Store.getProposalsForUser(user).map(p => p.id));
-+
-+    if (user.role === 'team_lead') {
-+      const teamUserIds = new Set(Store.getUsersByTeam(user.teamId).map(u => u.id));
-+      teamUserIds.add(user.id);
-+      return billings.filter(b => {
-+        if (b.teamId === user.teamId) return true;
-+        if (teamUserIds.has(b.assignedTo) || teamUserIds.has(b.createdBy)) return true;
-+        if (b.handoffId && handoffIds.has(b.handoffId)) return true;
-+        if (b.dealId && dealIds.has(b.dealId)) return true;
-+        if (b.proposalId && proposalIds.has(b.proposalId)) return true;
-+        return false;
-+      });
-+    }
-+
-+    // Employee
-+    return billings.filter(b => {
-+      if (b.assignedTo === user.id || b.createdBy === user.id) return true;
-+      if (b.handoffId && handoffIds.has(b.handoffId)) return true;
-+      if (b.dealId && dealIds.has(b.dealId)) return true;
-+      if (b.proposalId && proposalIds.has(b.proposalId)) return true;
-+      return false;
-+    });
-+  },
-+
-+  canUserViewBilling(billing, user) {
-+    if (!billing || !user) return false;
-+    if (user.role === 'manager') return true;
-+    const billings = Store.getBillingsForUser(user);
-+    return billings.some(b => b.id === billing.id);
-+  },
-+
-+  canUserEditBilling(billing, user) {
-+    if (!billing || !user) return false;
-+    if (user.role === 'manager') return true;
-+    if (user.role === 'team_lead') {
-+      return Store.canUserViewBilling(billing, user);
-+    }
-+    return billing.assignedTo === user.id || billing.createdBy === user.id;
-+  },
-+
- 
-   // ΓöÇΓöÇ Export / Import ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-   exportData() {
-@@ -422,6 +478,7 @@ export const Store = {
-       requirements: getAll(KEYS.requirements),
-       proposals: getAll(KEYS.proposals),
-       handoffs: getAll(KEYS.handoffs),
-+      billings: getAll(KEYS.billings),
-       settings: Store.getSettings(),
-       exportedAt: new Date().toISOString()
-     };
-@@ -429,7 +486,7 @@ export const Store = {
- 
-   importData(payload) {
-     // Pre-serialize all datasets before touching localStorage
--    const dataKeys = [KEYS.users, KEYS.teams, KEYS.leads, KEYS.contacts, KEYS.deals, KEYS.activities, KEYS.requirements, KEYS.proposals, KEYS.handoffs, KEYS.settings];
-+    const dataKeys = [KEYS.users, KEYS.teams, KEYS.leads, KEYS.contacts, KEYS.deals, KEYS.activities, KEYS.requirements, KEYS.proposals, KEYS.handoffs, KEYS.billings, KEYS.settings];
-     const newValues = {
-       [KEYS.users]:        JSON.stringify(payload.users || []),
-       [KEYS.teams]:        JSON.stringify(payload.teams || []),
-@@ -440,6 +497,7 @@ export const Store = {
-       [KEYS.requirements]: JSON.stringify(payload.requirements || []),
-       [KEYS.proposals]:    JSON.stringify(payload.proposals || []),
-       [KEYS.handoffs]:     JSON.stringify(payload.handoffs || []),
-+      [KEYS.billings]:     JSON.stringify(payload.billings || []),
-       [KEYS.settings]:     JSON.stringify(payload.settings || {})
-     };
- 
+ let currentPage = null;
 ```
 
 ## Tests Run
 ```text
-Browser preview performed externally: Manager, Team Lead, and Employee billing visibility/actions checked; billing creation from deal/proposal/handoff checked; payment status, duplicate, and overdue guardrails checked
+Browser preview performed externally: Manager, Team Lead, and Employee hygiene visibility/actions checked; filters, assign owner, follow-up creation, reviewed hiding, and duplicate delete guardrails checked
 ```
 
 ## Risks / Pending Checks

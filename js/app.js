@@ -24,6 +24,7 @@ import { renderRequirements, bindRequirementsEvents } from './pages/requirements
 import { renderProposals, bindProposalsEvents } from './pages/proposals.js';
 import { renderHandoffs, bindHandoffsEvents, initHandoffsPage } from './pages/handoffs.js';
 import { renderBilling, bindBillingEvents, initBillingPage } from './pages/billing.js';
+import { renderHygiene, bindHygieneEvents, initHygienePage } from './pages/hygiene.js';
 
 // ── DOM References ──────────────────────────────────────────
 
@@ -148,6 +149,10 @@ function renderPage(pageId, params) {
       contentEl.innerHTML = renderBilling();
       initBillingPage();
       break;
+    case 'hygiene':
+      contentEl.innerHTML = renderHygiene();
+      initHygienePage();
+      break;
     default:
       contentEl.innerHTML = renderComingSoon(pageId);
   }
@@ -169,6 +174,7 @@ bindRequirementsEvents();
 bindProposalsEvents();
 bindHandoffsEvents();
 bindBillingEvents();
+bindHygieneEvents();
 
 // ── Bootstrap ───────────────────────────────────────────────
 

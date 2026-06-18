@@ -21,7 +21,8 @@ const ROUTES = {
   'billing':   { pageId: 'billing',   title: 'Billing' },
   'team':      { pageId: 'team',      title: 'Team' },
   'reports':   { pageId: 'reports',   title: 'Reports' },
-  'settings':  { pageId: 'settings',  title: 'Settings' }
+  'settings':  { pageId: 'settings',  title: 'Settings' },
+  'hygiene':   { pageId: 'hygiene',   title: 'Hygiene' }
 };
 
 let currentPage = null;

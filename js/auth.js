@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { id: 'proposals',   label: 'Proposals',  hash: '#/proposals', icon: 'proposals', roles: ['manager', 'team_lead', 'employee'] },
   { id: 'handoffs',    label: 'Project Handoff',hash: '#/handoffs',  icon: 'handoffs',  roles: ['manager', 'team_lead', 'employee'] },
   { id: 'billing',     label: 'Billing & Renewals',hash: '#/billing',icon: 'billing',   roles: ['manager', 'team_lead', 'employee'] },
+  { id: 'hygiene',     label: 'CRM Hygiene',hash: '#/hygiene',   icon: 'hygiene',   roles: ['manager', 'team_lead', 'employee'] },
   { id: 'team',      label: 'Team',       hash: '#/team',      icon: 'team',      roles: ['manager', 'team_lead'] },
   { id: 'reports',   label: 'Reports',    hash: '#/reports',   icon: 'reports',   roles: ['manager'] },
   { id: 'settings',  label: 'Settings',   hash: '#/settings',  icon: 'settings',  roles: ['manager', 'team_lead', 'employee'] }
