@@ -15,6 +15,7 @@ const KEYS = {
   requirements: STORAGE_PREFIX + 'requirements',
   proposals:  STORAGE_PREFIX + 'proposals',
   handoffs:   STORAGE_PREFIX + 'handoffs',
+  billings:   STORAGE_PREFIX + 'billings',
   session:    STORAGE_PREFIX + 'session',
   settings:   STORAGE_PREFIX + 'settings',
   seeded:     STORAGE_PREFIX + 'seeded'
@@ -409,6 +410,61 @@ export const Store = {
     return handoff.assignedTo === user.id || handoff.createdBy === user.id;
   },
 
+  // ── Billings ───────────────────────────────────────────
+  getBillings() { return getAll(KEYS.billings); },
+  getBillingById(id) { return getById(KEYS.billings, id); },
+  createBilling(payload) { return create(KEYS.billings, payload); },
+  updateBilling(id, updates) { return update(KEYS.billings, id, updates); },
+  deleteBilling(id) { return remove(KEYS.billings, id); },
+
+  getBillingsForUser(user) {
+    if (!user) return [];
+    const billings = Store.getBillings();
+    if (user.role === 'manager') return billings;
+
+    const handoffIds = new Set(Store.getHandoffsForUser(user).map(h => h.id));
+    const dealIds = new Set(Store.getDealsForUser(user).map(d => d.id));
+    const proposalIds = new Set(Store.getProposalsForUser(user).map(p => p.id));
+
+    if (user.role === 'team_lead') {
+      const teamUserIds = new Set(Store.getUsersByTeam(user.teamId).map(u => u.id));
+      teamUserIds.add(user.id);
+      return billings.filter(b => {
+        if (b.teamId === user.teamId) return true;
+        if (teamUserIds.has(b.assignedTo) || teamUserIds.has(b.createdBy)) return true;
+        if (b.handoffId && handoffIds.has(b.handoffId)) return true;
+        if (b.dealId && dealIds.has(b.dealId)) return true;
+        if (b.proposalId && proposalIds.has(b.proposalId)) return true;
+        return false;
+      });
+    }
+
+    // Employee
+    return billings.filter(b => {
+      if (b.assignedTo === user.id || b.createdBy === user.id) return true;
+      if (b.handoffId && handoffIds.has(b.handoffId)) return true;
+      if (b.dealId && dealIds.has(b.dealId)) return true;
+      if (b.proposalId && proposalIds.has(b.proposalId)) return true;
+      return false;
+    });
+  },
+
+  canUserViewBilling(billing, user) {
+    if (!billing || !user) return false;
+    if (user.role === 'manager') return true;
+    const billings = Store.getBillingsForUser(user);
+    return billings.some(b => b.id === billing.id);
+  },
+
+  canUserEditBilling(billing, user) {
+    if (!billing || !user) return false;
+    if (user.role === 'manager') return true;
+    if (user.role === 'team_lead') {
+      return Store.canUserViewBilling(billing, user);
+    }
+    return billing.assignedTo === user.id || billing.createdBy === user.id;
+  },
+
 
   // ── Export / Import ────────────────────────────────────
   exportData() {
@@ -422,6 +478,7 @@ export const Store = {
       requirements: getAll(KEYS.requirements),
       proposals: getAll(KEYS.proposals),
       handoffs: getAll(KEYS.handoffs),
+      billings: getAll(KEYS.billings),
       settings: Store.getSettings(),
       exportedAt: new Date().toISOString()
     };
@@ -429,7 +486,7 @@ export const Store = {
 
   importData(payload) {
     // Pre-serialize all datasets before touching localStorage
-    const dataKeys = [KEYS.users, KEYS.teams, KEYS.leads, KEYS.contacts, KEYS.deals, KEYS.activities, KEYS.requirements, KEYS.proposals, KEYS.handoffs, KEYS.settings];
+    const dataKeys = [KEYS.users, KEYS.teams, KEYS.leads, KEYS.contacts, KEYS.deals, KEYS.activities, KEYS.requirements, KEYS.proposals, KEYS.handoffs, KEYS.billings, KEYS.settings];
     const newValues = {
       [KEYS.users]:        JSON.stringify(payload.users || []),
       [KEYS.teams]:        JSON.stringify(payload.teams || []),
@@ -440,6 +497,7 @@ export const Store = {
       [KEYS.requirements]: JSON.stringify(payload.requirements || []),
       [KEYS.proposals]:    JSON.stringify(payload.proposals || []),
       [KEYS.handoffs]:     JSON.stringify(payload.handoffs || []),
+      [KEYS.billings]:     JSON.stringify(payload.billings || []),
       [KEYS.settings]:     JSON.stringify(payload.settings || {})
     };
 

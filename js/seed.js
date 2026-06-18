@@ -549,6 +549,106 @@ export function seedData() {
     }
   ];
 
+  // ── Billings ───────────────────────────────────────────
+  const billings = [
+    {
+      id: generateId(),
+      title: 'Invoice for AWS Training',
+      dealId: 'deal_01',
+      proposalId: proposals[0].id,
+      handoffId: handoffs[0].id,
+      companyName: 'Infosys',
+      clientContactId: contacts[0].id,
+      invoiceNumber: 'INV-2026-001',
+      invoiceDate: daysAgo(5),
+      dueDate: daysAgo(2),
+      currency: 'INR',
+      subtotal: 25000,
+      taxTotal: 4365,
+      discountTotal: 750,
+      grandTotal: 28615,
+      amountPaid: 28615,
+      balanceDue: 0,
+      paymentStatus: 'paid',
+      paymentMode: 'bank_transfer',
+      renewalStatus: 'none',
+      renewalDate: null,
+      renewalValue: null,
+      assignedTo: 'usr_emp_01',
+      teamId: 'team_01',
+      createdBy: 'usr_emp_01',
+      createdAt: daysAgo(5),
+      updatedAt: daysAgo(1),
+      paidAt: daysAgo(1),
+      cancelledAt: null,
+      notes: 'Payment received successfully via bank transfer.'
+    },
+    {
+      id: generateId(),
+      title: 'Wipro Analytics Setup - Milestone 1',
+      dealId: 'deal_03',
+      proposalId: null,
+      handoffId: handoffs[1].id,
+      companyName: 'Wipro',
+      clientContactId: contacts[2].id,
+      invoiceNumber: 'INV-2026-002',
+      invoiceDate: daysAgo(10),
+      dueDate: new Date(Date.now() + 86400000 * 5).toISOString(),
+      currency: 'INR',
+      subtotal: 150000,
+      taxTotal: 27000,
+      discountTotal: 0,
+      grandTotal: 177000,
+      amountPaid: 50000,
+      balanceDue: 127000,
+      paymentStatus: 'partially_paid',
+      paymentMode: 'upi',
+      renewalStatus: 'none',
+      renewalDate: null,
+      renewalValue: null,
+      assignedTo: 'usr_emp_03',
+      teamId: 'team_02',
+      createdBy: 'usr_emp_03',
+      createdAt: daysAgo(10),
+      updatedAt: daysAgo(2),
+      paidAt: null,
+      cancelledAt: null,
+      notes: 'Advance payment received.'
+    },
+    {
+      id: generateId(),
+      title: 'Freshworks SaaS Annual License',
+      dealId: 'deal_05',
+      proposalId: null,
+      handoffId: handoffs[2].id,
+      companyName: 'Freshworks',
+      clientContactId: contacts[5].id,
+      invoiceNumber: 'INV-2025-099',
+      invoiceDate: daysAgo(380),
+      dueDate: daysAgo(350),
+      currency: 'USD',
+      subtotal: 5000,
+      taxTotal: 0,
+      discountTotal: 0,
+      grandTotal: 5000,
+      amountPaid: 0,
+      balanceDue: 5000,
+      paymentStatus: 'overdue',
+      paymentMode: 'not_recorded',
+      renewalStatus: 'renewal_due',
+      renewalDate: new Date(Date.now() + 86400000 * 15).toISOString(),
+      renewalValue: 5500,
+      assignedTo: 'usr_emp_03',
+      teamId: 'team_02',
+      createdBy: 'usr_emp_03',
+      createdAt: daysAgo(380),
+      updatedAt: daysAgo(1),
+      paidAt: null,
+      cancelledAt: null,
+      notes: 'Invoice overdue and renewal is approaching.'
+    }
+  ];
+
   // ── Persist ────────────────────────────────────────────
   users.forEach(u      => Store.createUser(u));
   teams.forEach(t      => Store.createTeam(t));
@@ -559,6 +659,7 @@ export function seedData() {
   requirements.forEach(r => Store.createRequirement(r));
   proposals.forEach(p => Store.createProposal(p));
   handoffs.forEach(h => Store.createHandoff(h));
+  billings.forEach(b => Store.createBilling(b));
 
   Store.markSeeded();
   console.log('TechnoEdge CRM: Demo data seeded successfully.');

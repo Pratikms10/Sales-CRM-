@@ -18,6 +18,7 @@ const ROUTES = {
   'requirements':{ pageId: 'requirements',title: 'Requirements' },
   'proposals': { pageId: 'proposals', title: 'Proposals' },
   'handoffs':  { pageId: 'handoffs',  title: 'Handoffs' },
+  'billing':   { pageId: 'billing',   title: 'Billing' },
   'team':      { pageId: 'team',      title: 'Team' },
   'reports':   { pageId: 'reports',   title: 'Reports' },
   'settings':  { pageId: 'settings',  title: 'Settings' }

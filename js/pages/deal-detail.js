@@ -149,6 +149,56 @@ export function renderDealDetail(params) {
     </div>
   `;
 
+  // Fetch Billings for this deal
+  const billings = Store.getBillings().filter(b => b.dealId === deal.id && Store.canUserViewBilling(b, user));
+  let billingHtml = '';
+
+  if (billings.length > 0) {
+    const b = billings[0];
+    const pLabel = b.paymentStatus.replace('_', ' ');
+    const rLabel = b.renewalStatus.replace('_', ' ');
+    let statusClass = 'badge-neutral';
+    if (b.paymentStatus === 'paid') statusClass = 'badge-success';
+    else if (b.paymentStatus === 'overdue' || b.paymentStatus === 'cancelled') statusClass = 'badge-error';
+    else if (b.paymentStatus === 'partially_paid') statusClass = 'badge-primary';
+
+    billingHtml = `
+      <div style="border:1px solid var(--color-hairline-soft); border-radius:4px; padding:12px; background:var(--color-surface-card);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div style="font-weight:600; font-size:1rem;">${b.title}</div>
+          <span class="badge ${statusClass}">${pLabel}</span>
+        </div>
+        <div style="font-size:0.85rem; color:var(--color-muted); margin-bottom:8px;">
+          Grand Total: ${formatCurrency(b.grandTotal, b.currency)} | Paid: <span style="color:var(--color-success);">${formatCurrency(b.amountPaid, b.currency)}</span> | Due: <span style="color:var(--color-error);">${formatCurrency(b.balanceDue, b.currency)}</span>
+        </div>
+        <div style="font-size:0.85rem; color:var(--color-muted); margin-bottom:12px;">
+          Renewal Status: ${rLabel}
+        </div>
+        <a href="#/billing" class="btn btn-sm btn-secondary">Go to Billing</a>
+      </div>
+    `;
+  } else if (deal.status === 'closed_won') {
+    billingHtml = `
+      <div style="border:1px dashed var(--color-hairline-soft); border-radius:4px; padding:1rem; text-align:center; background:var(--color-surface-soft);">
+        <div style="margin-bottom:0.5rem; color:var(--color-muted);">No billing record created yet.</div>
+        <button class="btn btn-sm btn-primary" data-action="create-billing-from-deal" data-deal-id="${deal.id}">Create Billing</button>
+      </div>
+    `;
+  } else {
+    billingHtml = `
+      <div style="border:1px dashed var(--color-hairline-soft); border-radius:4px; padding:1rem; text-align:center; background:var(--color-surface-soft); color:var(--color-muted); font-size:0.85rem;">
+        Deal must be Closed Won to create a billing record.
+      </div>
+    `;
+  }
+
+  const billingSection = `
+    <div class="dashboard-section" style="margin-top:1.5rem;">
+      <h4 class="dashboard-section-title">Billing & Renewals</h4>
+      ${billingHtml}
+    </div>
+  `;
+
   let handoffHtml = '';
   if (handoffs.length > 0) {
     const h = handoffs[0];
@@ -210,6 +260,7 @@ export function renderDealDetail(params) {
 
       ${reqPropSection}
       ${handoffSection}
+      ${billingSection}
 
       <div class="dashboard-section">
         <div class="dashboard-section-header" style="justify-content:space-between; align-items:center;">
@@ -244,6 +295,14 @@ export function bindDealDetailEvents() {
       const dealId = handoffBtn.getAttribute('data-deal-id');
       sessionStorage.setItem('pendingHandoffDealId', dealId);
       import('../router.js').then(m => m.Router.navigate('#/handoffs'));
+    }
+
+    // Create Billing button
+    const billingBtn = e.target.closest('[data-action="create-billing-from-deal"]');
+    if (billingBtn) {
+      const dealId = billingBtn.getAttribute('data-deal-id');
+      sessionStorage.setItem('pendingBillingDealId', dealId);
+      import('../router.js').then(m => m.Router.navigate('#/billing'));
     }
 
     // Override Stage button (Manager)

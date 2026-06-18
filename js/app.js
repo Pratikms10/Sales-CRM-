@@ -23,6 +23,7 @@ import { renderActivities, bindActivitiesEvents } from './pages/activities.js';
 import { renderRequirements, bindRequirementsEvents } from './pages/requirements.js';
 import { renderProposals, bindProposalsEvents } from './pages/proposals.js';
 import { renderHandoffs, bindHandoffsEvents, initHandoffsPage } from './pages/handoffs.js';
+import { renderBilling, bindBillingEvents, initBillingPage } from './pages/billing.js';
 
 // ── DOM References ──────────────────────────────────────────
 
@@ -143,6 +144,10 @@ function renderPage(pageId, params) {
       contentEl.innerHTML = renderHandoffs();
       initHandoffsPage();
       break;
+    case 'billing':
+      contentEl.innerHTML = renderBilling();
+      initBillingPage();
+      break;
     default:
       contentEl.innerHTML = renderComingSoon(pageId);
   }
@@ -163,6 +168,7 @@ bindActivitiesEvents();
 bindRequirementsEvents();
 bindProposalsEvents();
 bindHandoffsEvents();
+bindBillingEvents();
 
 // ── Bootstrap ───────────────────────────────────────────────
 
