@@ -320,6 +320,100 @@
   fill: currentColor;
 }
 
+/* ── Global Search Dropdown ─────────────────────────────── */
+.topbar-search-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: auto;
+  width: max-content;
+  min-width: 320px;
+  max-width: 90vw;
+  max-height: 400px;
+  overflow-y: auto;
+  background-color: var(--color-canvas);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-md);
+  box-shadow: var(--shadow-dropdown);
+  margin-top: 8px;
+  z-index: 200;
+  display: none;
+}
+
+.topbar-search-dropdown.is-open {
+  display: block;
+  animation: slideDown var(--transition-fast);
+}
+
+.search-result-group {
+  padding: 8px 12px;
+  font: var(--text-micro-label);
+  color: var(--color-muted-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background-color: var(--color-surface-soft);
+  border-bottom: 1px solid var(--color-hairline-soft);
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-hairline-soft);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-item:hover,
+.search-result-item.active {
+  background-color: var(--color-surface-soft);
+}
+
+.search-result-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.search-result-title {
+  font: var(--text-body-sm);
+  font-weight: 500;
+  color: var(--color-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-result-subtitle {
+  font: var(--text-caption-sm);
+  color: var(--color-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.search-result-badge {
+  font: var(--text-badge);
+  background-color: var(--color-primary-disabled);
+  color: var(--color-primary);
+  padding: 2px 6px;
+  border-radius: var(--rounded-sm);
+  flex-shrink: 0;
+}
+
+.search-empty-state {
+  padding: 24px 12px;
+  text-align: center;
+  color: var(--color-muted);
+  font: var(--text-body-sm);
+}
+
 .topbar-user {
   display: flex;
   align-items: center;

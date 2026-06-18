@@ -25,6 +25,7 @@ import { renderProposals, bindProposalsEvents } from './pages/proposals.js';
 import { renderHandoffs, bindHandoffsEvents, initHandoffsPage } from './pages/handoffs.js';
 import { renderBilling, bindBillingEvents, initBillingPage } from './pages/billing.js';
 import { renderHygiene, bindHygieneEvents, initHygienePage } from './pages/hygiene.js';
+import { initGlobalSearch } from './components/global-search.js';
 
 // ── DOM References ──────────────────────────────────────────
 
@@ -101,6 +102,9 @@ function renderPage(pageId, params) {
     Toast.info('Signed out', 'You have been logged out.');
     Router.navigate('#/login');
   });
+
+  // Initialize global search in topbar
+  initGlobalSearch();
 
   // Render page content
   switch (pageId) {

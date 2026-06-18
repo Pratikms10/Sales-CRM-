@@ -1,982 +1,456 @@
 ﻿# AI Change Audit Report
 
 ## Generated On
-2026-06-18_12-10-01
+2026-06-18_12-24-38
 
 ## Branch
 main
 
 ## Baseline Commit
-4f316a2
+d246a37
 
 ## Task Summary
-Phase 2E CRM Hygiene and Data Quality Dashboard with role-scoped issue detection, missing field/stale/duplicate/overdue checks, guarded owner assignment, follow-up creation, reviewed issue hiding, and manager-only duplicate deletion
+Phase 2F Global Search and Navigation Polish with role-scoped cross-module search, grouped dropdown results, keyboard navigation, safe escaping, page title mapping, and non-duplicating event bindings
 
 ## Git Status
 ```text
+ M css/layout.css
  M js/app.js
- M js/auth.js
- M js/components/sidebar.js
- A js/pages/hygiene.js
- M js/router.js
+ A js/components/global-search.js
+ M js/components/topbar.js
 ```
 
 ## Files Changed
 ```text
+M	css/layout.css
 M	js/app.js
-M	js/auth.js
-M	js/components/sidebar.js
-A	js/pages/hygiene.js
-M	js/router.js
+A	js/components/global-search.js
+M	js/components/topbar.js
 ```
 
 ## Change Summary
 ```text
- js/app.js                |   6 +
- js/auth.js               |   1 +
- js/components/sidebar.js |   1 +
- js/pages/hygiene.js      | 855 +++++++++++++++++++++++++++++++++++++++++++++++
- js/router.js             |   3 +-
- 5 files changed, 865 insertions(+), 1 deletion(-)
+ css/layout.css                 |  94 ++++++++++++++++
+ js/app.js                      |   4 +
+ js/components/global-search.js | 241 +++++++++++++++++++++++++++++++++++++++++
+ js/components/topbar.js        |  22 ++--
+ 4 files changed, 353 insertions(+), 8 deletions(-)
 ```
 
 ## Full Diff
 ```diff
+diff --git a/css/layout.css b/css/layout.css
+index 8e4e264..0bb5bb2 100644
+--- a/css/layout.css
++++ b/css/layout.css
+@@ -320,6 +320,100 @@
+   fill: currentColor;
+ }
+ 
++/* ΓöÇΓöÇ Global Search Dropdown ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
++.topbar-search-dropdown {
++  position: absolute;
++  top: 100%;
++  right: 0;
++  left: auto;
++  width: max-content;
++  min-width: 320px;
++  max-width: 90vw;
++  max-height: 400px;
++  overflow-y: auto;
++  background-color: var(--color-canvas);
++  border: 1px solid var(--color-hairline);
++  border-radius: var(--rounded-md);
++  box-shadow: var(--shadow-dropdown);
++  margin-top: 8px;
++  z-index: 200;
++  display: none;
++}
++
++.topbar-search-dropdown.is-open {
++  display: block;
++  animation: slideDown var(--transition-fast);
++}
++
++.search-result-group {
++  padding: 8px 12px;
++  font: var(--text-micro-label);
++  color: var(--color-muted-soft);
++  text-transform: uppercase;
++  letter-spacing: 0.5px;
++  background-color: var(--color-surface-soft);
++  border-bottom: 1px solid var(--color-hairline-soft);
++}
++
++.search-result-item {
++  display: flex;
++  align-items: center;
++  justify-content: space-between;
++  gap: 12px;
++  padding: 10px 12px;
++  border-bottom: 1px solid var(--color-hairline-soft);
++  cursor: pointer;
++  transition: background-color var(--transition-fast);
++}
++
++.search-result-item:last-child {
++  border-bottom: none;
++}
++
++.search-result-item:hover,
++.search-result-item.active {
++  background-color: var(--color-surface-soft);
++}
++
++.search-result-content {
++  flex: 1;
++  min-width: 0;
++}
++
++.search-result-title {
++  font: var(--text-body-sm);
++  font-weight: 500;
++  color: var(--color-ink);
++  white-space: nowrap;
++  overflow: hidden;
++  text-overflow: ellipsis;
++}
++
++.search-result-subtitle {
++  font: var(--text-caption-sm);
++  color: var(--color-muted);
++  white-space: nowrap;
++  overflow: hidden;
++  text-overflow: ellipsis;
++  margin-top: 2px;
++}
++
++.search-result-badge {
++  font: var(--text-badge);
++  background-color: var(--color-primary-disabled);
++  color: var(--color-primary);
++  padding: 2px 6px;
++  border-radius: var(--rounded-sm);
++  flex-shrink: 0;
++}
++
++.search-empty-state {
++  padding: 24px 12px;
++  text-align: center;
++  color: var(--color-muted);
++  font: var(--text-body-sm);
++}
++
+ .topbar-user {
+   display: flex;
+   align-items: center;
 diff --git a/js/app.js b/js/app.js
-index e634561..ec4ff60 100644
+index ec4ff60..bf38cf3 100644
 --- a/js/app.js
 +++ b/js/app.js
-@@ -24,6 +24,7 @@ import { renderRequirements, bindRequirementsEvents } from './pages/requirements
- import { renderProposals, bindProposalsEvents } from './pages/proposals.js';
+@@ -25,6 +25,7 @@ import { renderProposals, bindProposalsEvents } from './pages/proposals.js';
  import { renderHandoffs, bindHandoffsEvents, initHandoffsPage } from './pages/handoffs.js';
  import { renderBilling, bindBillingEvents, initBillingPage } from './pages/billing.js';
-+import { renderHygiene, bindHygieneEvents, initHygienePage } from './pages/hygiene.js';
+ import { renderHygiene, bindHygieneEvents, initHygienePage } from './pages/hygiene.js';
++import { initGlobalSearch } from './components/global-search.js';
  
  // ΓöÇΓöÇ DOM References ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
  
-@@ -148,6 +149,10 @@ function renderPage(pageId, params) {
-       contentEl.innerHTML = renderBilling();
-       initBillingPage();
-       break;
-+    case 'hygiene':
-+      contentEl.innerHTML = renderHygiene();
-+      initHygienePage();
-+      break;
-     default:
-       contentEl.innerHTML = renderComingSoon(pageId);
-   }
-@@ -169,6 +174,7 @@ bindRequirementsEvents();
- bindProposalsEvents();
- bindHandoffsEvents();
- bindBillingEvents();
-+bindHygieneEvents();
+@@ -102,6 +103,9 @@ function renderPage(pageId, params) {
+     Router.navigate('#/login');
+   });
  
- // ΓöÇΓöÇ Bootstrap ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
- 
-diff --git a/js/auth.js b/js/auth.js
-index dba8941..aaeb353 100644
---- a/js/auth.js
-+++ b/js/auth.js
-@@ -18,6 +18,7 @@ const NAV_ITEMS = [
-   { id: 'proposals',   label: 'Proposals',  hash: '#/proposals', icon: 'proposals', roles: ['manager', 'team_lead', 'employee'] },
-   { id: 'handoffs',    label: 'Project Handoff',hash: '#/handoffs',  icon: 'handoffs',  roles: ['manager', 'team_lead', 'employee'] },
-   { id: 'billing',     label: 'Billing & Renewals',hash: '#/billing',icon: 'billing',   roles: ['manager', 'team_lead', 'employee'] },
-+  { id: 'hygiene',     label: 'CRM Hygiene',hash: '#/hygiene',   icon: 'hygiene',   roles: ['manager', 'team_lead', 'employee'] },
-   { id: 'team',      label: 'Team',       hash: '#/team',      icon: 'team',      roles: ['manager', 'team_lead'] },
-   { id: 'reports',   label: 'Reports',    hash: '#/reports',   icon: 'reports',   roles: ['manager'] },
-   { id: 'settings',  label: 'Settings',   hash: '#/settings',  icon: 'settings',  roles: ['manager', 'team_lead', 'employee'] }
-diff --git a/js/components/sidebar.js b/js/components/sidebar.js
-index 207e4ea..e461269 100644
---- a/js/components/sidebar.js
-+++ b/js/components/sidebar.js
-@@ -18,6 +18,7 @@ const NAV_ICONS = {
-   proposals: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="M8 14h.01"></path><path d="M12 14h.01"></path><path d="M16 14h.01"></path><path d="M8 18h.01"></path><path d="M12 18h.01"></path><path d="M16 18h.01"></path></svg>',
-   handoffs:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>',
-   billing:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>',
-+  hygiene:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5"/><path d="M9 7V2"/><path d="M15 7V2"/><path d="M12 7v5"/><path d="M22 12h-5"/><path d="M7 12H2"/><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10z"/></svg>',
-   team:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
-   reports:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
-   settings:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>'
-diff --git a/js/pages/hygiene.js b/js/pages/hygiene.js
++  // Initialize global search in topbar
++  initGlobalSearch();
++
+   // Render page content
+   switch (pageId) {
+     case 'dashboard':
+diff --git a/js/components/global-search.js b/js/components/global-search.js
 new file mode 100644
-index 0000000..f22e76b
+index 0000000..9d69edc
 --- /dev/null
-+++ b/js/pages/hygiene.js
-@@ -0,0 +1,855 @@
++++ b/js/components/global-search.js
+@@ -0,0 +1,241 @@
 +// ============================================================
-+// TechnoEdge CRM ΓÇö Hygiene Dashboard
++// TechnoEdge CRM ΓÇö Global Search
 +// ============================================================
 +
 +import { Store } from '../store.js';
 +import { Auth } from '../auth.js';
-+import { Toast } from '../components/toast.js';
-+import { formatDate } from '../utils.js';
 +
-+let eventsBound = false;
-+let currentIssues = [];
++let debounceTimeout;
++let activeIndex = -1;
 +
-+function getHiddenIds() {
-+  const data = sessionStorage.getItem('technoedge_hygiene_hidden');
-+  if (!data) return [];
-+  try {
-+    return JSON.parse(data);
-+  } catch (e) {
-+    return [];
-+  }
-+}
-+
-+function addHiddenId(id) {
-+  const hidden = getHiddenIds();
-+  if (!hidden.includes(id)) {
-+    hidden.push(id);
-+    sessionStorage.setItem('technoedge_hygiene_hidden', JSON.stringify(hidden));
-+  }
-+}
-+
-+function diffDays(isoString) {
-+  if (!isoString) return 0;
-+  const d = new Date(isoString);
-+  if (isNaN(d.getTime())) return 0;
-+  const now = new Date();
-+  const diffTime = now - d;
-+  if (diffTime < 0) return 0;
-+  return Math.floor(diffTime / (1000 * 60 * 60 * 24));
-+}
-+
-+function isPast(isoString) {
-+  if (!isoString) return false;
-+  const d = new Date(isoString);
-+  if (isNaN(d.getTime())) return false;
-+  const now = new Date();
-+  now.setHours(0,0,0,0);
-+  return d < now;
-+}
-+
-+function isWithin30Days(isoString) {
-+  if (!isoString) return false;
-+  const d = new Date(isoString);
-+  if (isNaN(d.getTime())) return false;
-+  const now = new Date();
-+  now.setHours(0,0,0,0);
-+  const diffTime = d - now;
-+  const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-+  return days <= 30; // Could be past, which is <= 30
-+}
-+
-+function hasOpenActivity(linkedId, allActivities) {
-+  return allActivities.some(a =>
-+    (a.linkedId === linkedId || a.dealId === linkedId || a.leadId === linkedId || a.sourceEntityId === linkedId) &&
-+    !['completed', 'cancelled'].includes(a.status) &&
-+    a.dueAt
-+  );
++function escapeHtml(unsafe) {
++  return (unsafe || '').toString()
++    .replace(/&/g, "&amp;")
++    .replace(/</g, "&lt;")
++    .replace(/>/g, "&gt;")
++    .replace(/"/g, "&quot;")
++    .replace(/'/g, "&#039;");
 +}
 +
 +function normalize(str) {
-+  return (str || '').toLowerCase().trim().replace(/[^a-z0-9]/g, '');
++  return String(str || '').toLowerCase();
 +}
 +
-+function generateIssues(user) {
-+  const issues = [];
-+  const addIssue = (id, type, entityType, entityId, entityTitle, severity, message, assignedTo, fixAction, rawDate) => {
-+    let suggestedFix = '';
-+    if (type === 'missing_field') suggestedFix = 'Fill required fields';
-+    else if (type === 'stale_record') suggestedFix = 'Update record or add activity';
-+    else if (type === 'overdue_followup') suggestedFix = 'Complete or reschedule follow-up';
-+    else if (type === 'no_next_action') suggestedFix = 'Create follow-up';
-+    else if (type === 'duplicate_record') suggestedFix = 'Review duplicate candidate';
-+    else if (type === 'unassigned_record') suggestedFix = 'Assign owner';
-+    else if (type === 'invalid_link') suggestedFix = 'Review broken reference';
-+    else if (type === 'overdue_payment') suggestedFix = 'Collect/update payment';
-+    else if (type === 'renewal_due') suggestedFix = 'Contact client for renewal';
++function matchFields(query, item, fields) {
++  return fields.some(f => normalize(item[f]).includes(query));
++}
 +
-+    const dateLabel = rawDate ? formatDate(rawDate) : '-';
-+
-+    issues.push({ id, type, entityType, entityId, entityTitle, severity, message, assignedTo, fixAction, dateLabel, suggestedFix });
-+  };
-+
-+  const leads = Store.getLeadsForUser(user);
-+  const contacts = Store.getContacts();
-+  const deals = Store.getDealsForUser(user);
-+  const requirements = Store.getRequirementsForUser(user);
-+  const proposals = Store.getProposalsForUser(user);
-+  const handoffs = Store.getHandoffsForUser(user);
-+  const billings = Store.getBillingsForUser(user);
-+  const activities = Store.getActivitiesForUser(user);
-+  const allActivities = Store.getActivities();
-+
-+  const issueId = (eType, eId, iType, key) => `${eType}_${eId}_${iType}_${key}`;
-+
-+  // 1. Missing required fields
-+  leads.forEach(l => {
-+    if (!l.name || !l.company || !l.assignedTo || !l.status || !l.source || (!l.email && !l.phone)) {
-+      addIssue(issueId('lead', l.id, 'missing_field', 'all'), 'missing_field', 'lead', l.id, l.name || 'Unknown', 'high', 'Missing critical fields (Name, Company, Assigned, Status, Source, or Email+Phone)', l.assignedTo, 'view', l.updatedAt);
-+    }
-+    if (!l.assignedTo) {
-+      addIssue(issueId('lead', l.id, 'unassigned_record', 'owner'), 'unassigned_record', 'lead', l.id, l.name || 'Unknown', 'high', 'Lead has no assigned owner.', l.assignedTo, 'fix_owner', l.updatedAt);
-+    }
-+  });
-+
-+  contacts.forEach(c => {
-+    if (!c.name || !c.company || (!c.email && !c.phone)) {
-+      addIssue(issueId('contact', c.id, 'missing_field', 'all'), 'missing_field', 'contact', c.id, c.name || 'Unknown', 'medium', 'Missing Name, Company, or Contact info (Email+Phone)', null, 'view', c.updatedAt);
-+    }
-+  });
-+
-+  deals.forEach(d => {
-+    if (!d.title || d.value === undefined || !d.stage || !d.assignedTo) {
-+      addIssue(issueId('deal', d.id, 'missing_field', 'all'), 'missing_field', 'deal', d.id, d.title || 'Unknown', 'high', 'Missing Title, Value, Stage, or Assigned To', d.assignedTo, 'view', d.updatedAt);
-+    }
-+    if (!d.assignedTo) {
-+      addIssue(issueId('deal', d.id, 'unassigned_record', 'owner'), 'unassigned_record', 'deal', d.id, d.title || 'Unknown', 'high', 'Deal has no assigned owner.', d.assignedTo, 'fix_owner', d.updatedAt);
-+    }
-+  });
-+
-+  requirements.forEach(r => {
-+    if (!r.title || !r.summary || !r.requirementType || !r.status || !r.assignedTo) {
-+      addIssue(issueId('requirement', r.id, 'missing_field', 'all'), 'missing_field', 'requirement', r.id, r.title || 'Unknown', 'high', 'Missing Title, Summary, Type, Status, or Assigned To', r.assignedTo, 'view', r.updatedAt);
-+    }
-+    if (!r.assignedTo) {
-+      addIssue(issueId('requirement', r.id, 'unassigned_record', 'owner'), 'unassigned_record', 'requirement', r.id, r.title || 'Unknown', 'high', 'Requirement has no assigned owner.', r.assignedTo, 'fix_owner', r.updatedAt);
-+    }
-+  });
-+
-+  proposals.forEach(p => {
-+    if (!p.title || !p.status || !p.lineItems || p.lineItems.length === 0 || p.grandTotal === undefined || !p.assignedTo) {
-+      addIssue(issueId('proposal', p.id, 'missing_field', 'all'), 'missing_field', 'proposal', p.id, p.title || 'Unknown', 'high', 'Missing Title, Status, Line Items, Grand Total, or Assigned To', p.assignedTo, 'view', p.updatedAt);
-+    }
-+    if (!p.assignedTo) {
-+      addIssue(issueId('proposal', p.id, 'unassigned_record', 'owner'), 'unassigned_record', 'proposal', p.id, p.title || 'Unknown', 'high', 'Proposal has no assigned owner.', p.assignedTo, 'fix_owner', p.updatedAt);
-+    }
-+  });
-+
-+  handoffs.forEach(h => {
-+    if (!h.title || !h.companyName || !h.projectBrief || !h.assignedTo || !h.deliveryStatus) {
-+      addIssue(issueId('handoff', h.id, 'missing_field', 'all'), 'missing_field', 'handoff', h.id, h.title || 'Unknown', 'high', 'Missing Title, Company, Brief, Assigned To, or Status', h.assignedTo, 'view', h.updatedAt);
-+    }
-+    if (!h.assignedTo) {
-+      addIssue(issueId('handoff', h.id, 'unassigned_record', 'owner'), 'unassigned_record', 'handoff', h.id, h.title || 'Unknown', 'high', 'Handoff has no assigned owner.', h.assignedTo, 'fix_owner', h.updatedAt);
-+    }
-+  });
-+
-+  billings.forEach(b => {
-+    if (!b.title || !b.companyName || b.grandTotal === undefined || !b.paymentStatus || !b.assignedTo) {
-+      addIssue(issueId('billing', b.id, 'missing_field', 'all'), 'missing_field', 'billing', b.id, b.title || 'Unknown', 'high', 'Missing Title, Company, Total, Payment Status, or Assigned To', b.assignedTo, 'view', b.updatedAt);
-+    }
-+    if (!b.assignedTo) {
-+      addIssue(issueId('billing', b.id, 'unassigned_record', 'owner'), 'unassigned_record', 'billing', b.id, b.title || 'Unknown', 'high', 'Billing record has no assigned owner.', b.assignedTo, 'fix_owner', b.updatedAt);
-+    }
-+  });
-+
-+  activities.forEach(a => {
-+    if (!a.assignedTo) {
-+      addIssue(issueId('activity', a.id, 'unassigned_record', 'owner'), 'unassigned_record', 'activity', a.id, a.title || 'Unknown', 'medium', 'Activity has no assigned owner.', a.assignedTo, 'fix_owner', a.updatedAt);
-+    }
-+  });
-+
-+  // 2. Stale Records
-+  leads.forEach(l => {
-+    if (!['converted', 'lost', 'won'].includes(l.status) && diffDays(l.updatedAt) >= 14) {
-+      addIssue(issueId('lead', l.id, 'stale_record', 'time'), 'stale_record', 'lead', l.id, l.name || 'Unknown', 'medium', 'Lead active but not updated in 14+ days.', l.assignedTo, 'view', l.updatedAt);
-+    }
-+  });
-+  deals.forEach(d => {
-+    if (!['closed_won', 'closed_lost'].includes(d.status) && diffDays(d.updatedAt) >= 14) {
-+      addIssue(issueId('deal', d.id, 'stale_record', 'time'), 'stale_record', 'deal', d.id, d.title || 'Unknown', 'high', 'Deal active but not updated in 14+ days.', d.assignedTo, 'view', d.updatedAt);
-+    }
-+  });
-+  requirements.forEach(r => {
-+    if (['draft', 'captured'].includes(r.status) && diffDays(r.updatedAt) >= 10) {
-+      addIssue(issueId('requirement', r.id, 'stale_record', 'time'), 'stale_record', 'requirement', r.id, r.title || 'Unknown', 'medium', 'Requirement stuck in Draft/Captured for 10+ days.', r.assignedTo, 'view', r.updatedAt);
-+    }
-+  });
-+  proposals.forEach(p => {
-+    if (['draft', 'sent'].includes(p.status) && diffDays(p.updatedAt) >= 10) {
-+      addIssue(issueId('proposal', p.id, 'stale_record', 'time'), 'stale_record', 'proposal', p.id, p.title || 'Unknown', 'medium', 'Proposal stuck in Draft/Sent for 10+ days.', r.assignedTo, 'view', p.updatedAt);
-+    }
-+  });
-+  handoffs.forEach(h => {
-+    if (!['completed', 'cancelled', 'blocked'].includes(h.deliveryStatus) && diffDays(h.updatedAt) >= 10) {
-+      addIssue(issueId('handoff', h.id, 'stale_record', 'time'), 'stale_record', 'handoff', h.id, h.title || 'Unknown', 'high', 'Handoff active but not updated in 10+ days.', h.assignedTo, 'view', h.updatedAt);
-+    }
-+  });
-+  billings.forEach(b => {
-+    if (['invoiced', 'partially_paid'].includes(b.paymentStatus)) {
-+      if ((b.dueDate && isPast(b.dueDate)) || diffDays(b.updatedAt) >= 14) {
-+        addIssue(issueId('billing', b.id, 'stale_record', 'time'), 'stale_record', 'billing', b.id, b.title || 'Unknown', 'high', 'Billing stuck in Invoiced/Partial state for 14+ days or past due.', b.assignedTo, 'view', b.updatedAt);
++// Ensure the document-level click handler is bound only once per app lifecycle
++if (!window.__globalSearchDocumentClickBound) {
++  window.__globalSearchDocumentClickBound = true;
++  document.addEventListener('click', (e) => {
++    const container = document.querySelector('.topbar-search');
++    // If we clicked outside the topbar-search container entirely
++    if (container && !container.contains(e.target)) {
++      const dropdown = container.querySelector('.topbar-search-dropdown');
++      if (dropdown && dropdown.classList.contains('is-open')) {
++        dropdown.classList.remove('is-open');
++        dropdown.innerHTML = '';
++        activeIndex = -1; // Reset active index since dropdown closed
 +      }
 +    }
 +  });
-+
-+  // 3. Overdue follow-ups
-+  activities.forEach(a => {
-+    if (a.dueAt && isPast(a.dueAt) && !['completed', 'cancelled'].includes(a.status)) {
-+      addIssue(issueId('activity', a.id, 'overdue_followup', 'time'), 'overdue_followup', 'activity', a.id, a.title || 'Unknown', 'high', 'Activity due date has passed.', a.assignedTo, 'view', a.dueAt);
-+    }
-+  });
-+  billings.forEach(b => {
-+    if (b.dueDate && isPast(b.dueDate) && b.balanceDue > 0) {
-+      addIssue(issueId('billing', b.id, 'overdue_payment', 'time'), 'overdue_payment', 'billing', b.id, b.title || 'Unknown', 'high', 'Payment is overdue.', b.assignedTo, 'view', b.dueDate);
-+    }
-+    if (b.renewalDate && isWithin30Days(b.renewalDate) && !['renewed', 'not_renewing'].includes(b.renewalStatus)) {
-+      addIssue(issueId('billing', b.id, 'renewal_due', 'time'), 'renewal_due', 'billing', b.id, b.title || 'Unknown', 'medium', 'Renewal is due within 30 days or already passed.', b.assignedTo, 'view', b.renewalDate);
-+    }
-+  });
-+
-+  // 4. No next action
-+  leads.forEach(l => {
-+    if (!['converted', 'lost', 'won'].includes(l.status) && !hasOpenActivity(l.id, allActivities)) {
-+      addIssue(issueId('lead', l.id, 'no_next_action', 'act'), 'no_next_action', 'lead', l.id, l.name || 'Unknown', 'high', 'Lead has no open follow-up activity.', l.assignedTo, 'create_followup', l.updatedAt);
-+    }
-+  });
-+  deals.forEach(d => {
-+    if (!['closed_won', 'closed_lost'].includes(d.status) && !hasOpenActivity(d.id, allActivities)) {
-+      addIssue(issueId('deal', d.id, 'no_next_action', 'act'), 'no_next_action', 'deal', d.id, d.title || 'Unknown', 'high', 'Deal has no open follow-up activity.', d.assignedTo, 'create_followup', d.updatedAt);
-+    }
-+  });
-+  proposals.forEach(p => {
-+    if (['draft', 'sent'].includes(p.status) && !hasOpenActivity(p.id, allActivities)) {
-+      addIssue(issueId('proposal', p.id, 'no_next_action', 'act'), 'no_next_action', 'proposal', p.id, p.title || 'Unknown', 'medium', 'Active proposal has no open follow-up activity.', p.assignedTo, 'create_followup', p.updatedAt);
-+    }
-+  });
-+  handoffs.forEach(h => {
-+    if (!['completed', 'cancelled'].includes(h.deliveryStatus) && !hasOpenActivity(h.id, allActivities)) {
-+      addIssue(issueId('handoff', h.id, 'no_next_action', 'act'), 'no_next_action', 'handoff', h.id, h.title || 'Unknown', 'medium', 'Active handoff has no open follow-up activity.', h.assignedTo, 'create_followup', h.updatedAt);
-+    }
-+  });
-+
-+  // 5. Duplicate Records
-+  const allContacts = Store.getContacts();
-+  const allLeads = Store.getLeads();
-+  const emailMap = {}, phoneMap = {}, companyMap = {};
-+
-+  allContacts.forEach(c => {
-+    if (user.role !== 'manager') {
-+       const hasLinkedDeal = deals.some(d => d.contactId === c.id || d.clientContactId === c.id);
-+       const hasLinkedReq = requirements.some(r => r.contactId === c.id);
-+       const hasLinkedProp = proposals.some(p => p.contactId === c.id);
-+       const hasLinkedHandoff = handoffs.some(h => h.clientContactId === c.id);
-+       const hasLinkedBilling = billings.some(b => b.clientContactId === c.id);
-+       const hasLinkedAct = activities.some(a => a.contactId === c.id);
-+       if (!hasLinkedDeal && !hasLinkedReq && !hasLinkedProp && !hasLinkedHandoff && !hasLinkedBilling && !hasLinkedAct) {
-+           return;
-+       }
-+    }
-+    if (c.email) { emailMap[c.email] = emailMap[c.email] || []; emailMap[c.email].push({ type: 'contact', id: c.id, name: c.name, assignedTo: null, rawDate: c.createdAt }); }
-+    if (c.phone) { phoneMap[c.phone] = phoneMap[c.phone] || []; phoneMap[c.phone].push({ type: 'contact', id: c.id, name: c.name, assignedTo: null, rawDate: c.createdAt }); }
-+    if (c.company) {
-+      const norm = normalize(c.company);
-+      if (norm) { companyMap[norm] = companyMap[norm] || []; companyMap[norm].push({ type: 'contact', id: c.id, name: c.name, assignedTo: null, rawDate: c.createdAt }); }
-+    }
-+  });
-+  allLeads.forEach(l => {
-+    if (l.email) { emailMap[l.email] = emailMap[l.email] || []; emailMap[l.email].push({ type: 'lead', id: l.id, name: l.name, assignedTo: l.assignedTo, rawDate: l.createdAt }); }
-+    if (l.phone) { phoneMap[l.phone] = phoneMap[l.phone] || []; phoneMap[l.phone].push({ type: 'lead', id: l.id, name: l.name, assignedTo: l.assignedTo, rawDate: l.createdAt }); }
-+    if (l.company) {
-+      const norm = normalize(l.company);
-+      if (norm) { companyMap[norm] = companyMap[norm] || []; companyMap[norm].push({ type: 'lead', id: l.id, name: l.name, assignedTo: l.assignedTo, rawDate: l.createdAt }); }
-+    }
-+  });
-+
-+  const pushDup = (map, severity, reason) => {
-+    for (const key in map) {
-+      if (map[key].length > 1) {
-+        map[key].forEach(rec => {
-+          if (rec.type === 'lead') {
-+            if (!leads.some(l => l.id === rec.id)) return;
-+          }
-+          addIssue(issueId(rec.type, rec.id, 'duplicate_record', key.replace(/\s+/g,'')), 'duplicate_record', rec.type, rec.id, rec.name || 'Unknown', severity, `Duplicate detected (Same ${reason}: ${key}).`, rec.assignedTo, 'delete_dup', rec.rawDate);
-+        });
-+      }
-+    }
-+  };
-+
-+  pushDup(emailMap, 'high', 'Email');
-+  pushDup(phoneMap, 'high', 'Phone');
-+  pushDup(companyMap, 'low', 'Company');
-+
-+  // 6. Invalid Links
-+  const checkLink = (entityType, eId, eTitle, linkType, linkId, assignedTo, rawDate) => {
-+    if (linkId) {
-+      let valid = false;
-+      if (linkType === 'deal') valid = !!Store.getDealById(linkId);
-+      if (linkType === 'lead') valid = !!Store.getLeadById(linkId);
-+      if (linkType === 'contact') valid = !!Store.getContactById(linkId);
-+      if (linkType === 'requirement') valid = !!Store.getRequirementById(linkId);
-+      if (linkType === 'proposal') valid = !!Store.getProposalById(linkId);
-+      if (linkType === 'handoff') valid = !!Store.getHandoffById(linkId);
-+
-+      if (!valid) {
-+        addIssue(issueId(entityType, eId, 'invalid_link', linkId), 'invalid_link', entityType, eId, eTitle || 'Unknown', 'high', `Broken reference to ${linkType} (ID: ${linkId})`, assignedTo, 'view', rawDate);
-+      }
-+    }
-+  };
-+
-+  proposals.forEach(p => {
-+    checkLink('proposal', p.id, p.title, 'requirement', p.requirementId, p.assignedTo, p.updatedAt);
-+    checkLink('proposal', p.id, p.title, 'deal', p.dealId, p.assignedTo, p.updatedAt);
-+    checkLink('proposal', p.id, p.title, 'contact', p.contactId, p.assignedTo, p.updatedAt);
-+  });
-+  requirements.forEach(r => {
-+    checkLink('requirement', r.id, r.title, 'deal', r.dealId, r.assignedTo, r.updatedAt);
-+    checkLink('requirement', r.id, r.title, 'lead', r.leadId, r.assignedTo, r.updatedAt);
-+    checkLink('requirement', r.id, r.title, 'contact', r.contactId, r.assignedTo, r.updatedAt);
-+  });
-+  handoffs.forEach(h => {
-+    checkLink('handoff', h.id, h.title, 'deal', h.dealId, h.assignedTo, h.updatedAt);
-+    checkLink('handoff', h.id, h.title, 'proposal', h.proposalId, h.assignedTo, h.updatedAt);
-+    checkLink('handoff', h.id, h.title, 'contact', h.clientContactId, h.assignedTo, h.updatedAt);
-+  });
-+  billings.forEach(b => {
-+    checkLink('billing', b.id, b.title, 'deal', b.dealId, b.assignedTo, b.updatedAt);
-+    checkLink('billing', b.id, b.title, 'proposal', b.proposalId, b.assignedTo, b.updatedAt);
-+    checkLink('billing', b.id, b.title, 'handoff', b.handoffId, b.assignedTo, b.updatedAt);
-+    checkLink('billing', b.id, b.title, 'contact', b.clientContactId, b.assignedTo, b.updatedAt);
-+  });
-+  activities.forEach(a => {
-+    if (a.linkedType && a.linkedId) {
-+      checkLink('activity', a.id, a.title, a.linkedType, a.linkedId, a.assignedTo, a.updatedAt);
-+    }
-+    checkLink('activity', a.id, a.title, 'deal', a.dealId, a.assignedTo, a.updatedAt);
-+    checkLink('activity', a.id, a.title, 'lead', a.leadId, a.assignedTo, a.updatedAt);
-+    checkLink('activity', a.id, a.title, 'contact', a.contactId, a.assignedTo, a.updatedAt);
-+  });
-+
-+  return issues;
 +}
 +
-+export function renderHygiene() {
-+  const user = Auth.getCurrentUser();
-+  if (!user) return '';
-+
-+  const hiddenIds = getHiddenIds();
-+  const rawIssues = generateIssues(user);
-+
-+  const uniqueMap = new Map();
-+  rawIssues.forEach(i => uniqueMap.set(i.id, i));
-+  currentIssues = Array.from(uniqueMap.values()).filter(i => !hiddenIds.includes(i.id));
-+
-+  const total = currentIssues.length;
-+  const missing = currentIssues.filter(i => i.type === 'missing_field').length;
-+  const stale = currentIssues.filter(i => i.type === 'stale_record').length;
-+  const overdue = currentIssues.filter(i => i.type === 'overdue_followup' || i.type === 'overdue_payment' || i.type === 'renewal_due').length;
-+  const duplicates = currentIssues.filter(i => i.type === 'duplicate_record').length;
-+  const unassigned = currentIssues.filter(i => i.type === 'unassigned_record').length;
-+
-+  return `
-+    <div class="content-inner">
-+      <div class="page-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-+        <div>
-+          <h1 class="page-header-title">CRM Hygiene</h1>
-+          <div class="page-header-subtitle">Identify and fix data quality issues in your workspace</div>
-+        </div>
-+        <button class="btn btn-secondary" id="btn-refresh-hygiene">
-+          <span class="icon">Γå╗</span> Refresh
-+        </button>
-+      </div>
-+
-+      <div class="dashboard-grid" style="grid-template-columns: repeat(6, 1fr); margin-bottom: 2rem;">
-+        <div class="stat-card">
-+          <div class="stat-card-label">Total Issues</div>
-+          <div class="stat-card-value">${total}</div>
-+        </div>
-+        <div class="stat-card">
-+          <div class="stat-card-label">Missing Info</div>
-+          <div class="stat-card-value" style="color:var(--color-error);">${missing}</div>
-+        </div>
-+        <div class="stat-card">
-+          <div class="stat-card-label">Stale Records</div>
-+          <div class="stat-card-value" style="color:var(--color-stage-invoice);">${stale}</div>
-+        </div>
-+        <div class="stat-card">
-+          <div class="stat-card-label">Overdue</div>
-+          <div class="stat-card-value" style="color:var(--color-error);">${overdue}</div>
-+        </div>
-+        <div class="stat-card">
-+          <div class="stat-card-label">Duplicates</div>
-+          <div class="stat-card-value" style="color:var(--color-stage-sales);">${duplicates}</div>
-+        </div>
-+        <div class="stat-card">
-+          <div class="stat-card-label">Unassigned</div>
-+          <div class="stat-card-value" style="color:var(--color-primary);">${unassigned}</div>
-+        </div>
-+      </div>
-+
-+      <div class="filters-bar" style="display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap; background:var(--color-surface-card); padding:1rem; border-radius:8px; border:1px solid var(--color-hairline-soft);">
-+        <input type="text" class="login-input" id="hygiene-filter-search" placeholder="Search issues..." style="flex:1; min-width:200px;">
-+        <select class="login-input" id="hygiene-filter-type" style="width:160px;">
-+          <option value="all">All Issue Types</option>
-+          <option value="missing_field">Missing Fields</option>
-+          <option value="stale_record">Stale Records</option>
-+          <option value="overdue_followup">Overdue Follow-ups</option>
-+          <option value="no_next_action">No Next Action</option>
-+          <option value="duplicate_record">Duplicates</option>
-+          <option value="unassigned_record">Unassigned</option>
-+          <option value="invalid_link">Invalid Links</option>
-+          <option value="overdue_payment">Overdue Payment</option>
-+          <option value="renewal_due">Renewal Due</option>
-+        </select>
-+        <select class="login-input" id="hygiene-filter-entity" style="width:140px;">
-+          <option value="all">All Entities</option>
-+          <option value="lead">Leads</option>
-+          <option value="deal">Deals</option>
-+          <option value="activity">Activities</option>
-+          <option value="requirement">Requirements</option>
-+          <option value="proposal">Proposals</option>
-+          <option value="handoff">Handoffs</option>
-+          <option value="billing">Billings</option>
-+          <option value="contact">Contacts</option>
-+        </select>
-+        <select class="login-input" id="hygiene-filter-severity" style="width:120px;">
-+          <option value="all">All Severities</option>
-+          <option value="high">High</option>
-+          <option value="medium">Medium</option>
-+          <option value="low">Low</option>
-+        </select>
-+        <select class="login-input" id="hygiene-filter-owner" style="width:140px;">
-+          <!-- Populated dynamically -->
-+        </select>
-+      </div>
-+
-+      <div class="table-container" style="background:var(--color-surface-card); border-radius:8px; border:1px solid var(--color-hairline-soft); overflow-x:auto;">
-+        <table class="data-table" style="width:100%; text-align:left; border-collapse:collapse;">
-+          <thead>
-+            <tr style="border-bottom:1px solid var(--color-hairline-soft);">
-+              <th style="padding:1rem;">Issue</th>
-+              <th style="padding:1rem;">Entity</th>
-+              <th style="padding:1rem;">Severity</th>
-+              <th style="padding:1rem;">Owner</th>
-+              <th style="padding:1rem;">Last Updated / Due Date</th>
-+              <th style="padding:1rem;">Suggested Fix</th>
-+              <th style="padding:1rem; text-align:right;">Actions</th>
-+            </tr>
-+          </thead>
-+          <tbody id="hygiene-tbody">
-+            <!-- Rendered via loadHygieneTable() -->
-+          </tbody>
-+        </table>
-+      </div>
-+    </div>
-+  `;
++// Ensure global hotkey is bound only once per app lifecycle
++if (!window.__globalSearchHotkeyBound) {
++  window.__globalSearchHotkeyBound = true;
++  document.addEventListener('keydown', (e) => {
++    if (e.key === '/') {
++      const activeEl = document.activeElement;
++      if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT' || activeEl.isContentEditable)) {
++        return;
++      }
++      e.preventDefault();
++      const input = document.getElementById('topbar-search');
++      if (input) input.focus();
++    }
++  });
 +}
 +
-+export function loadHygieneTable() {
-+  const tbody = document.getElementById('hygiene-tbody');
-+  const searchInput = document.getElementById('hygiene-filter-search');
-+  const typeFilter = document.getElementById('hygiene-filter-type');
-+  const entityFilter = document.getElementById('hygiene-filter-entity');
-+  const severityFilter = document.getElementById('hygiene-filter-severity');
-+  const ownerFilter = document.getElementById('hygiene-filter-owner');
++export function initGlobalSearch() {
++  const input = document.getElementById('topbar-search');
++  if (!input) return;
++  if (input.dataset.searchInitialized) return;
++  input.dataset.searchInitialized = 'true';
 +
-+  if (!tbody || !searchInput || !typeFilter || !entityFilter || !severityFilter || !ownerFilter) return;
++  const container = input.closest('.topbar-search');
++  if (!container) return;
 +
-+  const user = Auth.getCurrentUser();
-+  if (!user) return;
-+
-+  if (ownerFilter.options.length === 0) {
-+    let ownerOptions = '<option value="all">All Owners</option>';
-+    if (user.role === 'employee') {
-+      ownerOptions += `<option value="${user.id}">${user.name} (You)</option>`;
-+    } else if (user.role === 'team_lead') {
-+      const teamUsers = Store.getUsersByTeam(user.teamId);
-+      teamUsers.push(user);
-+      const uniqueUsers = Array.from(new Map(teamUsers.map(u => [u.id, u])).values());
-+      ownerOptions += uniqueUsers.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
-+    } else {
-+      const allUsers = Store.getUsers().filter(u => u.isActive);
-+      ownerOptions += allUsers.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
-+    }
-+    ownerOptions += '<option value="unassigned">Unassigned</option>';
-+    ownerFilter.innerHTML = ownerOptions;
++  let dropdown = container.querySelector('.topbar-search-dropdown');
++  if (!dropdown) {
++    dropdown = document.createElement('div');
++    dropdown.className = 'topbar-search-dropdown';
++    container.appendChild(dropdown);
 +  }
 +
-+  const search = searchInput.value.toLowerCase();
-+  const typeVal = typeFilter.value;
-+  const entityVal = entityFilter.value;
-+  const severityVal = severityFilter.value;
-+  const ownerVal = ownerFilter.value;
-+
-+  const filtered = currentIssues.filter(i => {
-+    const matchSearch = String(i.message || '').toLowerCase().includes(search) || String(i.entityTitle || '').toLowerCase().includes(search);
-+    const matchType = typeVal === 'all' || i.type === typeVal;
-+    const matchEntity = entityVal === 'all' || i.entityType === entityVal;
-+    const matchSeverity = severityVal === 'all' || i.severity === severityVal;
-+
-+    let matchOwner = false;
-+    if (ownerVal === 'all') matchOwner = true;
-+    else if (ownerVal === 'unassigned') matchOwner = !i.assignedTo;
-+    else matchOwner = i.assignedTo === ownerVal;
-+
-+    return matchSearch && matchType && matchEntity && matchSeverity && matchOwner;
-+  });
-+
-+  if (filtered.length === 0) {
-+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:2rem; color:var(--color-muted);">No hygiene issues found matching your filters. Great job! ≡ƒÄë</td></tr>';
-+    return;
++  function closeSearch() {
++    dropdown.classList.remove('is-open');
++    dropdown.innerHTML = '';
++    activeIndex = -1;
 +  }
 +
-+  tbody.innerHTML = filtered.map(i => {
-+    const owner = i.assignedTo ? Store.getUserById(i.assignedTo) : null;
-+    let sevColor = 'var(--color-muted)';
-+    if (i.severity === 'high') sevColor = 'var(--color-error)';
-+    if (i.severity === 'medium') sevColor = 'var(--color-stage-invoice)';
++  function performSearch(query) {
++    const user = Auth.getCurrentUser();
++    if (!user) return closeSearch();
 +
-+    const actions = [];
-+    actions.push(`<button class="btn btn-sm btn-secondary act-view" data-type="${i.entityType}" data-id="${i.entityId}">View</button>`);
-+    actions.push(`<button class="btn btn-sm btn-secondary act-hide" data-issue-id="${i.id}">Mark Reviewed</button>`);
++    const q = query.toLowerCase().trim();
++    if (q.length < 2) return closeSearch();
 +
-+    if (i.fixAction === 'fix_owner') {
-+      actions.push(`<button class="btn btn-sm btn-primary act-fix-owner" data-type="${i.entityType}" data-id="${i.entityId}">Assign Owner</button>`);
-+    } else if (i.fixAction === 'create_followup') {
-+      actions.push(`<button class="btn btn-sm btn-primary act-followup" data-type="${i.entityType}" data-id="${i.entityId}" data-title="${encodeURIComponent(i.entityTitle)}" data-owner="${i.assignedTo}">Follow-up</button>`);
-+    } else if (i.fixAction === 'delete_dup' && user.role === 'manager') {
-+      actions.push(`<button class="btn btn-sm btn-secondary act-delete-dup" style="color:var(--color-error); border-color:var(--color-error);" data-type="${i.entityType}" data-id="${i.entityId}">Delete</button>`);
-+    }
++    let totalCount = 0;
++    let resultsHtml = '';
 +
-+    return `
-+      <tr style="border-bottom:1px solid var(--color-hairline-soft);">
-+        <td style="padding:1rem;">
-+          <div style="font-weight:600;">${i.message}</div>
-+          <div style="font-size:0.8rem; color:var(--color-muted);">${i.entityTitle}</div>
-+        </td>
-+        <td style="padding:1rem; text-transform:capitalize;">${i.entityType}</td>
-+        <td style="padding:1rem;">
-+          <span class="badge" style="background:${sevColor}; color:white;">${i.severity}</span>
-+        </td>
-+        <td style="padding:1rem;">${owner ? owner.name : '<span style="color:var(--color-error);">Unassigned</span>'}</td>
-+        <td style="padding:1rem;">${i.dateLabel}</td>
-+        <td style="padding:1rem;">${i.suggestedFix}</td>
-+        <td style="padding:1rem; text-align:right;">
-+          <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
-+            ${actions.join('')}
++    const addGroup = (title, items, type) => {
++      const validItems = items.filter(item => item && item.id !== undefined && item.id !== null && String(item.id).trim() !== '');
++      if (validItems.length === 0 || totalCount >= 20) return;
++
++      const limited = validItems.slice(0, Math.min(5, 20 - totalCount));
++      if (limited.length === 0) return;
++
++      totalCount += limited.length;
++
++      resultsHtml += `<div class="search-result-group">${escapeHtml(title)}</div>`;
++      limited.forEach((item) => {
++        const safeId = escapeHtml(String(item.id));
++        const titleText = escapeHtml(item.title || item.name || 'Untitled');
++        const subText = escapeHtml(item.company || item.companyName || item.email || item.summary || item.content || '');
++        const badgeText = escapeHtml(item.status || item.stage || item.deliveryStatus || item.paymentStatus || item.requirementType || item.type || '');
++
++        resultsHtml += `
++          <div class="search-result-item" data-type="${type}" data-id="${safeId}">
++            <div class="search-result-content">
++              <div class="search-result-title">${titleText}</div>
++              ${subText ? `<div class="search-result-subtitle">${subText}</div>` : ''}
++            </div>
++            ${badgeText ? `<div class="search-result-badge">${badgeText}</div>` : ''}
 +          </div>
-+        </td>
-+      </tr>
-+    `;
-+  }).join('');
-+}
-+
-+function handleRouteAction(type, id) {
-+  const map = {
-+    'lead': '#/leads',
-+    'deal': `#/deals/${id}`,
-+    'activity': '#/activities',
-+    'requirement': '#/requirements',
-+    'proposal': '#/proposals',
-+    'handoff': '#/handoffs',
-+    'billing': '#/billing',
-+    'contact': '#/contacts'
-+  };
-+  import('../router.js').then(m => m.Router.navigate(map[type] || '#/dashboard'));
-+}
-+
-+function handleAssignOwner(entityType, entityId) {
-+  const user = Auth.getCurrentUser();
-+  if (!user) return;
-+
-+  const validUsers = user.role === 'employee' ? [user] :
-+                     user.role === 'team_lead' ? Store.getUsersByTeam(user.teamId).concat([user]) :
-+                     Store.getUsers().filter(u => u.isActive);
-+
-+  const modalHtml = `
-+    <div id="hygiene-owner-modal" class="modal-overlay">
-+      <div class="modal" style="max-width:400px; width:90%;">
-+        <div class="modal-header">
-+          <h2>Assign Owner</h2>
-+          <button class="modal-close" id="btn-close-owner">&times;</button>
-+        </div>
-+        <div class="modal-body">
-+          <div class="form-group">
-+            <label>Select User</label>
-+            <select class="login-input" id="hygiene-new-owner">
-+              ${validUsers.map(u => `<option value="${u.id}">${u.name}</option>`).join('')}
-+            </select>
-+          </div>
-+        </div>
-+        <div class="modal-footer">
-+          <button class="btn btn-secondary" id="btn-cancel-owner">Cancel</button>
-+          <button class="btn btn-primary" id="btn-save-owner">Save</button>
-+        </div>
-+      </div>
-+    </div>
-+  `;
-+  document.body.insertAdjacentHTML('beforeend', modalHtml);
-+
-+  const removeModal = () => document.getElementById('hygiene-owner-modal')?.remove();
-+
-+  document.getElementById('btn-close-owner').addEventListener('click', removeModal);
-+  document.getElementById('btn-cancel-owner').addEventListener('click', removeModal);
-+
-+  document.getElementById('btn-save-owner').onclick = () => {
-+    const newOwnerId = document.getElementById('hygiene-new-owner').value;
-+    if (!newOwnerId) return;
-+
-+    const validTypes = ['lead', 'deal', 'requirement', 'proposal', 'handoff', 'billing', 'activity'];
-+    if (!validTypes.includes(entityType)) return Toast.error('Error', 'Invalid entity type.');
-+
-+    const targetUser = Store.getUserById(newOwnerId);
-+    if (!targetUser || !targetUser.isActive) return Toast.error('Error', 'Selected user does not exist or is inactive.');
-+
-+    if (user.role === 'employee' && newOwnerId !== user.id) {
-+      return Toast.error('Error', 'Employees can only assign themselves.');
-+    }
-+    if (user.role === 'team_lead' && targetUser.teamId !== user.teamId && targetUser.id !== user.id) {
-+      return Toast.error('Error', 'Team Leads can only assign same-team users.');
-+    }
-+
-+    let success = false;
-+    const Getters = {
-+      lead: Store.getLeadById,
-+      deal: Store.getDealById,
-+      requirement: Store.getRequirementById,
-+      proposal: Store.getProposalById,
-+      handoff: Store.getHandoffById,
-+      billing: Store.getBillingById,
-+      activity: Store.getActivityById
-+    };
-+    const Updaters = {
-+      lead: Store.updateLead,
-+      deal: Store.updateDeal,
-+      requirement: Store.updateRequirement,
-+      proposal: Store.updateProposal,
-+      handoff: Store.updateHandoff,
-+      billing: Store.updateBilling,
-+      activity: Store.updateActivity
++        `;
++      });
 +    };
 +
-+    const getFn = Getters[entityType];
-+    const upFn = Updaters[entityType];
++    // Leads
++    const leads = Store.getLeadsForUser(user).filter(l => matchFields(q, l, ['name', 'company', 'email', 'phone', 'source', 'status']));
++    addGroup('Leads', leads, 'lead');
 +
-+    if (getFn && upFn) {
-+      const rec = getFn(entityId);
-+      if (rec) {
-+        if (rec.assignedTo && rec.assignedTo !== newOwnerId) {
-+          if (user.role !== 'manager') return Toast.error('Error', 'Only managers can reassign records that already have an owner.');
-+          if (!confirm('This record is already assigned. Are you sure you want to reassign it?')) return;
-+        }
++    // Deals
++    const deals = Store.getDealsForUser(user).filter(d => matchFields(q, d, ['title', 'companyName', 'stage', 'status', 'value']));
++    addGroup('Deals', deals, 'deal');
 +
-+        let canEdit = false;
-+        if (entityType === 'lead' || entityType === 'deal') canEdit = Auth.canEditRecord(rec);
-+        else if (entityType === 'requirement') canEdit = Store.canUserEditRequirement(rec, user);
-+        else if (entityType === 'proposal') canEdit = Store.canUserEditProposal(rec, user);
-+        else if (entityType === 'handoff') canEdit = Store.canUserEditHandoff(rec, user);
-+        else if (entityType === 'billing') canEdit = Store.canUserEditBilling(rec, user);
-+        else if (entityType === 'activity') canEdit = Store.canUserEditActivity(rec, user);
++    // Contacts
++    const contacts = Store.getContacts().filter(c => matchFields(q, c, ['name', 'company', 'email', 'phone', 'designation', 'tags']));
++    addGroup('Contacts', contacts, 'contact');
 +
-+        if (!canEdit) return Toast.error('Error', 'Permission denied.');
++    // Requirements
++    const reqs = Store.getRequirementsForUser(user).filter(r => matchFields(q, r, ['title', 'summary', 'requirementType', 'status', 'priority']));
++    addGroup('Requirements', reqs, 'requirement');
 +
-+        const payload = { assignedTo: newOwnerId, teamId: targetUser.teamId || rec.teamId || user.teamId || null };
-+        success = !!upFn(entityId, payload);
-+      }
++    // Proposals
++    const props = Store.getProposalsForUser(user).filter(p => matchFields(q, p, ['title', 'status', 'approvalStatus', 'grandTotal']));
++    addGroup('Proposals', props, 'proposal');
++
++    // Handoffs
++    const handoffs = Store.getHandoffsForUser(user).filter(h => matchFields(q, h, ['title', 'companyName', 'deliveryStatus', 'projectBrief']));
++    addGroup('Project Handoffs', handoffs, 'handoff');
++
++    // Billings
++    const billings = Store.getBillingsForUser(user).filter(b => matchFields(q, b, ['title', 'companyName', 'invoiceNumber', 'paymentStatus', 'renewalStatus']));
++    addGroup('Billing & Renewals', billings, 'billing');
++
++    // Activities
++    const activities = Store.getActivitiesForUser(user).filter(a => matchFields(q, a, ['title', 'content', 'type', 'status']));
++    addGroup('Activities', activities, 'activity');
++
++    if (totalCount === 0) {
++      resultsHtml = '<div class="search-empty-state">No matching records found.</div>';
 +    }
 +
-+    if (success) {
-+      Toast.success('Updated', 'Owner assigned successfully.');
-+      removeModal();
-+      import('../router.js').then(m => m.Router.handleRoute());
-+    } else {
-+      Toast.error('Error', 'Failed to assign owner or permission denied.');
-+    }
-+  };
-+}
-+
-+function handleDeleteDuplicate(entityType, entityId) {
-+  const user = Auth.getCurrentUser();
-+  if (!user || user.role !== 'manager') return Toast.error('Access Denied', 'Only managers can delete records.');
-+
-+  if (!confirm('Are you sure you want to delete this duplicate candidate? This cannot be undone.')) return;
-+
-+  if (entityType === 'contact') {
-+    const c = Store.getContactById(entityId);
-+    if (!c) return Toast.error('Error', 'Contact not found.');
-+
-+    const deals = Store.getDeals().some(d => d.contactId === entityId || d.clientContactId === entityId);
-+    const reqs = Store.getRequirements().some(r => r.contactId === entityId);
-+    const props = Store.getProposals().some(p => p.contactId === entityId);
-+    const handoffs = Store.getHandoffs().some(h => h.clientContactId === entityId);
-+    const billings = Store.getBillings().some(b => b.clientContactId === entityId);
-+    const acts = Store.getActivities().some(a => a.contactId === entityId);
-+
-+    if (deals || reqs || props || handoffs || billings || acts) {
-+      return Toast.error('Error', 'Cannot delete contact because it is linked to other records.');
-+    }
-+
-+    if (Store.deleteContact(entityId)) {
-+      Toast.success('Deleted', 'Duplicate contact removed.');
-+      import('../router.js').then(m => m.Router.handleRoute());
-+    } else {
-+      Toast.error('Error', 'Failed to delete contact.');
-+    }
-+  } else if (entityType === 'lead') {
-+    const l = Store.getLeadById(entityId);
-+    if (!l) return Toast.error('Error', 'Lead not found.');
-+
-+    const deals = Store.getDeals().some(d => d.leadId === entityId);
-+    const acts = Store.getActivities().some(a => a.leadId === entityId);
-+    const reqs = Store.getRequirements().some(r => r.leadId === entityId);
-+
-+    if (deals || acts || reqs) {
-+      return Toast.error('Error', 'Cannot delete lead because it is linked to other records.');
-+    }
-+
-+    if (Store.deleteLead(entityId)) {
-+      Toast.success('Deleted', 'Duplicate lead removed.');
-+      import('../router.js').then(m => m.Router.handleRoute());
-+    } else {
-+      Toast.error('Error', 'Failed to delete lead.');
-+    }
++    dropdown.innerHTML = resultsHtml;
++    dropdown.classList.add('is-open');
++    activeIndex = -1;
 +  }
-+}
 +
-+export function bindHygieneEvents() {
-+  if (eventsBound) return;
-+  eventsBound = true;
++  input.addEventListener('input', (e) => {
++    clearTimeout(debounceTimeout);
++    debounceTimeout = setTimeout(() => {
++      performSearch(e.target.value);
++    }, 200);
++  });
 +
-+  const content = document.getElementById('content-area');
-+  if (!content) return;
++  input.addEventListener('focus', (e) => {
++    if (e.target.value.trim().length >= 2) {
++      performSearch(e.target.value);
++    }
++  });
 +
-+  content.addEventListener('click', e => {
-+    if (e.target.closest('#btn-refresh-hygiene')) {
-+      import('../router.js').then(m => m.Router.handleRoute());
++  input.addEventListener('keydown', (e) => {
++    if (!dropdown.classList.contains('is-open')) return;
++    const items = dropdown.querySelectorAll('.search-result-item');
++    if (items.length === 0) {
++      if (e.key === 'Escape') closeSearch();
++      return;
 +    }
 +
-+    const btnHide = e.target.closest('.act-hide');
-+    if (btnHide) {
-+      addHiddenId(btnHide.getAttribute('data-issue-id'));
-+      import('../router.js').then(m => m.Router.handleRoute());
-+    }
-+
-+    const btnView = e.target.closest('.act-view');
-+    if (btnView) {
-+      handleRouteAction(btnView.getAttribute('data-type'), btnView.getAttribute('data-id'));
-+    }
-+
-+    const btnOwner = e.target.closest('.act-fix-owner');
-+    if (btnOwner) {
-+      handleAssignOwner(btnOwner.getAttribute('data-type'), btnOwner.getAttribute('data-id'));
-+    }
-+
-+    const btnDel = e.target.closest('.act-delete-dup');
-+    if (btnDel) {
-+      handleDeleteDuplicate(btnDel.getAttribute('data-type'), btnDel.getAttribute('data-id'));
-+    }
-+
-+    const btnFollow = e.target.closest('.act-followup');
-+    if (btnFollow) {
-+      const type = btnFollow.getAttribute('data-type');
-+      const id = btnFollow.getAttribute('data-id');
-+      const title = decodeURIComponent(btnFollow.getAttribute('data-title'));
-+      const owner = btnFollow.getAttribute('data-owner');
-+
-+      const user = Auth.getCurrentUser();
-+      let canEditSource = false;
-+      const Getters = {
-+        lead: Store.getLeadById,
-+        deal: Store.getDealById,
-+        contact: Store.getContactById,
-+        requirement: Store.getRequirementById,
-+        proposal: Store.getProposalById,
-+        handoff: Store.getHandoffById,
-+        billing: Store.getBillingById
-+      };
-+      const rec = Getters[type] ? Getters[type](id) : null;
-+      if (!rec) return Toast.error('Error', 'Source record not found.');
-+
-+      if (type === 'contact') canEditSource = true;
-+      else if (type === 'lead' || type === 'deal') canEditSource = Auth.canEditRecord(rec);
-+      else if (type === 'requirement') canEditSource = Store.canUserEditRequirement(rec, user);
-+      else if (type === 'proposal') canEditSource = Store.canUserEditProposal(rec, user);
-+      else if (type === 'handoff') canEditSource = Store.canUserEditHandoff(rec, user);
-+      else if (type === 'billing') canEditSource = Store.canUserEditBilling(rec, user);
-+
-+      if (!canEditSource) return Toast.error('Error', 'Permission denied to create follow-up for this record.');
-+
-+      if (['deal', 'lead', 'contact'].includes(type)) {
-+        import('./activities.js').then(m => {
-+          m.renderActivityModal(null, { linkedType: type, linkedId: id });
-+        });
++    if (e.key === 'ArrowDown') {
++      e.preventDefault();
++      activeIndex = (activeIndex + 1) % items.length;
++      updateActiveItem(items);
++    } else if (e.key === 'ArrowUp') {
++      e.preventDefault();
++      activeIndex = (activeIndex - 1 + items.length) % items.length;
++      updateActiveItem(items);
++    } else if (e.key === 'Enter') {
++      e.preventDefault();
++      if (activeIndex >= 0 && activeIndex < items.length) {
++        items[activeIndex].click();
 +      } else {
-+        let dealId = null;
-+        if (rec && rec.dealId) {
-+          const d = Store.getDealById(rec.dealId);
-+          if (d && Auth.canEditRecord(d)) dealId = rec.dealId;
-+        }
++        items[0].click(); // Auto-select first if none explicitly focused
++      }
++    } else if (e.key === 'Escape') {
++      closeSearch();
++      input.blur();
++    }
++  });
 +
-+        if (dealId) {
-+          import('./activities.js').then(m => {
-+            m.renderActivityModal(null, { linkedType: 'deal', linkedId: dealId });
-+          });
-+        } else {
-+          let targetOwner = user.id;
-+          let targetTeamId = user.teamId;
-+          if (owner && owner !== 'null' && owner !== 'undefined' && owner !== '') {
-+            const u = Store.getUserById(owner);
-+            if (u && u.isActive) {
-+              targetOwner = u.id;
-+              targetTeamId = u.teamId;
-+            }
-+          }
++  function updateActiveItem(items) {
++    items.forEach((item, idx) => {
++      if (idx === activeIndex) {
++        item.classList.add('active');
++        item.scrollIntoView({ block: 'nearest' });
++      } else {
++        item.classList.remove('active');
++      }
++    });
++  }
 +
-+          const due = new Date();
-+          due.setDate(due.getDate() + 1);
-+          const nowIso = new Date().toISOString();
++  dropdown.addEventListener('click', (e) => {
++    const item = e.target.closest('.search-result-item');
++    if (item) {
++      const type = item.getAttribute('data-type');
++      const id = item.getAttribute('data-id');
 +
-+          const payload = {
-+            id: 'act_' + Date.now(),
-+            title: `Follow up on ${type}: ${title}`,
-+            content: `Follow up on ${type}: ${title}`,
-+            type: 'follow_up',
-+            status: 'open',
-+            linkedType: 'none',
-+            linkedId: null,
-+            sourceEntityType: type,
-+            sourceEntityId: id,
-+            assignedTo: targetOwner,
-+            teamId: targetTeamId,
-+            dueAt: due.toISOString(),
-+            createdBy: user.id,
-+            createdAt: nowIso,
-+            updatedAt: nowIso
-+          };
-+          Store.createActivity(payload);
-+          Toast.success('Created', 'Follow-up activity created.');
-+          import('../router.js').then(m => m.Router.handleRoute());
-+        }
++      const map = {
++        'lead': '#/leads',
++        'contact': '#/contacts',
++        'deal': `#/deals/${id}`,
++        'requirement': '#/requirements',
++        'proposal': '#/proposals',
++        'handoff': '#/handoffs',
++        'billing': '#/billing',
++        'activity': '#/activities'
++      };
++
++      const route = map[type];
++      if (route) {
++        closeSearch();
++        input.value = '';
++        input.blur();
++        import('../router.js').then(m => m.Router.navigate(route));
 +      }
 +    }
 +  });
-+
-+  content.addEventListener('change', e => {
-+    if (['hygiene-filter-search', 'hygiene-filter-type', 'hygiene-filter-entity', 'hygiene-filter-severity', 'hygiene-filter-owner'].includes(e.target.id)) {
-+      loadHygieneTable();
-+    }
-+  });
-+  content.addEventListener('keyup', e => {
-+    if (e.target.id === 'hygiene-filter-search') loadHygieneTable();
-+  });
 +}
-+
-+export function initHygienePage() {
-+  loadHygieneTable();
-+}
-diff --git a/js/router.js b/js/router.js
-index df7ebd5..710a9d3 100644
---- a/js/router.js
-+++ b/js/router.js
-@@ -21,7 +21,8 @@ const ROUTES = {
-   'billing':   { pageId: 'billing',   title: 'Billing' },
-   'team':      { pageId: 'team',      title: 'Team' },
-   'reports':   { pageId: 'reports',   title: 'Reports' },
--  'settings':  { pageId: 'settings',  title: 'Settings' }
-+  'settings':  { pageId: 'settings',  title: 'Settings' },
-+  'hygiene':   { pageId: 'hygiene',   title: 'Hygiene' }
+diff --git a/js/components/topbar.js b/js/components/topbar.js
+index e41774d..c8dbc96 100644
+--- a/js/components/topbar.js
++++ b/js/components/topbar.js
+@@ -9,14 +9,20 @@ import { getInitials, formatRole } from '../utils.js';
+ const SEARCH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+ 
+ const PAGE_TITLES = {
+-  dashboard: 'Dashboard',
+-  pipeline:  'Pipeline',
+-  leads:     'Leads',
+-  contacts:  'Contacts',
+-  deals:     'Deals',
+-  team:      'Team',
+-  reports:   'Reports',
+-  settings:  'Settings'
++  dashboard:    'Dashboard',
++  pipeline:     'Pipeline',
++  leads:        'Leads',
++  contacts:     'Contacts',
++  deals:        'Deals',
++  team:         'Team',
++  reports:      'Reports',
++  settings:     'Settings',
++  activities:   'Activities',
++  requirements: 'Requirements',
++  proposals:    'Proposals',
++  handoffs:     'Project Handoff',
++  billing:      'Billing & Renewals',
++  hygiene:      'CRM Hygiene'
  };
  
- let currentPage = null;
+ export function renderTopbar(pageId) {
 ```
 
 ## Tests Run
 ```text
-Browser preview performed externally: Manager, Team Lead, and Employee hygiene visibility/actions checked; filters, assign owner, follow-up creation, reviewed hiding, and duplicate delete guardrails checked
+Browser preview performed externally: Manager, Team Lead, and Employee global search visibility checked; slash focus, arrow navigation, Enter routing, Escape close, outside click close, and result navigation checked
 ```
 
 ## Risks / Pending Checks

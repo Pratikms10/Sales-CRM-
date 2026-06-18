@@ -9,14 +9,20 @@ import { getInitials, formatRole } from '../utils.js';
 const SEARCH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
 
 const PAGE_TITLES = {
-  dashboard: 'Dashboard',
-  pipeline:  'Pipeline',
-  leads:     'Leads',
-  contacts:  'Contacts',
-  deals:     'Deals',
-  team:      'Team',
-  reports:   'Reports',
-  settings:  'Settings'
+  dashboard:    'Dashboard',
+  pipeline:     'Pipeline',
+  leads:        'Leads',
+  contacts:     'Contacts',
+  deals:        'Deals',
+  team:         'Team',
+  reports:      'Reports',
+  settings:     'Settings',
+  activities:   'Activities',
+  requirements: 'Requirements',
+  proposals:    'Proposals',
+  handoffs:     'Project Handoff',
+  billing:      'Billing & Renewals',
+  hygiene:      'CRM Hygiene'
 };
 
 export function renderTopbar(pageId) {
