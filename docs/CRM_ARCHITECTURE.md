@@ -1,307 +1,94 @@
-# TechnoEdge CRM — System Architecture
+# TechnoEdge CRM — Architecture
 
-> This document describes the technical architecture of TechnoEdge CRM.  
-> Last updated: Phase 0 — Foundation Setup.
+## Overview
+TechnoEdge CRM is a Vanilla JavaScript Single Page Application (SPA). It runs entirely in the browser and uses `LocalStorage` for all data persistence.
 
----
+> **Important Limitation:** This is a frontend-only MVP. There is no remote backend database, no real authentication/JWTs, and no live external integrations. If `LocalStorage` is cleared, all CRM data is lost unless explicitly exported.
 
-## 1. Overview
+## Tech Stack
+- **HTML5 & CSS3**: Vanilla, leveraging custom CSS variables for tokens (`css/variables.css`). No CSS frameworks (e.g., Tailwind or Bootstrap) are used.
+- **JavaScript (ES6 Modules)**: Vanilla JS handles routing, data state, and DOM updates. No JS frameworks (e.g., React or Vue) are used.
+- **Data Layer**: Native browser `window.localStorage`.
 
-TechnoEdge CRM is a **single-page application (SPA)** built with vanilla HTML, CSS, and JavaScript. It runs entirely in the browser with no server-side dependencies in Phase 1.
+## Application Layers
 
-### Key Architectural Decisions
+### 1. The Store (`js/store.js`)
+The central nervous system of the app. It manages synchronous CRUD operations against LocalStorage.
+- Reads and writes schema arrays from LocalStorage and returns empty arrays when data is missing.
+- Enforces Role-Based Access Control (RBAC) synchronously (e.g., `getDealsForUser(user)` filters the raw deals array based on whether the user is a Manager, Team Lead, or Employee).
+- Connects modules via foreign keys (e.g., `dealId`, `assignedTo`, `teamId`).
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| Framework | None (vanilla JS) | Simplicity, zero dependencies, full control |
-| Styling | Vanilla CSS with custom properties | Design tokens from DESIGN.md map directly to CSS vars |
-| Routing | Hash-based (`#/page`) | No server config needed, works with file:// protocol |
-| Data | LocalStorage | No backend required for Phase 1; data persists per browser |
-| Modules | ES6 modules (`import/export`) | Native browser support, no bundler needed |
-| Font | Inter (Google Fonts CDN) | Open-source substitute for Airbnb Cereal VF per DESIGN.md |
+### 2. Authentication (`js/auth.js`)
+A mock authentication layer that controls the current active session.
+- Allows demo login by selecting a predefined user profile.
+- Restricts unauthenticated users to the `#/login` route.
+- Returns the full user object including `role` and `teamId`.
 
----
+### 3. Routing (`js/router.js` & `js/app.js`)
+A lightweight hash-based router (`window.addEventListener('hashchange')`).
+- Bootstraps the application shell (Sidebar + Topbar) on first load.
+- Injects module-specific HTML into the `<main id="content-area">` container.
+- Delegates event binding to specific page modules after DOM injection.
 
-## 2. Application Architecture
+### 4. Components (`js/components/`)
+Reusable UI modules that decouple shell behavior from business pages.
+- **`sidebar.js`**: Renders dynamic navigation links based on user role.
+- **`topbar.js`**: Renders breadcrumbs and the mobile menu toggle.
+- **`global-search.js`**: Manages the keyboard-accessible (`/`) cross-module search overlay.
+- **`toast.js`**: Non-blocking notification popups for success/error states.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        index.html                           │
-│  ┌──────────┐  ┌──────────────────────────────────────────┐ │
-│  │          │  │              Topbar                       │ │
-│  │          │  │  Breadcrumb │ Search │ User Profile       │ │
-│  │ Sidebar  │  ├──────────────────────────────────────────┤ │
-│  │          │  │                                          │ │
-│  │  Logo    │  │           Content Area                   │ │
-│  │  Nav     │  │                                          │ │
-│  │  Links   │  │    (Pages rendered here by Router)       │ │
-│  │          │  │                                          │ │
-│  │  User    │  │    Dashboard │ Pipeline │ Leads          │ │
-│  │  Info    │  │    Contacts  │ Deals   │ Team            │ │
-│  │          │  │    Reports   │ Settings                  │ │
-│  │          │  │                                          │ │
-│  └──────────┘  └──────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-```
+## Data Entities
 
-### Layer Diagram
+The local database consists of the following key entities:
+- `users`: Core profiles with roles (manager, team_lead, employee).
+- `teams`: Logical groupings of users.
+- `leads`: Early-stage unqualified opportunities.
+- `contacts`: Global stakeholder address book.
+- `deals`: Core sales opportunities progressing through pipeline stages.
+- `activities`: Timestamped notes, logs, and future-dated follow-ups.
+- `requirements`: Technical and business scoping docs attached to deals.
+- `proposals`: Financial quotes requiring manager approval.
+- `handoffs`: Post-sale delivery instruction sets.
+- `billings`: Invoicing, payment collection, and renewal tracking.
+- `settings` & `session`: App-wide preferences (like Compact Tables) and active login state.
 
-```
-┌─────────────────────────────────────┐
-│            Pages Layer              │  ← Page modules render into content area
-│  dashboard │ pipeline │ leads │ ... │
-├─────────────────────────────────────┤
-│         Components Layer            │  ← Reusable UI: tables, modals, forms
-│  sidebar │ topbar │ table │ modal   │
-├─────────────────────────────────────┤
-│          Services Layer             │  ← Business logic and data access
-│    auth │ store │ router │ utils    │
-├─────────────────────────────────────┤
-│         Design System (CSS)         │  ← Tokens, base styles, components
-│  variables │ base │ layout │ comps  │
-├─────────────────────────────────────┤
-│        Browser Platform             │  ← LocalStorage, DOM, History API
-└─────────────────────────────────────┘
-```
+## Core Workflows & Lifecycles
 
----
+### The Commercial Lifecycle
+Data conceptually flows sequentially, although users can jump between modules:
+1. **Lead Generation**: Unqualified prospect (`#/leads`).
+2. **Deal Conversion**: Lead is qualified and promoted to a Deal (`#/deals`).
+3. **Scoping**: Technical/Business Requirements are attached to the Deal (`#/requirements`).
+4. **Quotation**: A Financial Proposal is generated and approved (`#/proposals`).
+5. **Closure**: Deal is Won.
+6. **Execution**: A Project Handoff is authored for the Delivery team (`#/handoffs`).
+7. **Collection**: Invoices are raised and Renewals are tracked (`#/billing`).
 
-## 3. SOP Pipeline Architecture
+### The Activity Timeline
+All communication, updates, and future reminders are tracked as Activities (`#/activities`). Follow-ups are tied directly to parent entities (Deals, Leads, etc.) and appear chronologically in their detail views.
 
-The CRM enforces a **7-stage standard operating procedure** for every deal:
+### Audit & Export Boundaries
+Because data is browser-bound, data backup and portability rely on manual JSON exports.
+- **Managers only** can hit the `#/settings` endpoint to dump the entire database to a `.json` file, or generate `.csv` files for legacy systems.
+- Complete data imports will immediately overwrite `LocalStorage`.
 
-```
-┌──────┐   ┌─────────────┐   ┌──────────┐   ┌──────────┐
-│Sales │──▶│ Requirement │──▶│ Sourcing │──▶│ Delivery │
-└──────┘   └─────────────┘   └──────────┘   └──────────┘
-                                                  │
-                                                  ▼
-           ┌──────────┐   ┌─────────────────┐   ┌──────────┐
-           │ Renewal  │◀──│ Invoice/Payment │◀──│ Feedback │
-           └──────────┘   └─────────────────┘   └──────────┘
-```
+## Route Map
 
-### Stage Definitions
-
-| # | Stage | Purpose | Key Activities |
-|---|-------|---------|----------------|
-| 1 | **Sales** | Lead qualification, initial contact | Cold outreach, qualification calls, lead scoring |
-| 2 | **Requirement** | Needs analysis, requirement gathering | Discovery meetings, requirement documents, scope definition |
-| 3 | **Sourcing** | Vendor/product sourcing, proposal | Vendor research, pricing, proposal creation |
-| 4 | **Delivery** | Order fulfillment, delivery tracking | Order processing, shipment tracking, delivery confirmation |
-| 5 | **Feedback** | Customer satisfaction check | Follow-up calls, satisfaction surveys, issue resolution |
-| 6 | **Invoice/Payment** | Billing and payment | Invoice generation, payment tracking, overdue follow-ups |
-| 7 | **Renewal** | Contract renewal, upsell | Renewal offers, contract extension, upsell opportunities |
-
-### Stage Transition Rules
-
-- **Default flow:** Stages progress sequentially (1 → 2 → 3 → ... → 7)
-- **Employee/Team Lead:** Can only move a deal to the **next** stage
-- **Manager:** Can **override** and move a deal to **any** stage (skip forward or move back)
-- **Stage changes are logged** as activities with timestamp, user, and optional notes
-- A deal can be **closed/lost** from any stage (removes from active pipeline)
-
----
-
-## 4. Data Model
-
-### Entity Relationship
-
-```
-┌──────────┐       ┌──────────┐       ┌──────────┐
-│   User   │──────▶│   Team   │◀──────│   User   │
-│ (Member) │ many  │          │  1    │  (Lead)  │
-└──────────┘       └──────────┘       └──────────┘
-     │                   │
-     │ assignedTo        │ teamId
-     ▼                   ▼
-┌──────────┐       ┌──────────┐       ┌──────────┐
-│   Lead   │──────▶│   Deal   │◀──────│ Contact  │
-│          │ 1:1   │          │  1:1  │          │
-└──────────┘       └──────────┘       └──────────┘
-                        │
-                        │ dealId
-                        ▼
-                   ┌──────────┐
-                   │ Activity │
-                   │          │
-                   └──────────┘
-```
-
-### Entities
-
-#### User
-```
-{
-  id:        string     — Unique identifier
-  name:      string     — Full name
-  email:     string     — Email address
-  role:      enum       — "manager" | "team_lead" | "employee"
-  teamId:    string     — Reference to Team (null for Manager)
-  avatarColor: string   — Color for avatar circle
-  isActive:  boolean    — Account status
-}
-```
-
-#### Team
-```
-{
-  id:        string     — Unique identifier
-  name:      string     — Team name (e.g., "North Sales", "Enterprise Team")
-  leadId:    string     — Reference to User (Team Lead)
-  memberIds: string[]   — References to Users (Employees)
-}
-```
-
-#### Lead
-```
-{
-  id:          string   — Unique identifier
-  name:        string   — Contact/company name
-  company:     string   — Company name
-  email:       string   — Email
-  phone:       string   — Phone number
-  source:      enum     — "website" | "referral" | "cold_call" | "social" | "event" | "other"
-  status:      enum     — "new" | "contacted" | "qualified" | "unqualified" | "converted"
-  assignedTo:  string   — Reference to User
-  createdBy:   string   — Reference to User who created
-  createdAt:   string   — ISO timestamp
-  updatedAt:   string   — ISO timestamp
-  notes:       string   — Free-text notes
-}
-```
-
-#### Contact
-```
-{
-  id:          string   — Unique identifier
-  name:        string   — Full name
-  company:     string   — Company name
-  email:       string   — Email
-  phone:       string   — Phone number
-  designation: string   — Job title
-  type:        enum     — "client" | "vendor"
-  tags:        string[] — Flexible tagging
-  createdAt:   string   — ISO timestamp
-}
-```
-
-#### Deal
-```
-{
-  id:          string   — Unique identifier
-  title:       string   — Deal title
-  leadId:      string   — Reference to originating Lead
-  contactId:   string   — Reference to Contact
-  value:       number   — Deal value in base currency
-  currency:    string   — Currency code (default: "INR")
-  stage:       enum     — "sales" | "requirement" | "sourcing" | "delivery" | "feedback" | "invoice" | "renewal"
-  status:      enum     — "active" | "won" | "lost"
-  assignedTo:  string   — Reference to User (Employee)
-  teamId:      string   — Reference to Team
-  priority:    enum     — "low" | "medium" | "high" | "urgent"
-  createdAt:   string   — ISO timestamp
-  updatedAt:   string   — ISO timestamp
-  closedAt:    string   — ISO timestamp (when won/lost)
-  notes:       string   — Free-text notes
-}
-```
-
-#### Activity
-```
-{
-  id:          string   — Unique identifier
-  dealId:      string   — Reference to Deal
-  type:        enum     — "call" | "email" | "meeting" | "note" | "stage_change" | "assignment"
-  content:     string   — Activity description
-  fromStage:   string   — Previous stage (for stage_change type)
-  toStage:     string   — New stage (for stage_change type)
-  createdBy:   string   — Reference to User
-  createdAt:   string   — ISO timestamp
-}
-```
-
----
-
-## 5. Routing
-
-Hash-based routing with role guards:
-
-| Route | Page | Manager | Team Lead | Employee |
-|-------|------|---------|-----------|----------|
-| `#/login` | Login | ✅ | ✅ | ✅ |
-| `#/dashboard` | Dashboard | ✅ | ✅ | ✅ |
-| `#/pipeline` | Pipeline Kanban | ✅ | ✅ | ✅ |
-| `#/leads` | Lead List | ✅ | ✅ | ✅ |
-| `#/leads/:id` | Lead Detail | ✅ | ✅ | ✅ (own) |
-| `#/contacts` | Contact List | ✅ | ✅ | ✅ |
-| `#/contacts/:id` | Contact Detail | ✅ | ✅ | ✅ |
-| `#/deals` | Deal List | ✅ | ✅ | ✅ |
-| `#/deals/:id` | Deal Detail | ✅ | ✅ | ✅ (own) |
-| `#/team` | Team Management | ✅ | ✅ (own) | ❌ |
-| `#/reports` | Reports | ✅ | ❌ | ❌ |
-| `#/settings` | Settings | ✅ | ✅ | ✅ |
-
----
-
-## 6. State Management
-
-### Data Flow
-
-```
-User Action → Page Handler → Store (CRUD) → LocalStorage
-                                  ↓
-                            Re-render View
-```
-
-- **Store** provides role-scoped query methods
-- **Pages** subscribe to data changes and re-render
-- **No global state object** — each page fetches fresh data from Store on render
-- **Optimistic UI** — changes apply immediately, persisted to LocalStorage synchronously
-
-### LocalStorage Keys
-
-| Key | Contents |
-|-----|----------|
-| `technoedge_users` | User[] |
-| `technoedge_teams` | Team[] |
-| `technoedge_leads` | Lead[] |
-| `technoedge_contacts` | Contact[] |
-| `technoedge_deals` | Deal[] |
-| `technoedge_activities` | Activity[] |
-| `technoedge_session` | Current user session |
-| `technoedge_settings` | App preferences |
-
----
-
-## 7. Security Model (Client-Side)
-
-> **Note:** This is client-side enforcement only. There is no server-side validation in Phase 1. Data is not encrypted at rest.
-
-- **Route guards:** Router checks `auth.canAccess(route)` before rendering
-- **Data scoping:** Store queries filter by role before returning results
-- **Action guards:** UI disables/hides actions the current role cannot perform
-- **Session:** Stored in LocalStorage; cleared on logout
-
----
-
-## 8. Future Architecture (Phase 3+)
-
-When backend/integrations are added:
-
-```
-┌────────────┐     ┌────────────┐     ┌────────────┐
-│  Frontend  │────▶│  REST API  │────▶│  Database  │
-│  (Current) │     │  (Node.js) │     │ (Postgres) │
-└────────────┘     └────────────┘     └────────────┘
-                        │
-                   ┌────┴────┐
-                   │   AI    │
-                   │ Service │
-                   └─────────┘
-```
-
-- LocalStorage → replaced by API calls
-- Auth → replaced by JWT/session tokens
-- Store → becomes API client layer
-- Frontend code remains largely unchanged
+| Route | Purpose | Access |
+|---|---|---|
+| `#/login` | Demo role selection | Public |
+| `#/dashboard` | KPI overview & Alerts | All Roles |
+| `#/pipeline` | Kanban deal progression | All Roles |
+| `#/leads` | Lead management | All Roles |
+| `#/contacts` | Address book | All Roles |
+| `#/deals` | List view of deals | All Roles |
+| `#/deals/:id` | Deal detail & Stage execution | All Roles |
+| `#/activities` | Action items & Follow-ups | All Roles |
+| `#/requirements` | Scoping documents | All Roles |
+| `#/proposals` | Financial quotations | All Roles |
+| `#/handoffs` | Delivery transitioning | All Roles |
+| `#/billing` | Invoices & Renewals | All Roles |
+| `#/hygiene` | CRM data quality alerts | All Roles |
+| `#/team` | User & reassignment management | Team Lead, Manager |
+| `#/reports` | Analytics & forecasting | Manager Only |
+| `#/settings` | Preferences & data export | All Roles (Export Manager-only) |

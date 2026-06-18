@@ -1,137 +1,80 @@
 # TechnoEdge CRM
 
-A modern, SOP-driven Sales CRM built with vanilla HTML, CSS, and JavaScript.  
-Designed with the Airbnb-inspired design system. No frameworks. No dependencies.
+A robust, role-scoped, browser-local Customer Relationship Management (CRM) SPA designed for comprehensive sales pipeline execution, from initial lead sourcing through quotation, project handoff, and billing.
 
----
+## Current Status
 
-## Project Status
+**Status:** Phase 2H Documentation Closeout in Progress
+*The Phase 2 Basic CRM MVP is complete. The application is a fully functional browser-based SPA utilizing LocalStorage.*
 
-| Phase | Description | Status |
-|-------|-------------|--------|
-| Phase 0 | Project Foundation & Documentation | 🟢 Current |
-| Phase 1 | Core CRM UI & SOP Pipeline | ⬜ Planned |
-| Phase 2 | Advanced Features & Polish | ⬜ Planned |
-| Phase 3 | AI, RAG, Integrations | ⬜ Future |
+### Modules Implemented
+- **Login & Authentication**: Role-scoped (Manager, Team Lead, Employee) demo login.
+- **Dashboard**: High-level metrics, open tasks, recent hygiene alerts.
+- **Pipeline (Kanban)**: Visual kanban-style deal tracking with guarded stage controls.
+- **Leads**: Qualification and conversion tracking.
+- **Contacts**: Global Rolodex for clients and stakeholders.
+- **Deals**: Core opportunity tracking with detailed stage histories.
+- **Activities & Follow-ups**: Next-action assignments with specific deadlines.
+- **Requirements**: Technical and business requirement gathering attached to deals.
+- **Proposals & Quotations**: Financial modeling with manager approval workflows.
+- **Project Handoff**: Delivery scoping and operational handover tracking.
+- **Billing & Renewals**: Invoice tracking, payment status, and renewal reminders.
+- **CRM Hygiene**: Centralized dashboard to detect unassigned, stale, or incomplete records.
+- **Reports**: Manager-only analytical views and forecasting.
+- **Team Management**: User management and record reassignment tools.
+- **Global Search**: Role-scoped, keyboard-navigable cross-entity search (using `/`).
+- **Settings**: JSON/CSV export, data import, demo reset, and user preferences (e.g., Compact Tables).
+- **Responsive Shell**: Dynamic layout supporting laptop, tablet, and mobile devices natively.
 
----
-
-## What Is TechnoEdge CRM?
-
-TechnoEdge CRM is a role-based sales management system that enforces a standard operating procedure (SOP) across every deal's lifecycle:
-
-```
-Sales → Requirement → Sourcing → Delivery → Feedback → Invoice/Payment → Renewal
-```
-
-Every deal must progress through these stages in order. The system enforces who can do what based on three roles.
-
----
-
-## Roles
-
-| Role | Access Level |
-|------|-------------|
-| **Manager** | Full access — all data, all teams, approvals, overrides, reports |
-| **Team Lead** | Team-level access — own team's data, assignment, review, escalation |
-| **Employee** | Personal access — assigned work only, no approvals or global visibility |
-
-See [docs/ROLE_ACCESS_MATRIX.md](docs/ROLE_ACCESS_MATRIX.md) for the full permission breakdown.
-
----
-
-## Tech Stack
-
-- **HTML5** — Semantic markup, single-page app shell
-- **Vanilla CSS** — Design tokens from DESIGN.md as CSS custom properties
-- **Vanilla JavaScript** — ES6 modules, hash-based SPA routing
-- **LocalStorage** — Browser-local data persistence (Phase 1)
-- **Inter** — Google Font (open-source substitute for Airbnb Cereal VF)
-
-No React. No Vue. No Tailwind. No npm. Just clean, standards-based web code.
-
----
+### Future Scope (Not Yet Included)
+- **Phase 3:** AI assistant and smart sales intelligence.
+- **Phase 4:** RAG (Retrieval-Augmented Generation) and knowledge base integrations.
+- **Phase 5:** External Integrations (Outlook, Teams, Slack).
+- **Phase 6:** Call recording, transcription, and conversational analysis.
+- **Backend Infrastructure:** A real backend database/API.
+- **Real Authentication:** Secure password management, JWTs, and SSO.
 
 ## Project Structure
 
 ```
-Sales CRM/
-├── index.html              → App shell (Phase 1)
-├── DESIGN.md               → Lifetime design system reference
-├── README.md               → This file
-├── generate-audit.ps1      → Git diff audit script
-│
-├── css/                    → Stylesheets (Phase 1)
-│   ├── variables.css       → Design tokens
-│   ├── base.css            → Reset, fonts, globals
-│   ├── layout.css          → Sidebar, topbar, grid
-│   └── components.css      → Buttons, cards, tables, modals
-│
-├── js/                     → Application logic (Phase 1)
-│   ├── app.js              → Entry point
-│   ├── router.js           → Hash-based routing
-│   ├── auth.js             → Login, role checks
-│   ├── store.js            → LocalStorage data layer
-│   ├── seed.js             → Demo data
-│   ├── utils.js            → Helpers
-│   ├── components/         → Reusable UI components
-│   └── pages/              → Page modules
-│
-├── docs/                   → Project documentation
-│   ├── CRM_ARCHITECTURE.md → System architecture
-│   ├── ROLE_ACCESS_MATRIX.md → Permission matrix
-│   └── PHASE_PLAN.md       → Phased delivery roadmap
-│
-└── audits/                 → AI change audit reports
-    └── .gitkeep
+.
+├── css/
+│   ├── base.css           # Resets and typography
+│   ├── components.css     # Buttons, cards, modals, grids, tables
+│   ├── layout.css         # Shell, topbar, sidebar, overlay
+│   └── variables.css      # Design tokens (colors, spacing, fonts)
+├── docs/                  # Project documentation (Architecture, Roles, Roadmap)
+├── js/
+│   ├── components/        # Sidebar, topbar, toast, global search
+│   ├── pages/             # Individual module logic (Leads, Deals, Billing, etc.)
+│   ├── app.js             # Application bootstrap and routing
+│   ├── auth.js            # Mock authentication and role management
+│   ├── router.js          # Hash-based SPA routing
+│   ├── seed.js            # Initial demo data generation
+│   ├── store.js           # Central LocalStorage CRUD and permissions wrapper
+│   └── utils.js           # Formatters, ID generators, helpers
+├── index.html             # Single entry point
+└── README.md              # Project overview
 ```
 
----
+## Architecture
 
-## Getting Started
+This is a **Vanilla JavaScript Single Page Application (SPA)**.
+- **No external frameworks** (No React, Vue, or Tailwind).
+- **No backend dependencies**; all data persists locally in the user's browser via `LocalStorage`.
+- **Hash-based routing** dynamically maps `#/paths` to JavaScript page renderers.
 
-### Prerequisites
-- A modern web browser (Chrome, Firefox, Edge)
-- A local HTTP server (Phase 1 onward)
-- Git for version control
-- PowerShell (for audit script on Windows)
+For detailed documentation, review:
+- [CRM Architecture](docs/CRM_ARCHITECTURE.md)
+- [Role Access Matrix](docs/ROLE_ACCESS_MATRIX.md)
+- [Phase Plan](docs/PHASE_PLAN.md)
 
-### Development Workflow
+## Development Workflow
 
-**Before making changes:**
-```powershell
-git status
-git add .
-git commit -m "Baseline before changes"
-```
-
-**After making changes:**
-```powershell
-git status
-powershell -ExecutionPolicy Bypass -File .\generate-audit.ps1 -TaskSummary "Description of task" -TestsRun "Tests performed"
-```
-
-**Review, then commit:**
-```powershell
-git diff
-git add .
-git commit -m "Descriptive commit message"
-git push
-```
-
----
-
-## Documentation
-
-| Document | Purpose |
-|----------|---------|
-| [DESIGN.md](DESIGN.md) | Lifetime design system reference (colors, typography, spacing, components) |
-| [CRM_ARCHITECTURE.md](docs/CRM_ARCHITECTURE.md) | System architecture and data model |
-| [ROLE_ACCESS_MATRIX.md](docs/ROLE_ACCESS_MATRIX.md) | Complete role-based access control matrix |
-| [PHASE_PLAN.md](docs/PHASE_PLAN.md) | Phased delivery roadmap |
-
----
-
-## License
-
-Internal project. Not for public distribution.
+This project was built iteratively using an AI-agent-driven pair programming approach.
+1. **Baseline Commit**: Record the starting state.
+2. **Antigravity/Codex Execution**: Instruct the agent to build the next module or apply hardening fixes.
+3. **Validation**: Run `git diff --check` to ensure code cleanliness.
+4. **Audit**: Run `generate-audit.ps1` to log the phase's changes.
+5. **Commit**: `git add .`, `git commit -m "..."`, `git push`.
+6. **Testing**: Browser preview and manual QA are performed externally by the user.
