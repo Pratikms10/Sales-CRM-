@@ -14,6 +14,7 @@ const KEYS = {
   activities: STORAGE_PREFIX + 'activities',
   requirements: STORAGE_PREFIX + 'requirements',
   proposals:  STORAGE_PREFIX + 'proposals',
+  handoffs:   STORAGE_PREFIX + 'handoffs',
   session:    STORAGE_PREFIX + 'session',
   settings:   STORAGE_PREFIX + 'settings',
   seeded:     STORAGE_PREFIX + 'seeded'
@@ -366,6 +367,49 @@ export const Store = {
     return prop.assignedTo === user.id || prop.createdBy === user.id;
   },
 
+  // ── Handoffs ─────────────────────────────────────────────
+  getHandoffs() { return getAll(KEYS.handoffs); },
+  getHandoffById(id) { return getById(KEYS.handoffs, id); },
+  createHandoff(handoff) { return create(KEYS.handoffs, handoff); },
+  updateHandoff(id, updates) { return update(KEYS.handoffs, id, updates); },
+  deleteHandoff(id) { return remove(KEYS.handoffs, id); },
+
+  getHandoffsForUser(user) {
+    if (!user) return [];
+    const handoffs = Store.getHandoffs();
+    if (user.role === 'manager') return handoffs;
+
+    if (user.role === 'team_lead') {
+      const teamUserIds = new Set(Store.getUsersByTeam(user.teamId).map(u => u.id));
+      teamUserIds.add(user.id);
+      return handoffs.filter(h => {
+        if (h.teamId === user.teamId) return true;
+        if (teamUserIds.has(h.assignedTo) || teamUserIds.has(h.createdBy)) return true;
+        return false;
+      });
+    }
+
+    // Employee
+    return handoffs.filter(h => h.assignedTo === user.id || h.createdBy === user.id);
+  },
+
+  canUserViewHandoff(handoff, user) {
+    if (!handoff || !user) return false;
+    if (user.role === 'manager') return true;
+    const handoffs = Store.getHandoffsForUser(user);
+    return handoffs.some(h => h.id === handoff.id);
+  },
+
+  canUserEditHandoff(handoff, user) {
+    if (!handoff || !user) return false;
+    if (user.role === 'manager') return true;
+    if (user.role === 'team_lead') {
+      return Store.canUserViewHandoff(handoff, user);
+    }
+    return handoff.assignedTo === user.id || handoff.createdBy === user.id;
+  },
+
+
   // ── Export / Import ────────────────────────────────────
   exportData() {
     return {
@@ -377,6 +421,7 @@ export const Store = {
       activities: getAll(KEYS.activities),
       requirements: getAll(KEYS.requirements),
       proposals: getAll(KEYS.proposals),
+      handoffs: getAll(KEYS.handoffs),
       settings: Store.getSettings(),
       exportedAt: new Date().toISOString()
     };
@@ -384,7 +429,7 @@ export const Store = {
 
   importData(payload) {
     // Pre-serialize all datasets before touching localStorage
-    const dataKeys = [KEYS.users, KEYS.teams, KEYS.leads, KEYS.contacts, KEYS.deals, KEYS.activities, KEYS.requirements, KEYS.proposals, KEYS.settings];
+    const dataKeys = [KEYS.users, KEYS.teams, KEYS.leads, KEYS.contacts, KEYS.deals, KEYS.activities, KEYS.requirements, KEYS.proposals, KEYS.handoffs, KEYS.settings];
     const newValues = {
       [KEYS.users]:        JSON.stringify(payload.users || []),
       [KEYS.teams]:        JSON.stringify(payload.teams || []),
@@ -394,6 +439,7 @@ export const Store = {
       [KEYS.activities]:   JSON.stringify(payload.activities || []),
       [KEYS.requirements]: JSON.stringify(payload.requirements || []),
       [KEYS.proposals]:    JSON.stringify(payload.proposals || []),
+      [KEYS.handoffs]:     JSON.stringify(payload.handoffs || []),
       [KEYS.settings]:     JSON.stringify(payload.settings || {})
     };
 

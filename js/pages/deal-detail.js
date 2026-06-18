@@ -112,6 +112,7 @@ export function renderDealDetail(params) {
 
   const reqs = Store.getRequirementsForUser(user).filter(r => r.dealId === deal.id);
   const props = Store.getProposalsForUser(user).filter(p => p.dealId === deal.id);
+  const handoffs = Store.getHandoffsForUser(user).filter(h => h.dealId === deal.id);
 
   let reqHtml = reqs.length === 0 ? '<div style="color:var(--color-muted); font-size:0.85rem; margin-bottom:1rem;">No linked requirements.</div>' :
     reqs.map(r => `
@@ -148,6 +149,47 @@ export function renderDealDetail(params) {
     </div>
   `;
 
+  let handoffHtml = '';
+  if (handoffs.length > 0) {
+    const h = handoffs[0];
+    const owner = Store.getUserById(h.assignedTo);
+    handoffHtml = `
+      <div style="border:1px solid var(--color-hairline-soft); border-radius:4px; padding:12px; background:var(--color-surface-card);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div style="font-weight:600; font-size:1rem;">${h.title}</div>
+          <span class="badge ${h.deliveryStatus === 'blocked' ? 'badge-error' : h.deliveryStatus === 'completed' ? 'badge-success' : 'badge-neutral'}">${h.deliveryStatus}</span>
+        </div>
+        <div style="font-size:0.85rem; color:var(--color-muted); margin-bottom:8px;">
+          Owner: ${owner ? owner.name : 'Unassigned'} | Mode: ${h.deliveryMode}
+        </div>
+        <div style="font-size:0.85rem; color:var(--color-muted); margin-bottom:12px;">
+          Timeline: ${h.expectedStartDate ? formatDate(h.expectedStartDate) : 'TBD'} &rarr; ${h.expectedEndDate ? formatDate(h.expectedEndDate) : 'TBD'}
+        </div>
+        <a href="#/handoffs" class="btn btn-sm btn-secondary">Go to Handoffs</a>
+      </div>
+    `;
+  } else if (deal.status === 'closed_won') {
+    handoffHtml = `
+      <div style="border:1px dashed var(--color-hairline-soft); border-radius:4px; padding:1rem; text-align:center; background:var(--color-surface-soft);">
+        <div style="margin-bottom:0.5rem; color:var(--color-muted);">No delivery handoff created yet.</div>
+        <button class="btn btn-sm btn-primary" data-action="create-handoff-from-deal" data-deal-id="${deal.id}">Create Project Handoff</button>
+      </div>
+    `;
+  } else {
+    handoffHtml = `
+      <div style="border:1px dashed var(--color-hairline-soft); border-radius:4px; padding:1rem; text-align:center; background:var(--color-surface-soft); color:var(--color-muted); font-size:0.85rem;">
+        Deal must be Closed Won to create a handoff.
+      </div>
+    `;
+  }
+
+  const handoffSection = `
+    <div class="dashboard-section" style="margin-top:1.5rem;">
+      <h4 class="dashboard-section-title">Project Handoff & Delivery</h4>
+      ${handoffHtml}
+    </div>
+  `;
+
   return `
     <div class="content-inner">
       <div class="deal-detail-header">
@@ -167,6 +209,7 @@ export function renderDealDetail(params) {
       </div>
 
       ${reqPropSection}
+      ${handoffSection}
 
       <div class="dashboard-section">
         <div class="dashboard-section-header" style="justify-content:space-between; align-items:center;">
@@ -193,6 +236,14 @@ export function bindDealDetailEvents() {
       const dealId = e.target.dataset.dealId;
       const nextStage = e.target.dataset.nextStage;
       executeStageChange(dealId, nextStage);
+    }
+
+    // Create Handoff button
+    const handoffBtn = e.target.closest('[data-action="create-handoff-from-deal"]');
+    if (handoffBtn) {
+      const dealId = handoffBtn.getAttribute('data-deal-id');
+      sessionStorage.setItem('pendingHandoffDealId', dealId);
+      import('../router.js').then(m => m.Router.navigate('#/handoffs'));
     }
 
     // Override Stage button (Manager)

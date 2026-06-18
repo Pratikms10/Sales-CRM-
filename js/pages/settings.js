@@ -21,7 +21,8 @@ function getDataSummary() {
     deals: Store.getDeals().length,
     activities: Store.getActivities().length,
     requirements: Store.getRequirements().length,
-    proposals: Store.getProposals().length
+    proposals: Store.getProposals().length,
+    handoffs: Store.getHandoffs().length
   };
 }
 
@@ -112,7 +113,8 @@ function buildDataSummaryCard(user) {
     { label: 'Deals', count: summary.deals, color: 'var(--color-stage-feedback)' },
     { label: 'Activities', count: summary.activities, color: 'var(--color-stage-invoice)' },
     { label: 'Requirements', count: summary.requirements, color: 'var(--color-primary)' },
-    { label: 'Proposals', count: summary.proposals, color: 'var(--color-success)' }
+    { label: 'Proposals', count: summary.proposals, color: 'var(--color-success)' },
+    { label: 'Project Handoffs', count: summary.handoffs, color: 'var(--color-stage-invoice)' }
   ];
 
   const itemsHtml = items.map(i => `
@@ -388,7 +390,7 @@ function handleImportJson() {
 
     // Validate structure
     const requiredKeys = ['users', 'teams', 'leads', 'contacts', 'deals', 'activities'];
-    const optionalArrayKeys = ['requirements', 'proposals'];
+    const optionalArrayKeys = ['requirements', 'proposals', 'handoffs'];
     for (const key of requiredKeys) {
       if (!Array.isArray(payload[key])) {
         Toast.error('Invalid Structure', `Missing or invalid "${key}" array in import file.`);

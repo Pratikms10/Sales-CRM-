@@ -22,6 +22,7 @@ import { renderSettings, bindSettingsEvents } from './pages/settings.js';
 import { renderActivities, bindActivitiesEvents } from './pages/activities.js';
 import { renderRequirements, bindRequirementsEvents } from './pages/requirements.js';
 import { renderProposals, bindProposalsEvents } from './pages/proposals.js';
+import { renderHandoffs, bindHandoffsEvents, initHandoffsPage } from './pages/handoffs.js';
 
 // ── DOM References ──────────────────────────────────────────
 
@@ -138,6 +139,10 @@ function renderPage(pageId, params) {
     case 'proposals':
       contentEl.innerHTML = renderProposals();
       break;
+    case 'handoffs':
+      contentEl.innerHTML = renderHandoffs();
+      initHandoffsPage();
+      break;
     default:
       contentEl.innerHTML = renderComingSoon(pageId);
   }
@@ -157,6 +162,7 @@ bindSettingsEvents();
 bindActivitiesEvents();
 bindRequirementsEvents();
 bindProposalsEvents();
+bindHandoffsEvents();
 
 // ── Bootstrap ───────────────────────────────────────────────
 

@@ -1,26 +1,24 @@
 ﻿# AI Change Audit Report
 
 ## Generated On
-2026-06-18_09-59-31
+2026-06-18_10-34-18
 
 ## Branch
 main
 
 ## Baseline Commit
-f0d4c3f
+624446c
 
 ## Task Summary
-Phase 2B Requirements, Proposals, and Quotations with role-scoped requirement capture, proposal line items, approval controls, and deal-detail linkage
+Phase 2C Project Handoff and Delivery Tracker with role-scoped handoffs, guarded delivery status movement, deal/proposal linkage, duplicate prevention, and settings export/import support
 
 ## Git Status
 ```text
- M generate-audit.ps1
  M js/app.js
  M js/auth.js
  M js/components/sidebar.js
  M js/pages/deal-detail.js
- A js/pages/proposals.js
- A js/pages/requirements.js
+ A js/pages/handoffs.js
  M js/pages/settings.js
  M js/router.js
  M js/seed.js
@@ -29,13 +27,11 @@ Phase 2B Requirements, Proposals, and Quotations with role-scoped requirement ca
 
 ## Files Changed
 ```text
-M	generate-audit.ps1
 M	js/app.js
 M	js/auth.js
 M	js/components/sidebar.js
 M	js/pages/deal-detail.js
-A	js/pages/proposals.js
-A	js/pages/requirements.js
+A	js/pages/handoffs.js
 M	js/pages/settings.js
 M	js/router.js
 M	js/seed.js
@@ -44,928 +40,182 @@ M	js/store.js
 
 ## Change Summary
 ```text
- generate-audit.ps1       |  14 +-
- js/app.js                |  10 +
- js/auth.js               |   2 +
- js/components/sidebar.js |   2 +
- js/pages/deal-detail.js  |  40 +++
- js/pages/proposals.js    | 718 +++++++++++++++++++++++++++++++++++++++++++++++
- js/pages/requirements.js | 628 +++++++++++++++++++++++++++++++++++++++++
- js/pages/settings.js     |  17 +-
- js/router.js             |   2 +
- js/seed.js               |  98 +++++++
- js/store.js              | 133 ++++++++-
- 11 files changed, 1646 insertions(+), 18 deletions(-)
+ js/app.js                |   6 +
+ js/auth.js               |   1 +
+ js/components/sidebar.js |   1 +
+ js/pages/deal-detail.js  |  51 ++++
+ js/pages/handoffs.js     | 741 +++++++++++++++++++++++++++++++++++++++++++++++
+ js/pages/settings.js     |   8 +-
+ js/router.js             |   1 +
+ js/seed.js               |  85 +++++-
+ js/store.js              |  48 ++-
+ 9 files changed, 934 insertions(+), 8 deletions(-)
 ```
 
 ## Full Diff
 ```diff
-diff --git a/generate-audit.ps1 b/generate-audit.ps1
-index 02c8faf..a789504 100644
---- a/generate-audit.ps1
-+++ b/generate-audit.ps1
-@@ -8,14 +8,14 @@ $stamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
- 
- New-Item -ItemType Directory -Force audits | Out-Null
- 
--git add -N . | Out-Null
-+& "C:\Program Files\Git\cmd\git.exe" add -N . | Out-Null
- 
--$branch = git branch --show-current
--$commit = git rev-parse --short HEAD
--$status = git status --short
--$changedFiles = git diff --name-status HEAD -- . ":(exclude)audits/CHANGE_AUDIT.md"
--$summary = git diff --stat HEAD -- . ":(exclude)audits/CHANGE_AUDIT.md"
--$diff = git diff --no-ext-diff HEAD -- . ":(exclude)audits/CHANGE_AUDIT.md"
-+$branch = & "C:\Program Files\Git\cmd\git.exe" branch --show-current
-+$commit = & "C:\Program Files\Git\cmd\git.exe" rev-parse --short HEAD
-+$status = & "C:\Program Files\Git\cmd\git.exe" status --short
-+$changedFiles = & "C:\Program Files\Git\cmd\git.exe" diff --name-status HEAD -- . ":(exclude)audits/CHANGE_AUDIT.md"
-+$summary = & "C:\Program Files\Git\cmd\git.exe" diff --stat HEAD -- . ":(exclude)audits/CHANGE_AUDIT.md"
-+$diff = & "C:\Program Files\Git\cmd\git.exe" diff --no-ext-diff HEAD -- . ":(exclude)audits/CHANGE_AUDIT.md"
- 
- $report = @(
- "# AI Change Audit Report"
 diff --git a/js/app.js b/js/app.js
-index bc059ed..31521b9 100644
+index 31521b9..80c1727 100644
 --- a/js/app.js
 +++ b/js/app.js
-@@ -20,6 +20,8 @@ import { renderTeam, bindTeamEvents } from './pages/team.js';
- import { renderReports, bindReportsEvents } from './pages/reports.js';
- import { renderSettings, bindSettingsEvents } from './pages/settings.js';
+@@ -22,6 +22,7 @@ import { renderSettings, bindSettingsEvents } from './pages/settings.js';
  import { renderActivities, bindActivitiesEvents } from './pages/activities.js';
-+import { renderRequirements, bindRequirementsEvents } from './pages/requirements.js';
-+import { renderProposals, bindProposalsEvents } from './pages/proposals.js';
+ import { renderRequirements, bindRequirementsEvents } from './pages/requirements.js';
+ import { renderProposals, bindProposalsEvents } from './pages/proposals.js';
++import { renderHandoffs, bindHandoffsEvents, initHandoffsPage } from './pages/handoffs.js';
  
  // ΓöÇΓöÇ DOM References ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
  
-@@ -130,6 +132,12 @@ function renderPage(pageId, params) {
-     case 'settings':
-       contentEl.innerHTML = renderSettings();
+@@ -138,6 +139,10 @@ function renderPage(pageId, params) {
+     case 'proposals':
+       contentEl.innerHTML = renderProposals();
        break;
-+    case 'requirements':
-+      contentEl.innerHTML = renderRequirements();
-+      break;
-+    case 'proposals':
-+      contentEl.innerHTML = renderProposals();
++    case 'handoffs':
++      contentEl.innerHTML = renderHandoffs();
++      initHandoffsPage();
 +      break;
      default:
        contentEl.innerHTML = renderComingSoon(pageId);
    }
-@@ -147,6 +155,8 @@ bindTeamEvents();
- bindReportsEvents();
- bindSettingsEvents();
+@@ -157,6 +162,7 @@ bindSettingsEvents();
  bindActivitiesEvents();
-+bindRequirementsEvents();
-+bindProposalsEvents();
+ bindRequirementsEvents();
+ bindProposalsEvents();
++bindHandoffsEvents();
  
  // ΓöÇΓöÇ Bootstrap ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
  
 diff --git a/js/auth.js b/js/auth.js
-index 36795a1..941e7b1 100644
+index 941e7b1..b2a2475 100644
 --- a/js/auth.js
 +++ b/js/auth.js
-@@ -14,6 +14,8 @@ const NAV_ITEMS = [
-   { id: 'contacts',  label: 'Contacts',   hash: '#/contacts',  icon: 'contacts',  roles: ['manager', 'team_lead', 'employee'] },
-   { id: 'deals',     label: 'Deals',      hash: '#/deals',     icon: 'deals',     roles: ['manager', 'team_lead', 'employee'] },
+@@ -16,6 +16,7 @@ const NAV_ITEMS = [
    { id: 'activities',label: 'Activities', hash: '#/activities',icon: 'activities',roles: ['manager', 'team_lead', 'employee'] },
-+  { id: 'requirements',label: 'Requirements', hash: '#/requirements',icon: 'requirements',roles: ['manager', 'team_lead', 'employee'] },
-+  { id: 'proposals',   label: 'Proposals',  hash: '#/proposals', icon: 'proposals', roles: ['manager', 'team_lead', 'employee'] },
+   { id: 'requirements',label: 'Requirements', hash: '#/requirements',icon: 'requirements',roles: ['manager', 'team_lead', 'employee'] },
+   { id: 'proposals',   label: 'Proposals',  hash: '#/proposals', icon: 'proposals', roles: ['manager', 'team_lead', 'employee'] },
++  { id: 'handoffs',    label: 'Project Handoff',hash: '#/handoffs',  icon: 'handoffs',  roles: ['manager', 'team_lead', 'employee'] },
    { id: 'team',      label: 'Team',       hash: '#/team',      icon: 'team',      roles: ['manager', 'team_lead'] },
    { id: 'reports',   label: 'Reports',    hash: '#/reports',   icon: 'reports',   roles: ['manager'] },
    { id: 'settings',  label: 'Settings',   hash: '#/settings',  icon: 'settings',  roles: ['manager', 'team_lead', 'employee'] }
 diff --git a/js/components/sidebar.js b/js/components/sidebar.js
-index 9cf86aa..9a0825e 100644
+index 9a0825e..be95498 100644
 --- a/js/components/sidebar.js
 +++ b/js/components/sidebar.js
-@@ -14,6 +14,8 @@ const NAV_ICONS = {
-   contacts:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
-   deals:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>',
+@@ -16,6 +16,7 @@ const NAV_ICONS = {
    activities:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>',
-+  requirements: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>',
-+  proposals: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="M8 14h.01"></path><path d="M12 14h.01"></path><path d="M16 14h.01"></path><path d="M8 18h.01"></path><path d="M12 18h.01"></path><path d="M16 18h.01"></path></svg>',
+   requirements: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>',
+   proposals: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="M8 14h.01"></path><path d="M12 14h.01"></path><path d="M16 14h.01"></path><path d="M8 18h.01"></path><path d="M12 18h.01"></path><path d="M16 18h.01"></path></svg>',
++  handoffs:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>',
    team:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
    reports:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
    settings:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>'
 diff --git a/js/pages/deal-detail.js b/js/pages/deal-detail.js
-index f25928c..8c5503f 100644
+index 8c5503f..98292e1 100644
 --- a/js/pages/deal-detail.js
 +++ b/js/pages/deal-detail.js
-@@ -110,6 +110,44 @@ export function renderDealDetail(params) {
-     `;
-   }).join('') || '<div class="activity-feed-empty">No activities recorded.</div>';
+@@ -112,6 +112,7 @@ export function renderDealDetail(params) {
  
-+  const reqs = Store.getRequirementsForUser(user).filter(r => r.dealId === deal.id);
-+  const props = Store.getProposalsForUser(user).filter(p => p.dealId === deal.id);
-+
-+  let reqHtml = reqs.length === 0 ? '<div style="color:var(--color-muted); font-size:0.85rem; margin-bottom:1rem;">No linked requirements.</div>' :
-+    reqs.map(r => `
-+      <div style="border:1px solid var(--color-hairline-soft); border-radius:4px; padding:8px; margin-bottom:8px; background:var(--color-surface-card);">
-+        <div style="font-weight:600; font-size:0.9rem;">${r.title}</div>
-+        <div style="font-size:0.8rem; color:var(--color-muted);">Type: ${r.requirementType} | Status: ${r.status}</div>
-+      </div>
-+    `).join('');
-+
-+  let propHtml = props.length === 0 ? '<div style="color:var(--color-muted); font-size:0.85rem; margin-bottom:1rem;">No linked proposals.</div>' :
-+    props.map(p => `
-+      <div style="border:1px solid var(--color-hairline-soft); border-radius:4px; padding:8px; margin-bottom:8px; background:var(--color-surface-card);">
-+        <div style="font-weight:600; font-size:0.9rem;">${p.title} <span class="badge badge-neutral" style="font-size:0.7rem;">v${p.version || '1.0'}</span></div>
-+        <div style="font-size:0.8rem; color:var(--color-muted);">Status: ${p.status} | Total: ${formatCurrency(p.grandTotal || 0)}</div>
-+      </div>
-+    `).join('');
-+
-+  const reqPropSection = `
-+    <div class="dashboard-section" style="display:flex; gap:1rem; flex-wrap:wrap;">
-+      <div style="flex:1; min-width:300px;">
-+        <div class="dashboard-section-header" style="justify-content:space-between; align-items:center;">
-+          <h4 class="dashboard-section-title" style="margin:0;">Requirements</h4>
-+          <a href="#/requirements" class="btn btn-sm btn-secondary">View All</a>
+   const reqs = Store.getRequirementsForUser(user).filter(r => r.dealId === deal.id);
+   const props = Store.getProposalsForUser(user).filter(p => p.dealId === deal.id);
++  const handoffs = Store.getHandoffsForUser(user).filter(h => h.dealId === deal.id);
+ 
+   let reqHtml = reqs.length === 0 ? '<div style="color:var(--color-muted); font-size:0.85rem; margin-bottom:1rem;">No linked requirements.</div>' :
+     reqs.map(r => `
+@@ -148,6 +149,47 @@ export function renderDealDetail(params) {
+     </div>
+   `;
+ 
++  let handoffHtml = '';
++  if (handoffs.length > 0) {
++    const h = handoffs[0];
++    const owner = Store.getUserById(h.assignedTo);
++    handoffHtml = `
++      <div style="border:1px solid var(--color-hairline-soft); border-radius:4px; padding:12px; background:var(--color-surface-card);">
++        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
++          <div style="font-weight:600; font-size:1rem;">${h.title}</div>
++          <span class="badge ${h.deliveryStatus === 'blocked' ? 'badge-error' : h.deliveryStatus === 'completed' ? 'badge-success' : 'badge-neutral'}">${h.deliveryStatus}</span>
 +        </div>
-+        <div>${reqHtml}</div>
-+      </div>
-+      <div style="flex:1; min-width:300px;">
-+        <div class="dashboard-section-header" style="justify-content:space-between; align-items:center;">
-+          <h4 class="dashboard-section-title" style="margin:0;">Proposals</h4>
-+          <a href="#/proposals" class="btn btn-sm btn-secondary">View All</a>
++        <div style="font-size:0.85rem; color:var(--color-muted); margin-bottom:8px;">
++          Owner: ${owner ? owner.name : 'Unassigned'} | Mode: ${h.deliveryMode}
 +        </div>
-+        <div>${propHtml}</div>
++        <div style="font-size:0.85rem; color:var(--color-muted); margin-bottom:12px;">
++          Timeline: ${h.expectedStartDate ? formatDate(h.expectedStartDate) : 'TBD'} &rarr; ${h.expectedEndDate ? formatDate(h.expectedEndDate) : 'TBD'}
++        </div>
++        <a href="#/handoffs" class="btn btn-sm btn-secondary">Go to Handoffs</a>
 +      </div>
++    `;
++  } else if (deal.status === 'closed_won') {
++    handoffHtml = `
++      <div style="border:1px dashed var(--color-hairline-soft); border-radius:4px; padding:1rem; text-align:center; background:var(--color-surface-soft);">
++        <div style="margin-bottom:0.5rem; color:var(--color-muted);">No delivery handoff created yet.</div>
++        <button class="btn btn-sm btn-primary" data-action="create-handoff-from-deal" data-deal-id="${deal.id}">Create Project Handoff</button>
++      </div>
++    `;
++  } else {
++    handoffHtml = `
++      <div style="border:1px dashed var(--color-hairline-soft); border-radius:4px; padding:1rem; text-align:center; background:var(--color-surface-soft); color:var(--color-muted); font-size:0.85rem;">
++        Deal must be Closed Won to create a handoff.
++      </div>
++    `;
++  }
++
++  const handoffSection = `
++    <div class="dashboard-section" style="margin-top:1.5rem;">
++      <h4 class="dashboard-section-title">Project Handoff & Delivery</h4>
++      ${handoffHtml}
 +    </div>
 +  `;
 +
    return `
      <div class="content-inner">
        <div class="deal-detail-header">
-@@ -128,6 +166,8 @@ export function renderDealDetail(params) {
-         </div>
+@@ -167,6 +209,7 @@ export function renderDealDetail(params) {
        </div>
  
-+      ${reqPropSection}
-+
+       ${reqPropSection}
++      ${handoffSection}
+ 
        <div class="dashboard-section">
          <div class="dashboard-section-header" style="justify-content:space-between; align-items:center;">
-           <h4 class="dashboard-section-title" style="margin:0;">Activity History</h4>
-diff --git a/js/pages/proposals.js b/js/pages/proposals.js
+@@ -195,6 +238,14 @@ export function bindDealDetailEvents() {
+       executeStageChange(dealId, nextStage);
+     }
+ 
++    // Create Handoff button
++    const handoffBtn = e.target.closest('[data-action="create-handoff-from-deal"]');
++    if (handoffBtn) {
++      const dealId = handoffBtn.getAttribute('data-deal-id');
++      sessionStorage.setItem('pendingHandoffDealId', dealId);
++      import('../router.js').then(m => m.Router.navigate('#/handoffs'));
++    }
++
+     // Override Stage button (Manager)
+     if (e.target.id === 'btn-override-stage') {
+       const dealId = e.target.dataset.dealId;
+diff --git a/js/pages/handoffs.js b/js/pages/handoffs.js
 new file mode 100644
-index 0000000..46d2713
+index 0000000..36e46fe
 --- /dev/null
-+++ b/js/pages/proposals.js
-@@ -0,0 +1,718 @@
++++ b/js/pages/handoffs.js
+@@ -0,0 +1,741 @@
 +// ============================================================
-+// TechnoEdge CRM ΓÇö Proposals Page
++// TechnoEdge CRM ΓÇö Project Handoffs & Delivery Tracker
 +// ============================================================
 +
 +import { Store } from '../store.js';
 +import { Auth } from '../auth.js';
++import { generateId, formatDate, timeAgo } from '../utils.js';
 +import { Toast } from '../components/toast.js';
-+import { formatCurrency, formatDateTime } from '../utils.js';
-+
-+let filters = {
-+  search: '',
-+  status: 'all',
-+  approval: 'all',
-+  owner: 'all'
-+};
 +
 +const STATUSES = [
 +  { key: 'draft', label: 'Draft' },
-+  { key: 'sent', label: 'Sent' },
-+  { key: 'accepted', label: 'Accepted' },
-+  { key: 'rejected', label: 'Rejected' },
-+  { key: 'revised', label: 'Revised' }
-+];
-+
-+const APPROVALS = [
-+  { key: 'not_required', label: 'Not Required' },
-+  { key: 'pending', label: 'Pending' },
-+  { key: 'approved', label: 'Approved' },
-+  { key: 'rejected', label: 'Rejected' }
-+];
-+
-+let currentLineItems = [];
-+
-+// ΓöÇΓöÇ Helpers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-+
-+function getFilteredData() {
-+  const user = Auth.getCurrentUser();
-+  if (!user) return [];
-+
-+  let props = Store.getProposalsForUser(user);
-+
-+  if (filters.search) {
-+    const term = filters.search.toLowerCase();
-+    props = props.filter(p => {
-+      const t = (p.title || '').toLowerCase();
-+      const u = Store.getUserById(p.assignedTo || p.createdBy);
-+      const uName = u ? u.name.toLowerCase() : '';
-+      let l = '';
-+      if (p.dealId) { const d = Store.getDealById(p.dealId); if (d) l = d.title.toLowerCase(); }
-+      if (p.requirementId) { const r = Store.getRequirementById(p.requirementId); if (r) l += ' ' + r.title.toLowerCase(); }
-+      return t.includes(term) || uName.includes(term) || l.includes(term);
-+    });
-+  }
-+
-+  if (filters.status !== 'all') props = props.filter(p => p.status === filters.status);
-+  if (filters.approval !== 'all') props = props.filter(p => p.approvalStatus === filters.approval);
-+  if (filters.owner !== 'all') props = props.filter(p => p.assignedTo === filters.owner);
-+
-+  return props.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-+}
-+
-+function getLabel(key, array) {
-+  const obj = array.find(o => o.key === key);
-+  return obj ? obj.label : key;
-+}
-+
-+function getLinkedLabel(p) {
-+  if (p.requirementId) {
-+    const r = Store.getRequirementById(p.requirementId);
-+    return r ? `Req: ${r.title}` : 'Req (Deleted)';
-+  }
-+  if (p.dealId) {
-+    const d = Store.getDealById(p.dealId);
-+    return d ? `<a href="#/deals/${d.id}" class="btn-link">Deal: ${d.title}</a>` : 'Deal (Deleted)';
-+  }
-+  return 'ΓÇö';
-+}
-+
-+function calculateTotals(items) {
-+  let sub = 0, disc = 0, tax = 0;
-+  items.forEach(it => {
-+    const qty = parseFloat(it.quantity) || 0;
-+    const up = parseFloat(it.unitPrice) || 0;
-+    const dp = parseFloat(it.discountPercent) || 0;
-+    const tp = parseFloat(it.taxPercent) || 0;
-+    
-+    const rowSub = qty * up;
-+    const rowDisc = rowSub * (dp / 100);
-+    const rowAfterDisc = rowSub - rowDisc;
-+    const rowTax = rowAfterDisc * (tp / 100);
-+    
-+    sub += rowSub;
-+    disc += rowDisc;
-+    tax += rowTax;
-+  });
-+  return { subtotal: sub, discountTotal: disc, taxTotal: tax, grandTotal: sub - disc + tax };
-+}
-+
-+// ΓöÇΓöÇ Components ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-+
-+function buildKPIs(props) {
-+  const total = props.length;
-+  const sent = props.filter(p => p.status === 'sent').length;
-+  const pending = props.filter(p => p.approvalStatus === 'pending').length;
-+  const acceptedValue = props.filter(p => p.status === 'accepted').reduce((sum, p) => sum + (p.grandTotal || 0), 0);
-+
-+  return `
-+    <div class="activity-kpi-grid">
-+      <div class="stat-card">
-+        <div class="stat-card-content">
-+          <div class="stat-card-label">Total Proposals</div>
-+          <div class="stat-card-value">${total}</div>
-+        </div>
-+      </div>
-+      <div class="stat-card">
-+        <div class="stat-card-content">
-+          <div class="stat-card-label" style="color: var(--color-primary);">Sent</div>
-+          <div class="stat-card-value">${sent}</div>
-+        </div>
-+      </div>
-+      <div class="stat-card">
-+        <div class="stat-card-content">
-+          <div class="stat-card-label" style="color: var(--color-warning);">Pending Approval</div>
-+          <div class="stat-card-value">${pending}</div>
-+        </div>
-+      </div>
-+      <div class="stat-card">
-+        <div class="stat-card-content">
-+          <div class="stat-card-label" style="color: var(--color-success);">Accepted Value</div>
-+          <div class="stat-card-value">${formatCurrency(acceptedValue)}</div>
-+        </div>
-+      </div>
-+    </div>
-+  `;
-+}
-+
-+function buildFilters(user) {
-+  let ownerOptions = `<option value="all">All Owners</option>`;
-+  if (user.role === 'manager') {
-+    Store.getUsers().forEach(u => {
-+      ownerOptions += `<option value="${u.id}" ${filters.owner === u.id ? 'selected' : ''}>${u.name}</option>`;
-+    });
-+  } else if (user.role === 'team_lead') {
-+    Store.getUsersByTeam(user.teamId).forEach(u => {
-+      if (u.id !== user.id) ownerOptions += `<option value="${u.id}" ${filters.owner === u.id ? 'selected' : ''}>${u.name}</option>`;
-+    });
-+    ownerOptions += `<option value="${user.id}" ${filters.owner === user.id ? 'selected' : ''}>${user.name}</option>`;
-+  } else {
-+    ownerOptions += `<option value="${user.id}" ${filters.owner === user.id ? 'selected' : ''}>${user.name} (Me)</option>`;
-+  }
-+
-+  return `
-+    <div class="filter-bar">
-+      <div style="flex: 1;">
-+        <input type="text" id="prop-search" class="login-input" placeholder="Search proposals..." value="${filters.search}">
-+      </div>
-+      <div>
-+        <select id="prop-status" class="login-input" style="padding-right:32px;">
-+          <option value="all">All Statuses</option>
-+          ${STATUSES.map(s => `<option value="${s.key}" ${filters.status === s.key ? 'selected' : ''}>${s.label}</option>`).join('')}
-+        </select>
-+      </div>
-+      <div>
-+        <select id="prop-approval" class="login-input" style="padding-right:32px;">
-+          <option value="all">Any Approval</option>
-+          ${APPROVALS.map(a => `<option value="${a.key}" ${filters.approval === a.key ? 'selected' : ''}>${a.label}</option>`).join('')}
-+        </select>
-+      </div>
-+      <div>
-+        <select id="prop-owner" class="login-input" style="padding-right:32px;">
-+          ${ownerOptions}
-+        </select>
-+      </div>
-+      <button class="btn btn-secondary" id="btn-prop-clear">Clear</button>
-+    </div>
-+  `;
-+}
-+
-+function buildTable(props, user) {
-+  const rows = props.map(p => {
-+    const owner = Store.getUserById(p.assignedTo || p.createdBy);
-+    const ownerName = owner ? owner.name : 'Unknown';
-+
-+    const canEdit = Store.canUserEditProposal(p, user);
-+    const canDelete = user.role === 'manager';
-+
-+    let actions = '';
-+    if (canEdit) actions += `<button class="btn btn-sm btn-secondary" data-action="edit-prop" data-id="${p.id}" style="margin-right:4px;">Edit</button>`;
-+    if (canDelete) actions += `<button class="btn btn-sm" style="background:var(--color-error); color:white;" data-action="delete-prop" data-id="${p.id}">Delete</button>`;
-+
-+    let approvalBadge = 'badge-neutral';
-+    if (p.approvalStatus === 'pending') approvalBadge = 'badge-warning';
-+    else if (p.approvalStatus === 'approved') approvalBadge = 'badge-success';
-+    else if (p.approvalStatus === 'rejected') approvalBadge = 'badge-error';
-+
-+    return `
-+      <tr>
-+        <td style="font-weight:600;">${p.title}</td>
-+        <td>${getLinkedLabel(p)}</td>
-+        <td>v${p.version || '1.0'}</td>
-+        <td style="font-weight:bold;">${formatCurrency(p.grandTotal || 0)}</td>
-+        <td><span class="badge badge-neutral">${getLabel(p.status, STATUSES)}</span></td>
-+        <td><span class="badge ${approvalBadge}">${getLabel(p.approvalStatus, APPROVALS)}</span></td>
-+        <td>${ownerName}</td>
-+        <td>${p.validUntil ? new Date(p.validUntil).toLocaleDateString() : 'ΓÇö'}</td>
-+        <td style="text-align:right;">${actions}</td>
-+      </tr>
-+    `;
-+  }).join('');
-+
-+  return `
-+    <div class="card" style="overflow-x:auto;">
-+      <table class="data-table">
-+        <thead>
-+          <tr>
-+            <th>Proposal</th>
-+            <th>Linked To</th>
-+            <th>Version</th>
-+            <th>Amount</th>
-+            <th>Status</th>
-+            <th>Approval</th>
-+            <th>Owner</th>
-+            <th>Valid Until</th>
-+            <th style="text-align:right;">Actions</th>
-+          </tr>
-+        </thead>
-+        <tbody>
-+          ${rows || '<tr><td colspan="9" style="text-align:center;">No proposals found</td></tr>'}
-+        </tbody>
-+      </table>
-+    </div>
-+  `;
-+}
-+
-+// ΓöÇΓöÇ Modal ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-+
-+function renderLineItems() {
-+  const tbody = document.getElementById('line-items-body');
-+  if (!tbody) return;
-+
-+  tbody.innerHTML = currentLineItems.map((it, i) => `
-+    <tr>
-+      <td><input type="text" class="login-input li-desc" data-idx="${i}" value="${it.description}" placeholder="Item description"></td>
-+      <td style="width:80px;"><input type="number" class="login-input li-qty" data-idx="${i}" value="${it.quantity}" min="1"></td>
-+      <td style="width:120px;"><input type="number" class="login-input li-price" data-idx="${i}" value="${it.unitPrice}" min="0" step="0.01"></td>
-+      <td style="width:90px;"><input type="number" class="login-input li-disc" data-idx="${i}" value="${it.discountPercent}" min="0" max="100"></td>
-+      <td style="width:90px;"><input type="number" class="login-input li-tax" data-idx="${i}" value="${it.taxPercent}" min="0" max="100"></td>
-+      <td style="width:40px; text-align:right;"><button class="btn btn-sm btn-remove-li" data-idx="${i}" style="color:var(--color-error); padding:4px;">&times;</button></td>
-+    </tr>
-+  `).join('');
-+
-+  updateTotalsDisplay();
-+}
-+
-+function updateTotalsDisplay() {
-+  const totals = calculateTotals(currentLineItems);
-+  const elSub = document.getElementById('modal-prop-subtotal');
-+  const elDisc = document.getElementById('modal-prop-discount');
-+  const elTax = document.getElementById('modal-prop-tax');
-+  const elGrand = document.getElementById('modal-prop-grand');
-+  
-+  if (elSub) elSub.textContent = formatCurrency(totals.subtotal);
-+  if (elDisc) elDisc.textContent = '-' + formatCurrency(totals.discountTotal);
-+  if (elTax) elTax.textContent = '+' + formatCurrency(totals.taxTotal);
-+  if (elGrand) elGrand.textContent = formatCurrency(totals.grandTotal);
-+}
-+
-+export function renderProposalModal(propId = null, defaults = {}) {
-+  const user = Auth.getCurrentUser();
-+  if (!user) return;
-+
-+  let defaultValid = new Date();
-+  defaultValid.setDate(defaultValid.getDate() + 30);
-+  const dValidStr = defaultValid.toISOString().split('T')[0];
-+
-+  let p = {
-+    title: defaults.title || '',
-+    requirementId: defaults.requirementId || '',
-+    dealId: defaults.dealId || '',
-+    contactId: defaults.contactId || '',
-+    version: defaults.version || '1.0',
-+    status: defaults.status || 'draft',
-+    approvalStatus: defaults.approvalStatus || 'not_required',
-+    validUntil: defaults.validUntil || dValidStr,
-+    notes: defaults.notes || '',
-+    assignedTo: defaults.assignedTo || user.id,
-+    lineItems: defaults.lineItems || []
-+  };
-+
-+  if (propId) {
-+    const existing = Store.getProposalById(propId);
-+    if (!existing || !Store.canUserEditProposal(existing, user)) {
-+      return Toast.error('Error', 'Permission denied or not found.');
-+    }
-+    p = { ...p, ...existing };
-+  }
-+
-+  currentLineItems = JSON.parse(JSON.stringify(p.lineItems));
-+  if (currentLineItems.length === 0) {
-+    currentLineItems.push({ id: 'li_' + Date.now(), description: '', quantity: 1, unitPrice: 0, discountPercent: 0, taxPercent: 0 });
-+  }
-+
-+  let ownerOptions = '';
-+  if (user.role === 'manager') {
-+    ownerOptions = Store.getUsers().map(u => `<option value="${u.id}" ${u.id === p.assignedTo ? 'selected' : ''}>${u.name}</option>`).join('');
-+  } else if (user.role === 'team_lead') {
-+    const teamUsers = Store.getUsersByTeam(user.teamId).filter(u => u.id !== user.id);
-+    teamUsers.push(user);
-+    ownerOptions = teamUsers.map(u => `<option value="${u.id}" ${u.id === p.assignedTo ? 'selected' : ''}>${u.name}</option>`).join('');
-+  } else {
-+    ownerOptions = `<option value="${user.id}" selected>${user.name}</option>`;
-+  }
-+
-+  const isManager = user.role === 'manager';
-+
-+  const modalHtml = `
-+    <div class="modal" id="prop-modal">
-+      <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
-+        <div class="modal-header">
-+          <h2 class="modal-title">${propId ? 'Edit Proposal' : 'New Proposal'}</h2>
-+          <button class="modal-close" id="btn-close-prop-modal">&times;</button>
-+        </div>
-+        <div class="modal-body">
-+          
-+          <div style="display:flex; gap:1rem; margin-bottom:1rem;">
-+            <div style="flex:2;">
-+              <label class="login-label">Proposal Title <span style="color:red;">*</span></label>
-+              <input type="text" id="modal-prop-title" class="login-input" value="${p.title}">
-+            </div>
-+            <div style="flex:1;">
-+              <label class="login-label">Version</label>
-+              <input type="text" id="modal-prop-version" class="login-input" value="${p.version}">
-+            </div>
-+          </div>
-+
-+          <div style="display:flex; gap:1rem; margin-bottom:1rem;">
-+            <div style="flex:1;">
-+              <label class="login-label">Requirement (Optional)</label>
-+              <select id="modal-prop-req" class="login-input">
-+                <option value="">-- None --</option>
-+                ${Store.getRequirementsForUser(user).map(r => `<option value="${r.id}" ${r.id === p.requirementId ? 'selected' : ''}>${r.title}</option>`).join('')}
-+              </select>
-+            </div>
-+            <div style="flex:1;">
-+              <label class="login-label">Deal (Optional)</label>
-+              <select id="modal-prop-deal" class="login-input">
-+                <option value="">-- None --</option>
-+                ${Store.getDealsForUser(user).map(d => `<option value="${d.id}" ${d.id === p.dealId ? 'selected' : ''}>${d.title}</option>`).join('')}
-+              </select>
-+            </div>
-+            <div style="flex:1;">
-+              <label class="login-label">Contact (Optional)</label>
-+              <select id="modal-prop-contact" class="login-input">
-+                <option value="">-- None --</option>
-+                ${Store.getContacts().map(c => `<option value="${c.id}" ${c.id === p.contactId ? 'selected' : ''}>${c.name} (${c.company})</option>`).join('')}
-+              </select>
-+            </div>
-+          </div>
-+
-+          <div style="display:flex; gap:1rem; margin-bottom:1rem;">
-+            <div style="flex:1;">
-+              <label class="login-label">Status</label>
-+              <select id="modal-prop-status" class="login-input">
-+                ${STATUSES.map(s => `<option value="${s.key}" ${p.status === s.key ? 'selected' : ''}>${s.label}</option>`).join('')}
-+              </select>
-+            </div>
-+            <div style="flex:1;">
-+              <label class="login-label">Approval Status</label>
-+              <select id="modal-prop-approval" class="login-input" ${!isManager ? 'disabled' : ''}>
-+                ${APPROVALS.map(a => `<option value="${a.key}" ${p.approvalStatus === a.key ? 'selected' : ''}>${a.label}</option>`).join('')}
-+              </select>
-+              ${!isManager ? `<div style="font-size:0.75rem; color:var(--color-muted);">Only managers can approve/reject.</div>` : ''}
-+            </div>
-+            <div style="flex:1;">
-+              <label class="login-label">Valid Until</label>
-+              <input type="date" id="modal-prop-valid" class="login-input" value="${p.validUntil ? p.validUntil.split('T')[0] : ''}">
-+            </div>
-+            <div style="flex:1;">
-+              <label class="login-label">Assigned To</label>
-+              <select id="modal-prop-owner" class="login-input" ${user.role === 'employee' ? 'disabled' : ''}>
-+                ${ownerOptions}
-+              </select>
-+            </div>
-+          </div>
-+
-+          <div style="margin-bottom:1rem; padding-top:1rem; border-top:1px solid var(--color-hairline-soft);">
-+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
-+              <h3 style="font-size:1rem; margin:0;">Line Items</h3>
-+              <button class="btn btn-sm btn-secondary" id="btn-add-li">Add Item</button>
-+            </div>
-+            <table class="data-table" style="margin-bottom:0;">
-+              <thead>
-+                <tr>
-+                  <th>Description</th>
-+                  <th>Qty</th>
-+                  <th>Price</th>
-+                  <th>Disc %</th>
-+                  <th>Tax %</th>
-+                  <th></th>
-+                </tr>
-+              </thead>
-+              <tbody id="line-items-body">
-+              </tbody>
-+            </table>
-+          </div>
-+
-+          <div class="totals-panel" style="background:var(--color-surface-soft); padding:1rem; border-radius:4px; margin-bottom:1rem; text-align:right; border:1px solid var(--color-hairline-soft);">
-+            <div style="display:flex; justify-content:flex-end; gap:2rem;">
-+              <div>Subtotal: <strong id="modal-prop-subtotal">$0.00</strong></div>
-+              <div style="color:var(--color-error);">Discount: <strong id="modal-prop-discount">-$0.00</strong></div>
-+              <div style="color:var(--color-muted);">Tax: <strong id="modal-prop-tax">+$0.00</strong></div>
-+              <div style="font-size:1.1rem;">Grand Total: <strong id="modal-prop-grand" style="color:var(--color-primary);">$0.00</strong></div>
-+            </div>
-+          </div>
-+
-+          <div style="margin-bottom:1rem;">
-+            <label class="login-label">Notes / Terms</label>
-+            <textarea id="modal-prop-notes" class="login-input" style="height:60px;">${p.notes}</textarea>
-+          </div>
-+
-+        </div>
-+        <div class="modal-footer">
-+          <button class="btn btn-secondary" id="btn-cancel-prop-modal">Cancel</button>
-+          <button class="btn btn-primary" id="btn-save-prop" data-id="${propId || ''}">Save Proposal</button>
-+        </div>
-+      </div>
-+    </div>
-+  `;
-+
-+  document.body.insertAdjacentHTML('beforeend', modalHtml);
-+
-+  renderLineItems();
-+
-+  const m = document.getElementById('prop-modal');
-+  
-+  m.addEventListener('input', e => {
-+    if (e.target.classList.contains('li-desc') || e.target.classList.contains('li-qty') || 
-+        e.target.classList.contains('li-price') || e.target.classList.contains('li-disc') || 
-+        e.target.classList.contains('li-tax')) {
-+      const idx = e.target.dataset.idx;
-+      if (idx !== undefined) {
-+        if (e.target.classList.contains('li-desc')) currentLineItems[idx].description = e.target.value;
-+        if (e.target.classList.contains('li-qty')) currentLineItems[idx].quantity = parseFloat(e.target.value) || 0;
-+        if (e.target.classList.contains('li-price')) currentLineItems[idx].unitPrice = parseFloat(e.target.value) || 0;
-+        if (e.target.classList.contains('li-disc')) currentLineItems[idx].discountPercent = parseFloat(e.target.value) || 0;
-+        if (e.target.classList.contains('li-tax')) currentLineItems[idx].taxPercent = parseFloat(e.target.value) || 0;
-+        updateTotalsDisplay();
-+      }
-+    }
-+  });
-+
-+  document.getElementById('btn-add-li').addEventListener('click', () => {
-+    currentLineItems.push({ id: 'li_' + Date.now(), description: '', quantity: 1, unitPrice: 0, discountPercent: 0, taxPercent: 0 });
-+    renderLineItems();
-+  });
-+
-+  m.addEventListener('click', e => {
-+    if (e.target.classList.contains('btn-remove-li')) {
-+      const idx = e.target.dataset.idx;
-+      if (idx !== undefined) {
-+        currentLineItems.splice(idx, 1);
-+        renderLineItems();
-+      }
-+    }
-+  });
-+
-+  const closeFn = () => { if (m) m.remove(); };
-+  document.getElementById('btn-close-prop-modal').addEventListener('click', closeFn);
-+  document.getElementById('btn-cancel-prop-modal').addEventListener('click', closeFn);
-+
-+  document.getElementById('btn-save-prop').addEventListener('click', () => {
-+    const title = document.getElementById('modal-prop-title').value.trim();
-+    if (!title) return Toast.error('Validation Error', 'Title is required.');
-+
-+    if (currentLineItems.length === 0) return Toast.error('Validation Error', 'At least one line item is required.');
-+
-+    // Validate each line item field strictly
-+    for (let i = 0; i < currentLineItems.length; i++) {
-+      const it = currentLineItems[i];
-+      if (!it.description || !it.description.trim()) {
-+        return Toast.error('Validation Error', `Line item ${i + 1}: description is required.`);
-+      }
-+      const qty = parseFloat(it.quantity);
-+      if (isNaN(qty) || qty <= 0) {
-+        return Toast.error('Validation Error', `Line item ${i + 1}: quantity must be > 0.`);
-+      }
-+      const up = parseFloat(it.unitPrice);
-+      if (isNaN(up) || up < 0) {
-+        return Toast.error('Validation Error', `Line item ${i + 1}: unit price must be >= 0.`);
-+      }
-+      const dp = parseFloat(it.discountPercent);
-+      if (isNaN(dp) || dp < 0 || dp > 100) {
-+        return Toast.error('Validation Error', `Line item ${i + 1}: discount must be 0-100%.`);
-+      }
-+      const tp = parseFloat(it.taxPercent);
-+      if (isNaN(tp) || tp < 0 || tp > 100) {
-+        return Toast.error('Validation Error', `Line item ${i + 1}: tax must be 0-100%.`);
-+      }
-+    }
-+
-+    // Recalculate totals from line items ΓÇö never trust DOM display
-+    const totals = calculateTotals(currentLineItems);
-+
-+    // Assignment validation
-+    let assignedTo = document.getElementById('modal-prop-owner').value;
-+    if (user.role === 'employee') {
-+      assignedTo = user.id;
-+    } else if (user.role === 'team_lead') {
-+      const target = Store.getUserById(assignedTo);
-+      if (!target || (target.teamId !== user.teamId && target.id !== user.id)) {
-+        return Toast.error('Error', 'Cannot assign outside your team.');
-+      }
-+    }
-+
-+    const assignedUser = Store.getUserById(assignedTo);
-+    if (!assignedUser) return Toast.error('Validation Error', 'Assigned user does not exist.');
-+
-+    let finalTeamId = assignedUser.teamId || user.teamId || null;
-+
-+    // Validate linked records
-+    let reqId = document.getElementById('modal-prop-req').value || null;
-+    let dealId = document.getElementById('modal-prop-deal').value || null;
-+    const contactId = document.getElementById('modal-prop-contact').value || null;
-+    let linkedTeamId = null;
-+
-+    if (reqId) {
-+      const r = Store.getRequirementById(reqId);
-+      if (!r) return Toast.error('Error', 'Linked Requirement does not exist.');
-+      if (!Store.canUserViewRequirement(r, user)) return Toast.error('Error', 'Permission denied for linked Requirement.');
-+      if (r.dealId) dealId = r.dealId; // cascade deal link
-+      if (r.teamId) linkedTeamId = r.teamId;
-+    }
-+
-+    if (dealId) {
-+      const d = Store.getDealById(dealId);
-+      if (!d) return Toast.error('Error', 'Linked Deal does not exist.');
-+      if (!Auth.canViewRecord(d)) return Toast.error('Error', 'Permission denied for linked Deal.');
-+      linkedTeamId = d.teamId;
-+    }
-+
-+    // teamId derivation: assigned user -> linked deal/requirement -> current user
-+    if (!finalTeamId && linkedTeamId) finalTeamId = linkedTeamId;
-+    if (!finalTeamId) finalTeamId = user.teamId || null;
-+
-+    if (contactId) {
-+      const c = Store.getContactById(contactId);
-+      if (!c) return Toast.error('Error', 'Linked Contact does not exist.');
-+    }
-+
-+    let status = document.getElementById('modal-prop-status').value;
-+    if (!STATUSES.some(s => s.key === status)) return Toast.error('Validation Error', 'Invalid status.');
-+
-+    // Approval logic ΓÇö enforced before Store write
-+    let needsApproval = currentLineItems.some(it => (parseFloat(it.discountPercent) || 0) > 10);
-+
-+    let approvalStatus;
-+    if (isManager) {
-+      approvalStatus = document.getElementById('modal-prop-approval').value;
-+      if (!APPROVALS.some(a => a.key === approvalStatus)) {
-+        return Toast.error('Validation Error', 'Invalid approval status.');
-+      }
-+    } else {
-+      // Non-manager: cannot set approved/rejected ever
-+      if (needsApproval) {
-+        approvalStatus = 'pending';
-+      } else {
-+        approvalStatus = 'not_required';
-+      }
-+    }
-+
-+    // Guard: cannot accept a proposal unless approval is cleared
-+    if (status === 'accepted' && approvalStatus !== 'approved' && approvalStatus !== 'not_required') {
-+      return Toast.error('Validation Error', 'Cannot accept a proposal that is pending approval.');
-+    }
-+
-+    const validUntilRaw = document.getElementById('modal-prop-valid').value;
-+    let normalizedValid = null;
-+    if (validUntilRaw) {
-+      const d = new Date(validUntilRaw);
-+      if (isNaN(d.getTime())) {
-+        return Toast.error('Validation Error', 'Invalid Valid Until date.');
-+      }
-+      normalizedValid = d.toISOString();
-+    }
-+
-+    const payload = {
-+      title,
-+      requirementId: reqId,
-+      dealId,
-+      contactId,
-+      version: document.getElementById('modal-prop-version').value.trim(),
-+      status,
-+      approvalStatus,
-+      validUntil: normalizedValid,
-+      notes: document.getElementById('modal-prop-notes').value.trim(),
-+      assignedTo,
-+      teamId: finalTeamId,
-+      lineItems: currentLineItems,
-+      subtotal: totals.subtotal,
-+      discountTotal: totals.discountTotal,
-+      taxTotal: totals.taxTotal,
-+      grandTotal: totals.grandTotal,
-+      updatedAt: new Date().toISOString()
-+    };
-+
-+    if (propId) {
-+      const ex = Store.getProposalById(propId);
-+      if (!ex || !Store.canUserEditProposal(ex, user)) return Toast.error('Error', 'Permission denied.');
-+
-+      if (status === 'accepted' && ex.status !== 'accepted') payload.acceptedAt = new Date().toISOString();
-+      if (status === 'rejected' && ex.status !== 'rejected') payload.rejectedAt = new Date().toISOString();
-+      if (status === 'sent' && ex.status !== 'sent') payload.sentAt = new Date().toISOString();
-+
-+      Store.updateProposal(propId, payload);
-+      Toast.success('Saved', 'Proposal updated.');
-+    } else {
-+      payload.id = 'prop_' + Date.now().toString(36);
-+      payload.createdBy = user.id;
-+      payload.createdAt = new Date().toISOString();
-+
-+      if (status === 'accepted') payload.acceptedAt = new Date().toISOString();
-+      if (status === 'rejected') payload.rejectedAt = new Date().toISOString();
-+      if (status === 'sent') payload.sentAt = new Date().toISOString();
-+
-+      Store.createProposal(payload);
-+      Toast.success('Created', 'Proposal added.');
-+    }
-+
-+    if (needsApproval && approvalStatus === 'pending') {
-+      Toast.warning('Approval Required', 'Discount exceeds 10%. Proposal is pending approval.');
-+    }
-+
-+    closeFn();
-+    reRender();
-+  });
-+}
-+
-+// ΓöÇΓöÇ Main Render ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-+
-+export function renderProposals() {
-+  const user = Auth.getCurrentUser();
-+  if (!user) return '';
-+
-+  const props = getFilteredData();
-+
-+  return `
-+    <div class="content-inner">
-+      <div class="page-header">
-+        <div>
-+          <h1 class="page-header-title">Proposals & Quotations</h1>
-+          <p class="page-header-subtitle">Manage commercial offers, line items, and approvals.</p>
-+        </div>
-+        <button class="btn btn-primary" id="btn-new-prop">New Proposal</button>
-+      </div>
-+
-+      ${buildKPIs(props)}
-+      ${buildFilters(user)}
-+      ${buildTable(props, user)}
-+    </div>
-+  `;
-+}
-+
-+function reRender() {
-+  const contentEl = document.getElementById('content-area');
-+  if (contentEl) contentEl.innerHTML = renderProposals();
-+}
-+
-+export function bindProposalsEvents() {
-+  const content = document.getElementById('content-area');
-+  if (!content) return;
-+
-+  content.addEventListener('click', e => {
-+    if (e.target.id === 'btn-new-prop') {
-+      renderProposalModal();
-+      return;
-+    }
-+    if (e.target.id === 'btn-prop-clear') {
-+      filters = { search: '', status: 'all', approval: 'all', owner: 'all' };
-+      reRender();
-+      return;
-+    }
-+
-+    const action = e.target.dataset.action;
-+    const propId = e.target.dataset.id;
-+    const user = Auth.getCurrentUser();
-+
-+    if (action === 'edit-prop') {
-+      renderProposalModal(propId);
-+    } else if (action === 'delete-prop') {
-+      if (!user || user.role !== 'manager') return Toast.error('Denied', 'Only managers can delete proposals.');
-+      const p = Store.getProposalById(propId);
-+      if (!p) return Toast.error('Error', 'Not found.');
-+      if (confirm('Delete this proposal?')) {
-+        const success = Store.deleteProposal(propId);
-+        if (success !== false) {
-+          Toast.success('Deleted', 'Proposal removed.');
-+        } else Toast.error('Error', 'Failed to delete.');
-+        reRender();
-+      }
-+    }
-+  });
-+
-+  content.addEventListener('change', e => {
-+    if (['prop-status', 'prop-approval', 'prop-owner'].includes(e.target.id)) {
-+      filters.status = document.getElementById('prop-status').value;
-+      filters.approval = document.getElementById('prop-approval').value;
-+      filters.owner = document.getElementById('prop-owner').value;
-+      reRender();
-+    }
-+  });
-+
-+  content.addEventListener('keyup', e => {
-+    if (e.target.id === 'prop-search') {
-+      filters.search = e.target.value;
-+      reRender();
-+    }
-+  });
-+}
-diff --git a/js/pages/requirements.js b/js/pages/requirements.js
-new file mode 100644
-index 0000000..d0c3713
---- /dev/null
-+++ b/js/pages/requirements.js
-@@ -0,0 +1,628 @@
-+// ============================================================
-+// TechnoEdge CRM ΓÇö Requirements Page
-+// ============================================================
-+
-+import { Store } from '../store.js';
-+import { Auth } from '../auth.js';
-+import { Toast } from '../components/toast.js';
-+import { formatDateTime } from '../utils.js';
-+
-+let filters = {
-+  search: '',
-+  type: 'all',
-+  status: 'all',
-+  priority: 'all',
-+  owner: 'all'
-+};
-+
-+const REQ_TYPES = [
-+  { key: 'training', label: 'Training' },
-+  { key: 'elearning', label: 'eLearning' },
-+  { key: 'hiring', label: 'Hiring' },
-+  { key: 'consulting', label: 'Consulting' },
-+  { key: 'other', label: 'Other' }
-+];
-+
-+const REQ_STATUSES = [
-+  { key: 'draft', label: 'Draft' },
-+  { key: 'captured', label: 'Captured' },
-+  { key: 'validated', label: 'Validated' },
-+  { key: 'proposal_ready', label: 'Proposal Ready' },
-+  { key: 'closed', label: 'Closed' }
++  { key: 'handed_over', label: 'Handed Over' },
++  { key: 'trainer_sourcing', label: 'Trainer Sourcing' },
++  { key: 'scheduled', label: 'Scheduled' },
++  { key: 'in_delivery', label: 'In Delivery' },
++  { key: 'completed', label: 'Completed' },
++  { key: 'blocked', label: 'Blocked' },
++  { key: 'cancelled', label: 'Cancelled' }
 +];
 +
 +const PRIORITIES = [
@@ -975,949 +225,988 @@ index 0000000..d0c3713
 +  { key: 'urgent', label: 'Urgent' }
 +];
 +
-+// ΓöÇΓöÇ Helpers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++const DELIVERY_MODES = [
++  { key: 'online', label: 'Online' },
++  { key: 'onsite', label: 'Onsite' },
++  { key: 'hybrid', label: 'Hybrid' },
++  { key: 'not_decided', label: 'Not Decided' }
++];
 +
-+function getFilteredData() {
-+  const user = Auth.getCurrentUser();
-+  if (!user) return [];
-+
-+  let reqs = Store.getRequirementsForUser(user);
-+
-+  // Search
-+  if (filters.search) {
-+    const term = filters.search.toLowerCase();
-+    reqs = reqs.filter(r => {
-+      const u = Store.getUserById(r.assignedTo || r.createdBy);
-+      const uName = u ? u.name.toLowerCase() : '';
-+      const t = (r.title || '').toLowerCase();
-+      const c = (r.companyName || '').toLowerCase();
-+      let l = '';
-+      if (r.dealId) { const d = Store.getDealById(r.dealId); if (d) l = d.title.toLowerCase(); }
-+      else if (r.leadId) { const ld = Store.getLeadById(r.leadId); if (ld) l = ld.name.toLowerCase() + ' ' + ld.company.toLowerCase(); }
-+      return t.includes(term) || c.includes(term) || uName.includes(term) || l.includes(term);
-+    });
-+  }
-+
-+  if (filters.type !== 'all') reqs = reqs.filter(r => r.requirementType === filters.type);
-+  if (filters.status !== 'all') reqs = reqs.filter(r => r.status === filters.status);
-+  if (filters.priority !== 'all') reqs = reqs.filter(r => r.priority === filters.priority);
-+  if (filters.owner !== 'all') reqs = reqs.filter(r => r.assignedTo === filters.owner);
-+
-+  return reqs.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-+}
-+
-+function getLinkedRecordLabel(r) {
-+  if (r.dealId) {
-+    const d = Store.getDealById(r.dealId);
-+    return d ? `<a href="#/deals/${d.id}" class="btn-link">Deal: ${d.title}</a>` : 'Deal (Deleted)';
-+  }
-+  if (r.leadId) {
-+    const ld = Store.getLeadById(r.leadId);
-+    return ld ? `Lead: ${ld.name}` : 'Lead (Deleted)';
-+  }
-+  return 'ΓÇö';
-+}
-+
-+function getLabel(key, array) {
-+  const obj = array.find(o => o.key === key);
-+  return obj ? obj.label : key;
-+}
-+
-+// ΓöÇΓöÇ Components ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-+
-+function buildKPIs(reqs) {
-+  const total = reqs.length;
-+  const captured = reqs.filter(r => r.status === 'captured').length;
-+  const proposalReady = reqs.filter(r => r.status === 'proposal_ready').length;
-+  const urgent = reqs.filter(r => r.priority === 'urgent').length;
-+
-+  return `
-+    <div class="activity-kpi-grid">
-+      <div class="stat-card">
-+        <div class="stat-card-content">
-+          <div class="stat-card-label">Total Requirements</div>
-+          <div class="stat-card-value">${total}</div>
-+        </div>
-+      </div>
-+      <div class="stat-card">
-+        <div class="stat-card-content">
-+          <div class="stat-card-label" style="color: var(--color-primary);">Captured</div>
-+          <div class="stat-card-value">${captured}</div>
-+        </div>
-+      </div>
-+      <div class="stat-card">
-+        <div class="stat-card-content">
-+          <div class="stat-card-label" style="color: var(--color-success);">Proposal Ready</div>
-+          <div class="stat-card-value">${proposalReady}</div>
-+        </div>
-+      </div>
-+      <div class="stat-card">
-+        <div class="stat-card-content">
-+          <div class="stat-card-label" style="color: var(--color-error);">Urgent</div>
-+          <div class="stat-card-value">${urgent}</div>
-+        </div>
-+      </div>
-+    </div>
-+  `;
-+}
-+
-+function buildFilters(user) {
-+  let ownerOptions = `<option value="all">All Owners</option>`;
-+  if (user.role === 'manager') {
-+    Store.getUsers().forEach(u => {
-+      ownerOptions += `<option value="${u.id}" ${filters.owner === u.id ? 'selected' : ''}>${u.name}</option>`;
-+    });
-+  } else if (user.role === 'team_lead') {
-+    Store.getUsersByTeam(user.teamId).forEach(u => {
-+      if (u.id !== user.id) ownerOptions += `<option value="${u.id}" ${filters.owner === u.id ? 'selected' : ''}>${u.name}</option>`;
-+    });
-+    ownerOptions += `<option value="${user.id}" ${filters.owner === user.id ? 'selected' : ''}>${user.name}</option>`;
-+  } else {
-+    ownerOptions += `<option value="${user.id}" ${filters.owner === user.id ? 'selected' : ''}>${user.name} (Me)</option>`;
-+  }
-+
-+  const typeOpts = REQ_TYPES.map(t => `<option value="${t.key}" ${filters.type === t.key ? 'selected' : ''}>${t.label}</option>`).join('');
-+  const statusOpts = REQ_STATUSES.map(s => `<option value="${s.key}" ${filters.status === s.key ? 'selected' : ''}>${s.label}</option>`).join('');
-+  const priorityOpts = PRIORITIES.map(p => `<option value="${p.key}" ${filters.priority === p.key ? 'selected' : ''}>${p.label}</option>`).join('');
-+
-+  return `
-+    <div class="filter-bar">
-+      <div style="flex: 1;">
-+        <input type="text" id="req-search" class="login-input" placeholder="Search requirements..." value="${filters.search}">
-+      </div>
-+      <div>
-+        <select id="req-type" class="login-input" style="padding-right:32px;">
-+          <option value="all">All Types</option>
-+          ${typeOpts}
-+        </select>
-+      </div>
-+      <div>
-+        <select id="req-status" class="login-input" style="padding-right:32px;">
-+          <option value="all">All Statuses</option>
-+          ${statusOpts}
-+        </select>
-+      </div>
-+      <div>
-+        <select id="req-priority" class="login-input" style="padding-right:32px;">
-+          <option value="all">Any Priority</option>
-+          ${priorityOpts}
-+        </select>
-+      </div>
-+      <div>
-+        <select id="req-owner" class="login-input" style="padding-right:32px;">
-+          ${ownerOptions}
-+        </select>
-+      </div>
-+      <button class="btn btn-secondary" id="btn-req-clear">Clear</button>
-+    </div>
-+  `;
-+}
-+
-+function buildTable(reqs, user) {
-+  const rows = reqs.map(r => {
-+    const owner = Store.getUserById(r.assignedTo || r.createdBy);
-+    const ownerName = owner ? owner.name : 'Unknown';
-+
-+    const canEdit = Store.canUserEditRequirement(r, user);
-+    const canDelete = user.role === 'manager';
-+
-+    let actions = '';
-+    if (canEdit) actions += `<button class="btn btn-sm btn-secondary" data-action="edit-req" data-id="${r.id}" style="margin-right:4px;">Edit</button>`;
-+    if (canDelete) actions += `<button class="btn btn-sm" style="background:var(--color-error); color:white;" data-action="delete-req" data-id="${r.id}">Delete</button>`;
-+
-+    return `
-+      <tr>
-+        <td style="font-weight:600;">${r.title}</td>
-+        <td>${r.companyName || 'ΓÇö'}</td>
-+        <td>${getLinkedRecordLabel(r)}</td>
-+        <td>${getLabel(r.requirementType, REQ_TYPES)}</td>
-+        <td><span class="badge badge-neutral">${getLabel(r.status, REQ_STATUSES)}</span></td>
-+        <td><span class="badge ${r.priority === 'urgent' ? 'badge-error' : 'badge-neutral'}">${getLabel(r.priority, PRIORITIES)}</span></td>
-+        <td>${ownerName}</td>
-+        <td>${formatDateTime(r.updatedAt)}</td>
-+        <td style="text-align:right;">${actions}</td>
-+      </tr>
-+    `;
-+  }).join('');
-+
-+  return `
-+    <div class="card" style="overflow-x:auto;">
-+      <table class="data-table">
-+        <thead>
-+          <tr>
-+            <th>Requirement</th>
-+            <th>Company</th>
-+            <th>Linked To</th>
-+            <th>Type</th>
-+            <th>Status</th>
-+            <th>Priority</th>
-+            <th>Owner</th>
-+            <th>Updated</th>
-+            <th style="text-align:right;">Actions</th>
-+          </tr>
-+        </thead>
-+        <tbody>
-+          ${rows || '<tr><td colspan="9" style="text-align:center;">No requirements found</td></tr>'}
-+        </tbody>
-+      </table>
-+    </div>
-+  `;
-+}
-+
-+// ΓöÇΓöÇ Modal ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-+
-+export function renderRequirementModal(reqId = null, defaults = {}) {
-+  const user = Auth.getCurrentUser();
-+  if (!user) return;
-+
-+  let r = {
-+    title: defaults.title || '',
-+    dealId: defaults.dealId || '',
-+    leadId: defaults.leadId || '',
-+    contactId: defaults.contactId || '',
-+    companyName: defaults.companyName || '',
-+    requirementType: defaults.requirementType || 'training',
-+    productInterest: defaults.productInterest || '',
-+    audienceSize: defaults.audienceSize || '',
-+    deliveryMode: defaults.deliveryMode || 'not_decided',
-+    timeline: defaults.timeline || '',
-+    budgetRange: defaults.budgetRange || '',
-+    decisionMaker: defaults.decisionMaker || '',
-+    summary: defaults.summary || '',
-+    painPoints: defaults.painPoints || '',
-+    successCriteria: defaults.successCriteria || '',
-+    status: defaults.status || 'draft',
-+    priority: defaults.priority || 'medium',
-+    assignedTo: defaults.assignedTo || user.id,
-+    linkedType: 'none'
++function getStatusRank(status) {
++  const ranks = {
++    'draft': 0,
++    'handed_over': 1,
++    'trainer_sourcing': 2,
++    'scheduled': 3,
++    'in_delivery': 4,
++    'completed': 5,
++    'blocked': 6,
++    'cancelled': 7
 +  };
-+
-+  if (reqId) {
-+    const existing = Store.getRequirementById(reqId);
-+    if (!existing || !Store.canUserEditRequirement(existing, user)) {
-+      return Toast.error('Error', 'Permission denied or not found.');
-+    }
-+    r = { ...r, ...existing };
-+    if (r.dealId) r.linkedType = 'deal';
-+    else if (r.leadId) r.linkedType = 'lead';
-+    else r.linkedType = 'none';
-+  } else {
-+    if (r.dealId) r.linkedType = 'deal';
-+    else if (r.leadId) r.linkedType = 'lead';
-+  }
-+
-+  let ownerOptions = '';
-+  if (user.role === 'manager') {
-+    ownerOptions = Store.getUsers().map(u => `<option value="${u.id}" ${u.id === r.assignedTo ? 'selected' : ''}>${u.name}</option>`).join('');
-+  } else if (user.role === 'team_lead') {
-+    const teamUsers = Store.getUsersByTeam(user.teamId).filter(u => u.id !== user.id);
-+    teamUsers.push(user);
-+    ownerOptions = teamUsers.map(u => `<option value="${u.id}" ${u.id === r.assignedTo ? 'selected' : ''}>${u.name}</option>`).join('');
-+  } else {
-+    ownerOptions = `<option value="${user.id}" selected>${user.name}</option>`;
-+  }
-+
-+  const modalHtml = `
-+    <div class="modal" id="req-modal">
-+      <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
-+        <div class="modal-header">
-+          <h2 class="modal-title">${reqId ? 'Edit Requirement' : 'New Requirement'}</h2>
-+          <button class="modal-close" id="btn-close-req-modal">&times;</button>
-+        </div>
-+        <div class="modal-body">
-+          
-+          <div style="display:flex; gap:1rem; margin-bottom:1rem;">
-+            <div style="flex:2;">
-+              <label class="login-label">Title <span style="color:red;">*</span></label>
-+              <input type="text" id="modal-req-title" class="login-input" value="${r.title}">
-+            </div>
-+            <div style="flex:1;">
-+              <label class="login-label">Status</label>
-+              <select id="modal-req-status" class="login-input">
-+                ${REQ_STATUSES.map(s => `<option value="${s.key}" ${r.status === s.key ? 'selected' : ''}>${s.label}</option>`).join('')}
-+              </select>
-+            </div>
-+          </div>
-+
-+          <div style="display:flex; gap:1rem; margin-bottom:1rem;">
-+            <div style="flex:1;">
-+              <label class="login-label">Linked Record Type</label>
-+              <select id="modal-req-linked-type" class="login-input">
-+                <option value="none" ${r.linkedType === 'none' ? 'selected' : ''}>None</option>
-+                <option value="deal" ${r.linkedType === 'deal' ? 'selected' : ''}>Deal</option>
-+                <option value="lead" ${r.linkedType === 'lead' ? 'selected' : ''}>Lead</option>
-+              </select>
-+            </div>
-+            <div style="flex:1;">
-+              <label class="login-label">Linked Record</label>
-+              <select id="modal-req-linked-id" class="login-input" ${r.linkedType === 'none' ? 'disabled' : ''}></select>
-+            </div>
-+            <div style="flex:1;">
-+              <label class="login-label">Contact (Optional)</label>
-+              <select id="modal-req-contact-id" class="login-input">
-+                <option value="">-- None --</option>
-+                ${Store.getContacts().map(c => `<option value="${c.id}" ${r.contactId === c.id ? 'selected' : ''}>${c.name} (${c.company})</option>`).join('')}
-+              </select>
-+            </div>
-+          </div>
-+
-+          <div style="display:flex; gap:1rem; margin-bottom:1rem;">
-+            <div style="flex:1;">
-+              <label class="login-label">Company Name</label>
-+              <input type="text" id="modal-req-company" class="login-input" value="${r.companyName}">
-+            </div>
-+            <div style="flex:1;">
-+              <label class="login-label">Requirement Type <span style="color:red;">*</span></label>
-+              <select id="modal-req-type" class="login-input">
-+                ${REQ_TYPES.map(t => `<option value="${t.key}" ${r.requirementType === t.key ? 'selected' : ''}>${t.label}</option>`).join('')}
-+              </select>
-+            </div>
-+            <div style="flex:1;">
-+              <label class="login-label">Priority</label>
-+              <select id="modal-req-priority" class="login-input">
-+                ${PRIORITIES.map(p => `<option value="${p.key}" ${r.priority === p.key ? 'selected' : ''}>${p.label}</option>`).join('')}
-+              </select>
-+            </div>
-+          </div>
-+
-+          <div style="display:flex; gap:1rem; margin-bottom:1rem;">
-+            <div style="flex:1;">
-+              <label class="login-label">Product Interest</label>
-+              <input type="text" id="modal-req-product" class="login-input" value="${r.productInterest}">
-+            </div>
-+            <div style="flex:1;">
-+              <label class="login-label">Audience Size</label>
-+              <input type="text" id="modal-req-audience" class="login-input" value="${r.audienceSize}">
-+            </div>
-+            <div style="flex:1;">
-+              <label class="login-label">Delivery Mode</label>
-+              <select id="modal-req-delivery" class="login-input">
-+                <option value="not_decided" ${r.deliveryMode === 'not_decided' ? 'selected' : ''}>Not Decided</option>
-+                <option value="online" ${r.deliveryMode === 'online' ? 'selected' : ''}>Online</option>
-+                <option value="onsite" ${r.deliveryMode === 'onsite' ? 'selected' : ''}>Onsite</option>
-+                <option value="hybrid" ${r.deliveryMode === 'hybrid' ? 'selected' : ''}>Hybrid</option>
-+              </select>
-+            </div>
-+          </div>
-+
-+          <div style="display:flex; gap:1rem; margin-bottom:1rem;">
-+            <div style="flex:1;">
-+              <label class="login-label">Timeline</label>
-+              <input type="text" id="modal-req-timeline" class="login-input" value="${r.timeline}" placeholder="e.g. Q3 2026">
-+            </div>
-+            <div style="flex:1;">
-+              <label class="login-label">Budget Range</label>
-+              <input type="text" id="modal-req-budget" class="login-input" value="${r.budgetRange}" placeholder="e.g. $10k - $20k">
-+            </div>
-+            <div style="flex:1;">
-+              <label class="login-label">Decision Maker</label>
-+              <input type="text" id="modal-req-decision" class="login-input" value="${r.decisionMaker}">
-+            </div>
-+          </div>
-+
-+          <div style="margin-bottom:1rem;">
-+            <label class="login-label">Summary <span style="color:red;">*</span></label>
-+            <textarea id="modal-req-summary" class="login-input" style="height:60px;" required>${r.summary}</textarea>
-+          </div>
-+          <div style="display:flex; gap:1rem; margin-bottom:1rem;">
-+            <div style="flex:1;">
-+              <label class="login-label">Pain Points</label>
-+              <textarea id="modal-req-pain" class="login-input" style="height:60px;">${r.painPoints}</textarea>
-+            </div>
-+            <div style="flex:1;">
-+              <label class="login-label">Success Criteria</label>
-+              <textarea id="modal-req-success" class="login-input" style="height:60px;">${r.successCriteria}</textarea>
-+            </div>
-+          </div>
-+
-+          <div style="margin-bottom:1rem;">
-+            <label class="login-label">Assigned To</label>
-+            <select id="modal-req-owner" class="login-input" ${user.role === 'employee' ? 'disabled' : ''}>
-+              ${ownerOptions}
-+            </select>
-+          </div>
-+
-+        </div>
-+        <div class="modal-footer">
-+          <button class="btn btn-secondary" id="btn-cancel-req-modal">Cancel</button>
-+          <button class="btn btn-primary" id="btn-save-req" data-id="${reqId || ''}">Save</button>
-+        </div>
-+      </div>
-+    </div>
-+  `;
-+
-+  document.body.insertAdjacentHTML('beforeend', modalHtml);
-+
-+  const populateLinked = (type, selId) => {
-+    const sel = document.getElementById('modal-req-linked-id');
-+    if (!sel) return;
-+    if (type === 'none') {
-+      sel.innerHTML = '<option value="">-- None --</option>';
-+      sel.disabled = true;
-+      return;
-+    }
-+    sel.disabled = false;
-+    let options = [];
-+    if (type === 'deal') {
-+      options = Store.getDealsForUser(user).map(d => `<option value="${d.id}" ${d.id === selId ? 'selected' : ''}>${d.title}</option>`);
-+    } else if (type === 'lead') {
-+      options = Store.getLeadsForUser(user).map(l => `<option value="${l.id}" ${l.id === selId ? 'selected' : ''}>${l.name} (${l.company})</option>`);
-+    }
-+    sel.innerHTML = options.length ? options.join('') : '<option value="">-- No records --</option>';
-+  };
-+
-+  const initialLinkedId = r.linkedType === 'deal' ? r.dealId : (r.linkedType === 'lead' ? r.leadId : null);
-+  populateLinked(r.linkedType, initialLinkedId);
-+
-+  document.getElementById('modal-req-linked-type').addEventListener('change', e => {
-+    populateLinked(e.target.value, null);
-+  });
-+
-+  const closeFn = () => { const m = document.getElementById('req-modal'); if (m) m.remove(); };
-+  document.getElementById('btn-close-req-modal').addEventListener('click', closeFn);
-+  document.getElementById('btn-cancel-req-modal').addEventListener('click', closeFn);
-+
-+  document.getElementById('btn-save-req').addEventListener('click', () => {
-+    const title = document.getElementById('modal-req-title').value.trim();
-+    const type = document.getElementById('modal-req-type').value;
-+    const summary = document.getElementById('modal-req-summary').value.trim();
-+    if (!title || !type || !summary) return Toast.error('Validation Error', 'Title, Type, and Summary are required.');
-+
-+    // Validate enums
-+    if (!REQ_TYPES.some(t => t.key === type)) return Toast.error('Validation Error', 'Invalid requirement type.');
-+    const statusVal = document.getElementById('modal-req-status').value;
-+    if (!REQ_STATUSES.some(s => s.key === statusVal)) return Toast.error('Validation Error', 'Invalid status.');
-+    const priorityVal = document.getElementById('modal-req-priority').value;
-+    if (!PRIORITIES.some(p => p.key === priorityVal)) return Toast.error('Validation Error', 'Invalid priority.');
-+
-+    const linkedType = document.getElementById('modal-req-linked-type').value;
-+    if (!['none', 'deal', 'lead'].includes(linkedType)) return Toast.error('Validation Error', 'Invalid linked type.');
-+    const linkedId = document.getElementById('modal-req-linked-id').value;
-+    if (linkedType !== 'none' && !linkedId) return Toast.error('Validation Error', 'Valid linked record is required.');
-+
-+    let dealTeamId = null;
-+
-+    // Validate linked records internally
-+    if (linkedType === 'deal') {
-+      const d = Store.getDealById(linkedId);
-+      if (!d) return Toast.error('Error', 'Linked Deal does not exist.');
-+      if (!Auth.canViewRecord(d)) return Toast.error('Error', 'Permission denied for linked Deal.');
-+      dealTeamId = d.teamId;
-+    } else if (linkedType === 'lead') {
-+      const ld = Store.getLeadById(linkedId);
-+      if (!ld) return Toast.error('Error', 'Linked Lead does not exist.');
-+      if (!Auth.canViewRecord(ld)) return Toast.error('Error', 'Permission denied for linked Lead.');
-+      const assignee = Store.getUserById(ld.assignedTo);
-+      if (assignee) dealTeamId = assignee.teamId;
-+    }
-+
-+    const contactId = document.getElementById('modal-req-contact-id').value || null;
-+    if (contactId) {
-+      const c = Store.getContactById(contactId);
-+      if (!c) return Toast.error('Error', 'Linked Contact does not exist.');
-+    }
-+
-+    // Assignment validation
-+    let assignedTo = document.getElementById('modal-req-owner').value;
-+    if (user.role === 'employee') {
-+      assignedTo = user.id;
-+    } else if (user.role === 'team_lead') {
-+      const target = Store.getUserById(assignedTo);
-+      if (!target || (target.teamId !== user.teamId && target.id !== user.id)) {
-+        return Toast.error('Error', 'Cannot assign outside your team.');
-+      }
-+    }
-+
-+    const assignedUser = Store.getUserById(assignedTo);
-+    if (!assignedUser) return Toast.error('Validation Error', 'Assigned user does not exist.');
-+
-+    // Derive teamId
-+    let finalTeamId = assignedUser.teamId || null;
-+    if (!finalTeamId && dealTeamId) finalTeamId = dealTeamId;
-+    if (!finalTeamId) finalTeamId = user.teamId || null;
-+
-+    const deliveryMode = document.getElementById('modal-req-delivery').value;
-+    if (!['not_decided', 'online', 'onsite', 'hybrid'].includes(deliveryMode)) {
-+      return Toast.error('Validation Error', 'Invalid delivery mode.');
-+    }
-+
-+    const payload = {
-+      title,
-+      requirementType: type,
-+      status: statusVal,
-+      priority: priorityVal,
-+      dealId: linkedType === 'deal' ? linkedId : null,
-+      leadId: linkedType === 'lead' ? linkedId : null,
-+      contactId,
-+      companyName: document.getElementById('modal-req-company').value.trim(),
-+      productInterest: document.getElementById('modal-req-product').value.trim(),
-+      audienceSize: document.getElementById('modal-req-audience').value.trim(),
-+      deliveryMode,
-+      timeline: document.getElementById('modal-req-timeline').value.trim(),
-+      budgetRange: document.getElementById('modal-req-budget').value.trim(),
-+      decisionMaker: document.getElementById('modal-req-decision').value.trim(),
-+      summary,
-+      painPoints: document.getElementById('modal-req-pain').value.trim(),
-+      successCriteria: document.getElementById('modal-req-success').value.trim(),
-+      assignedTo,
-+      teamId: finalTeamId,
-+      updatedAt: new Date().toISOString()
-+    };
-+
-+    if (reqId) {
-+      const ex = Store.getRequirementById(reqId);
-+      if (!ex || !Store.canUserEditRequirement(ex, user)) return Toast.error('Error', 'Permission denied.');
-+      Store.updateRequirement(reqId, payload);
-+      Toast.success('Saved', 'Requirement updated.');
-+    } else {
-+      payload.id = 'req_' + Date.now().toString(36);
-+      payload.createdBy = user.id;
-+      payload.createdAt = new Date().toISOString();
-+      Store.createRequirement(payload);
-+      Toast.success('Created', 'Requirement added.');
-+    }
-+    closeFn();
-+    reRender();
-+  });
++  return ranks[status] !== undefined ? ranks[status] : -1;
 +}
 +
-+// ΓöÇΓöÇ Main Render ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++let currentHandoffId = null;
 +
-+export function renderRequirements() {
++export function renderHandoffs() {
 +  const user = Auth.getCurrentUser();
 +  if (!user) return '';
 +
-+  const reqs = getFilteredData();
++  const handoffs = Store.getHandoffsForUser(user);
++
++  const total = handoffs.length;
++  const active = handoffs.filter(h => ['handed_over', 'trainer_sourcing', 'scheduled', 'in_delivery'].includes(h.deliveryStatus)).length;
++  const completed = handoffs.filter(h => h.deliveryStatus === 'completed').length;
++  const blocked = handoffs.filter(h => h.deliveryStatus === 'blocked').length;
 +
 +  return `
 +    <div class="content-inner">
-+      <div class="page-header">
++      <div class="page-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
 +        <div>
-+          <h1 class="page-header-title">Requirements</h1>
-+          <p class="page-header-subtitle">Capture and validate detailed client requirements.</p>
++          <h1 class="page-header-title">Project Handoffs</h1>
++          <div class="page-header-subtitle">Manage delivery and project execution</div>
 +        </div>
-+        <button class="btn btn-primary" id="btn-new-req">New Requirement</button>
++        <button class="btn btn-primary" id="btn-new-handoff">
++          <span class="icon">Γ₧ò</span> New Handoff
++        </button>
 +      </div>
 +
-+      ${buildKPIs(reqs)}
-+      ${buildFilters(user)}
-+      ${buildTable(reqs, user)}
++      <div class="dashboard-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 2rem;">
++        <div class="stat-card">
++          <div class="stat-card-label">Total Handoffs</div>
++          <div class="stat-card-value">${total}</div>
++        </div>
++        <div class="stat-card">
++          <div class="stat-card-label">Active Delivery</div>
++          <div class="stat-card-value" style="color:var(--color-primary);">${active}</div>
++        </div>
++        <div class="stat-card">
++          <div class="stat-card-label">Completed</div>
++          <div class="stat-card-value" style="color:var(--color-success);">${completed}</div>
++        </div>
++        <div class="stat-card">
++          <div class="stat-card-label">Blocked</div>
++          <div class="stat-card-value" style="color:var(--color-error);">${blocked}</div>
++        </div>
++      </div>
++
++      <div class="filters-bar" style="display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap; background:var(--color-surface-card); padding:1rem; border-radius:8px; border:1px solid var(--color-hairline-soft);">
++        <input type="text" class="login-input" id="handoff-filter-search" placeholder="Search projects..." style="flex:1; min-width:200px;">
++        <select class="login-input" id="handoff-filter-status" style="width:160px;">
++          <option value="all">All Statuses</option>
++          ${STATUSES.map(s => `<option value="${s.key}">${s.label}</option>`).join('')}
++        </select>
++        <select class="login-input" id="handoff-filter-priority" style="width:160px;">
++          <option value="all">All Priorities</option>
++          ${PRIORITIES.map(p => `<option value="${p.key}">${p.label}</option>`).join('')}
++        </select>
++      </div>
++
++      <div class="table-container" style="background:var(--color-surface-card); border-radius:8px; border:1px solid var(--color-hairline-soft); overflow-x:auto;">
++        <table class="data-table" style="width:100%; text-align:left; border-collapse:collapse;">
++          <thead>
++            <tr style="border-bottom:1px solid var(--color-hairline-soft);">
++              <th style="padding:1rem;">Project / Company</th>
++              <th style="padding:1rem;">Deal / Proposal</th>
++              <th style="padding:1rem;">Status</th>
++              <th style="padding:1rem;">Priority</th>
++              <th style="padding:1rem;">Assigned To</th>
++              <th style="padding:1rem;">Timeline</th>
++              <th style="padding:1rem; text-align:right;">Actions</th>
++            </tr>
++          </thead>
++          <tbody id="handoffs-tbody">
++            <!-- Rendered via loadTable() -->
++          </tbody>
++        </table>
++      </div>
++    </div>
++
++    <!-- Handoff Modal -->
++    <div id="handoff-modal" class="modal-overlay" style="display:none;">
++      <div class="modal" style="max-width:800px; width:90%;">
++        <div class="modal-header">
++          <h2 id="modal-handoff-heading">Create Project Handoff</h2>
++          <button class="modal-close" id="btn-close-handoff-modal">&times;</button>
++        </div>
++        <div class="modal-body" style="max-height:70vh; overflow-y:auto;">
++          <div class="form-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
++            
++            <div class="form-group" style="grid-column: 1 / -1;">
++              <label>Project Title *</label>
++              <input type="text" class="login-input" id="modal-handoff-title" placeholder="e.g. Acme CRM Implementation">
++            </div>
++
++            <div class="form-group">
++              <label>Linked Deal</label>
++              <select class="login-input" id="modal-handoff-deal">
++                <option value="">-- Select Deal --</option>
++              </select>
++            </div>
++            <div class="form-group">
++              <label>Linked Proposal</label>
++              <select class="login-input" id="modal-handoff-proposal">
++                <option value="">-- Select Proposal --</option>
++              </select>
++            </div>
++
++            <div class="form-group">
++              <label>Company Name *</label>
++              <input type="text" class="login-input" id="modal-handoff-company">
++            </div>
++            <div class="form-group">
++              <label>Client Contact</label>
++              <select class="login-input" id="modal-handoff-contact">
++                <option value="">-- Select Contact --</option>
++              </select>
++            </div>
++
++            <div class="form-group" style="grid-column: 1 / -1;">
++              <label>Project Brief *</label>
++              <textarea class="login-input" id="modal-handoff-brief" rows="3" placeholder="Summary of delivery scope..."></textarea>
++            </div>
++
++            <div class="form-group">
++              <label>Training Requirement</label>
++              <input type="text" class="login-input" id="modal-handoff-training" placeholder="e.g. AWS Certification">
++            </div>
++            <div class="form-group">
++              <label>Trainer Need</label>
++              <input type="text" class="login-input" id="modal-handoff-trainer" placeholder="e.g. 1 Lead Trainer">
++            </div>
++
++            <div class="form-group">
++              <label>Delivery Mode *</label>
++              <select class="login-input" id="modal-handoff-mode">
++                ${DELIVERY_MODES.map(m => `<option value="${m.key}">${m.label}</option>`).join('')}
++              </select>
++            </div>
++            <div class="form-group">
++              <label>Priority *</label>
++              <select class="login-input" id="modal-handoff-priority">
++                ${PRIORITIES.map(p => `<option value="${p.key}">${p.label}</option>`).join('')}
++              </select>
++            </div>
++
++            <div class="form-group">
++              <label>Expected Start Date</label>
++              <input type="date" class="login-input" id="modal-handoff-start">
++            </div>
++            <div class="form-group">
++              <label>Expected End Date</label>
++              <input type="date" class="login-input" id="modal-handoff-end">
++            </div>
++
++            <div class="form-group">
++              <label>Delivery Status *</label>
++              <select class="login-input" id="modal-handoff-status">
++                ${STATUSES.map(s => `<option value="${s.key}">${s.label}</option>`).join('')}
++              </select>
++            </div>
++            <div class="form-group">
++              <label>Assigned To *</label>
++              <select class="login-input" id="modal-handoff-assigned"></select>
++            </div>
++
++            <div class="form-group" style="grid-column: 1 / -1;">
++              <label>Blocker Reason (If Blocked)</label>
++              <input type="text" class="login-input" id="modal-handoff-blocker" placeholder="Why is this blocked?">
++            </div>
++            
++            <div class="form-group" style="grid-column: 1 / -1;">
++              <label>Internal Notes</label>
++              <textarea class="login-input" id="modal-handoff-notes" rows="2" placeholder="Private team notes..."></textarea>
++            </div>
++
++          </div>
++        </div>
++        <div class="modal-footer">
++          <button class="btn btn-secondary" id="btn-cancel-handoff">Cancel</button>
++          <button class="btn btn-primary" id="btn-save-handoff">Save Handoff</button>
++        </div>
++      </div>
 +    </div>
 +  `;
 +}
 +
-+function reRender() {
-+  const contentEl = document.getElementById('content-area');
-+  if (contentEl) contentEl.innerHTML = renderRequirements();
++function loadTable() {
++  const tbody = document.getElementById('handoffs-tbody');
++  const searchInput = document.getElementById('handoff-filter-search');
++  const statusFilter = document.getElementById('handoff-filter-status');
++  const priorityFilter = document.getElementById('handoff-filter-priority');
++  
++  if (!tbody || !searchInput || !statusFilter || !priorityFilter) return;
++
++  const user = Auth.getCurrentUser();
++  if (!user) return;
++
++  const handoffs = Store.getHandoffsForUser(user);
++  const search = searchInput.value.toLowerCase();
++  const statusVal = statusFilter.value;
++  const priorityVal = priorityFilter.value;
++
++  const filtered = handoffs.filter(h => {
++    const matchSearch = String(h.title || '').toLowerCase().includes(search) || String(h.companyName || '').toLowerCase().includes(search);
++    const matchStatus = statusVal === 'all' || h.deliveryStatus === statusVal;
++    const matchPriority = priorityVal === 'all' || h.priority === priorityVal;
++    return matchSearch && matchStatus && matchPriority;
++  });
++
++  if (filtered.length === 0) {
++    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:2rem; color:var(--color-muted);">No handoffs found.</td></tr>';
++    return;
++  }
++
++  tbody.innerHTML = filtered.map(h => {
++    const deal = h.dealId ? Store.getDealById(h.dealId) : null;
++    const prop = h.proposalId ? Store.getProposalById(h.proposalId) : null;
++    const owner = Store.getUserById(h.assignedTo);
++    const sLabel = STATUSES.find(s => s.key === h.deliveryStatus)?.label || h.deliveryStatus;
++    const pLabel = PRIORITIES.find(p => p.key === h.priority)?.label || h.priority;
++
++    const actions = [];
++    if (Store.canUserEditHandoff(h, user)) {
++      actions.push(`<button class="btn btn-sm btn-secondary edit-handoff" data-id="${h.id}">Edit</button>`);
++    }
++    if (user.role === 'manager') {
++      actions.push(`<button class="btn btn-sm btn-secondary delete-handoff" style="color:var(--color-error); border-color:var(--color-error);" data-id="${h.id}">Delete</button>`);
++    }
++
++    return `
++      <tr style="border-bottom:1px solid var(--color-hairline-soft);">
++        <td style="padding:1rem;">
++          <div style="font-weight:600;">${h.title}</div>
++          <div style="font-size:0.8rem; color:var(--color-muted);">${h.companyName}</div>
++        </td>
++        <td style="padding:1rem;">
++          ${deal ? `<div style="font-size:0.85rem;"><a href="#/deals/${deal.id}">${deal.title}</a></div>` : ''}
++          ${prop ? `<div style="font-size:0.8rem; color:var(--color-muted);">Prop: ${prop.title}</div>` : ''}
++        </td>
++        <td style="padding:1rem;">
++          <span class="badge ${h.deliveryStatus === 'blocked' ? 'badge-error' : h.deliveryStatus === 'completed' ? 'badge-success' : 'badge-neutral'}">${sLabel}</span>
++        </td>
++        <td style="padding:1rem;">${pLabel}</td>
++        <td style="padding:1rem;">${owner ? owner.name : 'Unassigned'}</td>
++        <td style="padding:1rem; font-size:0.85rem; color:var(--color-muted);">
++          <div>${h.expectedStartDate ? formatDate(h.expectedStartDate) : 'TBD'} &rarr;</div>
++          <div>${h.expectedEndDate ? formatDate(h.expectedEndDate) : 'TBD'}</div>
++        </td>
++        <td style="padding:1rem; text-align:right;">
++          <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
++            ${actions.join('')}
++          </div>
++        </td>
++      </tr>
++    `;
++  }).join('');
 +}
 +
-+export function bindRequirementsEvents() {
++function openModal(id = null, defaultData = null) {
++  const modal = document.getElementById('handoff-modal');
++  if (!modal) return;
++  const user = Auth.getCurrentUser();
++  if (!user) return;
++  currentHandoffId = id;
++
++  document.getElementById('modal-handoff-heading').innerText = id ? 'Edit Project Handoff' : 'Create Project Handoff';
++
++  const deals = Store.getDealsForUser(user);
++  const props = Store.getProposalsForUser(user);
++  const contacts = Store.getContacts();
++
++  document.getElementById('modal-handoff-deal').innerHTML = '<option value="">-- Select Deal --</option>' + deals.map(d => `<option value="${d.id}">${d.title}</option>`).join('');
++  document.getElementById('modal-handoff-proposal').innerHTML = '<option value="">-- Select Proposal --</option>' + props.map(p => `<option value="${p.id}">${p.title}</option>`).join('');
++  document.getElementById('modal-handoff-contact').innerHTML = '<option value="">-- Select Contact --</option>' + contacts.map(c => `<option value="${c.id}">${c.name} (${c.company})</option>`).join('');
++
++  const assignedSelect = document.getElementById('modal-handoff-assigned');
++  if (user.role === 'employee') {
++    assignedSelect.innerHTML = `<option value="${user.id}">${user.name} (You)</option>`;
++    assignedSelect.disabled = true;
++  } else if (user.role === 'team_lead') {
++    const teamUsers = Store.getUsersByTeam(user.teamId);
++    teamUsers.push(user);
++    const uniqueUsers = Array.from(new Map(teamUsers.map(u => [u.id, u])).values());
++    assignedSelect.innerHTML = uniqueUsers.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
++    assignedSelect.disabled = false;
++  } else {
++    const allUsers = Store.getUsers().filter(u => u.isActive);
++    assignedSelect.innerHTML = allUsers.map(u => `<option value="${u.id}">${u.name} (${Store.getTeamById(u.teamId)?.name || 'No Team'})</option>`).join('');
++    assignedSelect.disabled = false;
++  }
++
++  const dealSelect = document.getElementById('modal-handoff-deal');
++  const propSelect = document.getElementById('modal-handoff-proposal');
++  const companyInput = document.getElementById('modal-handoff-company');
++
++  if (id) {
++    const h = Store.getHandoffById(id);
++    if (!h || !Store.canUserEditHandoff(h, user)) {
++      Toast.error('Error', 'Cannot edit this handoff.');
++      return;
++    }
++    document.getElementById('modal-handoff-title').value = h.title || '';
++    document.getElementById('modal-handoff-deal').value = h.dealId || '';
++    document.getElementById('modal-handoff-proposal').value = h.proposalId || '';
++    document.getElementById('modal-handoff-company').value = h.companyName || '';
++    document.getElementById('modal-handoff-contact').value = h.clientContactId || '';
++    document.getElementById('modal-handoff-brief').value = h.projectBrief || '';
++    document.getElementById('modal-handoff-training').value = h.trainingRequirement || '';
++    document.getElementById('modal-handoff-trainer').value = h.trainerNeed || '';
++    document.getElementById('modal-handoff-mode').value = h.deliveryMode || 'not_decided';
++    document.getElementById('modal-handoff-priority').value = h.priority || 'medium';
++    document.getElementById('modal-handoff-start').value = h.expectedStartDate ? h.expectedStartDate.split('T')[0] : '';
++    document.getElementById('modal-handoff-end').value = h.expectedEndDate ? h.expectedEndDate.split('T')[0] : '';
++    document.getElementById('modal-handoff-status').value = h.deliveryStatus || 'draft';
++    
++    if (user.role !== 'manager') {
++      const sSelect = document.getElementById('modal-handoff-status');
++      Array.from(sSelect.options).forEach(opt => {
++        const nRank = getStatusRank(opt.value);
++        const oRank = getStatusRank(h.deliveryStatus);
++        
++        let allowed = false;
++        if (opt.value === h.deliveryStatus) allowed = true;
++        else if (opt.value === 'blocked') allowed = true;
++        else if (h.deliveryStatus === 'blocked' && nRank >= 0 && nRank <= 5) allowed = true; // allow unblocking to any happy path
++        else if (nRank === oRank + 1) allowed = true; // sequential forward
++        
++        opt.disabled = !allowed;
++      });
++    }
++
++    assignedSelect.value = h.assignedTo || user.id;
++    document.getElementById('modal-handoff-blocker').value = h.blockerReason || '';
++    document.getElementById('modal-handoff-notes').value = h.internalNotes || '';
++  } else {
++    document.getElementById('modal-handoff-title').value = '';
++    document.getElementById('modal-handoff-deal').value = defaultData?.dealId || '';
++    document.getElementById('modal-handoff-proposal').value = defaultData?.proposalId || '';
++    document.getElementById('modal-handoff-company').value = defaultData?.companyName || '';
++    document.getElementById('modal-handoff-contact').value = defaultData?.contactId || '';
++    document.getElementById('modal-handoff-brief').value = '';
++    document.getElementById('modal-handoff-training').value = '';
++    document.getElementById('modal-handoff-trainer').value = '';
++    document.getElementById('modal-handoff-mode').value = 'not_decided';
++    document.getElementById('modal-handoff-priority').value = 'medium';
++    document.getElementById('modal-handoff-start').value = '';
++    document.getElementById('modal-handoff-end').value = '';
++    
++    const sSelect = document.getElementById('modal-handoff-status');
++    Array.from(sSelect.options).forEach(opt => opt.disabled = false);
++    sSelect.value = 'draft';
++
++    assignedSelect.value = user.id;
++    document.getElementById('modal-handoff-blocker').value = '';
++    document.getElementById('modal-handoff-notes').value = '';
++
++    if (defaultData?.dealId) {
++      const d = Store.getDealById(defaultData.dealId);
++      if (d) {
++        const lead = d.leadId ? Store.getLeadById(d.leadId) : null;
++        if (lead && !defaultData.companyName) document.getElementById('modal-handoff-company').value = lead.company;
++        if (d.contactId) document.getElementById('modal-handoff-contact').value = d.contactId;
++      }
++    }
++  }
++
++  modal.style.display = 'flex';
++}
++
++function closeModal() {
++  const modal = document.getElementById('handoff-modal');
++  if (modal) modal.style.display = 'none';
++  currentHandoffId = null;
++}
++
++function handleSaveHandoff() {
++  const user = Auth.getCurrentUser();
++  if (!user) return;
++
++  const title = document.getElementById('modal-handoff-title').value.trim();
++  const companyName = document.getElementById('modal-handoff-company').value.trim();
++  const projectBrief = document.getElementById('modal-handoff-brief').value.trim();
++  let deliveryMode = document.getElementById('modal-handoff-mode').value;
++  let deliveryStatus = document.getElementById('modal-handoff-status').value;
++  let priority = document.getElementById('modal-handoff-priority').value;
++  
++  if (!title || !companyName || !projectBrief) {
++    return Toast.error('Validation Error', 'Title, Company Name, and Project Brief are required.');
++  }
++
++  if (!STATUSES.some(s => s.key === deliveryStatus)) return Toast.error('Validation Error', 'Invalid status.');
++  if (!PRIORITIES.some(p => p.key === priority)) return Toast.error('Validation Error', 'Invalid priority.');
++  if (!DELIVERY_MODES.some(m => m.key === deliveryMode)) return Toast.error('Validation Error', 'Invalid delivery mode.');
++
++  let dealId = document.getElementById('modal-handoff-deal').value || null;
++  const proposalId = document.getElementById('modal-handoff-proposal').value || null;
++  const contactId = document.getElementById('modal-handoff-contact').value || null;
++
++  if (proposalId && !dealId) {
++    const p = Store.getProposalById(proposalId);
++    if (p && p.dealId) dealId = p.dealId;
++  }
++
++  if (contactId && !Store.getContactById(contactId)) {
++    return Toast.error('Validation Error', 'Selected client contact does not exist.');
++  }
++
++  let dealTeamId = null;
++  let requirementId = null;
++  let requirementTeamId = null;
++
++  if (dealId) {
++    const d = Store.getDealById(dealId);
++    if (!d) return Toast.error('Error', 'Linked Deal does not exist.');
++    if (!Auth.canViewRecord(d)) return Toast.error('Error', 'Permission denied for linked Deal.');
++    if (d.status !== 'closed_won') {
++      if (user.role !== 'manager') {
++        return Toast.error('Error', 'Deal must be Closed Won to create a handoff.');
++      } else {
++        if (!confirm('Warning: Linked Deal is not Closed Won. Create draft handoff anyway?')) return;
++        deliveryStatus = 'draft';
++      }
++    }
++    dealTeamId = d.teamId;
++  }
++
++  if (proposalId) {
++    const p = Store.getProposalById(proposalId);
++    if (!p) return Toast.error('Error', 'Linked Proposal does not exist.');
++    if (!Store.canUserViewProposal(p, user)) return Toast.error('Error', 'Permission denied for linked Proposal.');
++    if (p.status !== 'accepted') {
++      if (user.role !== 'manager') {
++        return Toast.error('Error', 'Proposal must be Accepted to create a handoff.');
++      } else {
++        if (!confirm('Warning: Linked Proposal is not Accepted. Create draft handoff anyway?')) return;
++        deliveryStatus = 'draft';
++      }
++    }
++    if (p.requirementId) {
++      const r = Store.getRequirementById(p.requirementId);
++      if (!r || !Store.canUserViewRequirement(r, user)) return Toast.error('Error', 'Permission denied for underlying Requirement.');
++      requirementId = p.requirementId;
++      requirementTeamId = r.teamId;
++    }
++  }
++
++  // Duplicate Check
++  if (!currentHandoffId) {
++    const allHandoffs = Store.getHandoffs();
++    const dup = allHandoffs.find(h => (dealId && h.dealId === dealId) || (proposalId && h.proposalId === proposalId));
++    if (dup) {
++      if (user.role !== 'manager') {
++        return Toast.error('Duplicate Error', 'A handoff already exists for this deal or proposal.');
++      } else {
++        if (!confirm('A handoff already exists for this deal/proposal. Create duplicate?')) return;
++      }
++    }
++  }
++
++  let assignedTo = document.getElementById('modal-handoff-assigned').value;
++  if (user.role === 'employee') {
++    assignedTo = user.id;
++  } else if (user.role === 'team_lead') {
++    const target = Store.getUserById(assignedTo);
++    if (!target || (target.teamId !== user.teamId && target.id !== user.id)) {
++      return Toast.error('Error', 'Cannot assign outside your team.');
++    }
++  }
++
++  const assignedUser = Store.getUserById(assignedTo);
++  if (!assignedUser) return Toast.error('Error', 'Assigned user does not exist.');
++
++  let finalTeamId = assignedUser.teamId || null;
++  if (!finalTeamId && dealTeamId) finalTeamId = dealTeamId;
++  if (!finalTeamId && requirementTeamId) finalTeamId = requirementTeamId;
++  if (!finalTeamId) finalTeamId = user.teamId || null;
++
++  const startRaw = document.getElementById('modal-handoff-start').value;
++  const endRaw = document.getElementById('modal-handoff-end').value;
++  
++  let startIso = null;
++  let endIso = null;
++  if (startRaw) {
++    const d = new Date(startRaw);
++    if (isNaN(d.getTime())) return Toast.error('Error', 'Invalid start date.');
++    startIso = d.toISOString();
++  }
++  if (endRaw) {
++    const d = new Date(endRaw);
++    if (isNaN(d.getTime())) return Toast.error('Error', 'Invalid end date.');
++    endIso = d.toISOString();
++  }
++
++  const oldRecord = currentHandoffId ? Store.getHandoffById(currentHandoffId) : null;
++
++  if (currentHandoffId && !oldRecord) {
++     return Toast.error('Error', 'Handoff not found.');
++  }
++
++  if (oldRecord) {
++     if (!Store.canUserEditHandoff(oldRecord, user)) {
++       return Toast.error('Error', 'Cannot edit this handoff.');
++     }
++     if (user.role !== 'manager') {
++       const nRank = getStatusRank(deliveryStatus);
++       const oRank = getStatusRank(oldRecord.deliveryStatus);
++       
++       let allowed = false;
++       if (deliveryStatus === oldRecord.deliveryStatus) allowed = true;
++       else if (deliveryStatus === 'blocked') allowed = true;
++       else if (oldRecord.deliveryStatus === 'blocked' && nRank >= 0 && nRank <= 5) allowed = true;
++       else if (nRank === oRank + 1) allowed = true;
++
++       if (!allowed) {
++         return Toast.error('Error', 'Invalid status transition.');
++       }
++     }
++  }
++
++  const payload = {
++    title,
++    dealId,
++    proposalId,
++    requirementId,
++    companyName,
++    clientContactId: contactId,
++    projectBrief,
++    trainingRequirement: document.getElementById('modal-handoff-training').value.trim(),
++    trainerNeed: document.getElementById('modal-handoff-trainer').value.trim(),
++    deliveryMode,
++    priority,
++    expectedStartDate: startIso,
++    expectedEndDate: endIso,
++    deliveryStatus,
++    assignedTo,
++    teamId: finalTeamId,
++    blockerReason: document.getElementById('modal-handoff-blocker').value.trim(),
++    internalNotes: document.getElementById('modal-handoff-notes').value.trim(),
++  };
++
++  let saved;
++  if (currentHandoffId) {
++    saved = Store.updateHandoff(currentHandoffId, payload);
++    if (!saved) return Toast.error('Error', 'Failed to update handoff.');
++    Toast.success('Updated', 'Handoff updated successfully.');
++
++    if (oldRecord.deliveryStatus !== saved.deliveryStatus) {
++       Store.createActivity({
++          id: generateId(),
++          title: `Handoff Status: ${saved.deliveryStatus}`,
++          type: 'stage_change',
++          dealId: saved.dealId || null,
++          assignedTo: user.id,
++          teamId: user.teamId,
++          createdBy: user.id,
++          createdAt: new Date().toISOString()
++       });
++    }
++    if (oldRecord.assignedTo !== saved.assignedTo) {
++       Store.createActivity({
++          id: generateId(),
++          title: `Handoff reassigned to ${assignedUser.name}`,
++          type: 'note',
++          dealId: saved.dealId || null,
++          assignedTo: user.id,
++          teamId: user.teamId,
++          createdBy: user.id,
++          createdAt: new Date().toISOString()
++       });
++    }
++  } else {
++    payload.id = generateId();
++    payload.createdBy = user.id;
++    payload.createdAt = new Date().toISOString();
++    payload.updatedAt = payload.createdAt;
++    saved = Store.createHandoff(payload);
++    if (!saved) return Toast.error('Error', 'Failed to create handoff.');
++    Toast.success('Created', 'Project handoff created successfully.');
++
++    Store.createActivity({
++       id: generateId(),
++       title: `Project Handoff Created`,
++       type: 'stage_change',
++       dealId: saved.dealId || null,
++       notes: `Handoff: ${saved.title}`,
++       assignedTo: user.id,
++       teamId: user.teamId,
++       createdBy: user.id,
++       createdAt: new Date().toISOString()
++    });
++  }
++
++  closeModal();
++  import('../router.js').then(m => m.Router.handleRoute());
++}
++
++let eventsBound = false;
++
++export function bindHandoffsEvents() {
++  if (eventsBound) return;
++  eventsBound = true;
++
 +  const content = document.getElementById('content-area');
 +  if (!content) return;
 +
++  // Delegate all clicks
 +  content.addEventListener('click', e => {
-+    if (e.target.id === 'btn-new-req') {
-+      renderRequirementModal();
-+      return;
++    if (e.target.closest('#btn-new-handoff')) {
++      openModal();
 +    }
-+    if (e.target.id === 'btn-req-clear') {
-+      filters = { search: '', type: 'all', status: 'all', priority: 'all', owner: 'all' };
-+      reRender();
-+      return;
++    if (e.target.closest('#btn-close-handoff-modal') || e.target.closest('#btn-cancel-handoff')) {
++      closeModal();
 +    }
-+
-+    const action = e.target.dataset.action;
-+    const reqId = e.target.dataset.id;
-+    const user = Auth.getCurrentUser();
-+
-+    if (action === 'edit-req') {
-+      renderRequirementModal(reqId);
-+    } else if (action === 'delete-req') {
-+      if (!user || user.role !== 'manager') return Toast.error('Denied', 'Only managers can delete requirements.');
-+      const r = Store.getRequirementById(reqId);
-+      if (!r) return Toast.error('Error', 'Not found.');
-+      if (confirm('Delete this requirement?')) {
-+        const success = Store.deleteRequirement(reqId);
-+        if (success !== false) {
-+          Toast.success('Deleted', 'Requirement removed.');
-+        } else Toast.error('Error', 'Failed to delete.');
-+        reRender();
++    if (e.target.closest('#btn-save-handoff')) {
++      handleSaveHandoff();
++    }
++    const editBtn = e.target.closest('.edit-handoff');
++    if (editBtn) {
++      openModal(editBtn.getAttribute('data-id'));
++    }
++    const deleteBtn = e.target.closest('.delete-handoff');
++    if (deleteBtn) {
++      const user = Auth.getCurrentUser();
++      if (user?.role !== 'manager') {
++        Toast.error('Access Denied', 'Only managers can delete handoffs.');
++        return;
 +      }
++      const id = deleteBtn.getAttribute('data-id');
++      const h = Store.getHandoffById(id);
++      if (!h) return Toast.error('Error', 'Handoff not found.');
++      
++      if (confirm('Are you sure you want to delete this handoff?')) {
++        if (Store.deleteHandoff(id)) {
++          Toast.success('Deleted', 'Handoff deleted.');
++          import('../router.js').then(m => m.Router.handleRoute());
++        } else {
++          Toast.error('Error', 'Failed to delete handoff.');
++        }
++      }
++    }
++  });
++
++  // Delegate input/change for filters and autofills
++  content.addEventListener('input', e => {
++    if (e.target.id === 'handoff-filter-search') {
++      loadTable();
 +    }
 +  });
 +
 +  content.addEventListener('change', e => {
-+    if (['req-type', 'req-status', 'req-priority', 'req-owner'].includes(e.target.id)) {
-+      filters.type = document.getElementById('req-type').value;
-+      filters.status = document.getElementById('req-status').value;
-+      filters.priority = document.getElementById('req-priority').value;
-+      filters.owner = document.getElementById('req-owner').value;
-+      reRender();
++    if (e.target.id === 'handoff-filter-status' || e.target.id === 'handoff-filter-priority') {
++      loadTable();
 +    }
-+  });
 +
-+  content.addEventListener('keyup', e => {
-+    if (e.target.id === 'req-search') {
-+      filters.search = e.target.value;
-+      reRender();
++    if (e.target.id === 'modal-handoff-deal') {
++      const dealSelect = e.target;
++      const companyInput = document.getElementById('modal-handoff-company');
++      const d = Store.getDealById(dealSelect.value);
++      if (d) {
++        const lead = d.leadId ? Store.getLeadById(d.leadId) : null;
++        if (lead && !companyInput.value) companyInput.value = lead.company;
++        if (d.contactId) document.getElementById('modal-handoff-contact').value = d.contactId;
++      }
++    }
++
++    if (e.target.id === 'modal-handoff-proposal') {
++      const propSelect = e.target;
++      const dealSelect = document.getElementById('modal-handoff-deal');
++      const p = Store.getProposalById(propSelect.value);
++      if (p && p.dealId && !dealSelect.value) {
++        dealSelect.value = p.dealId;
++        // manually dispatch change event to trigger deal auto-fill
++        dealSelect.dispatchEvent(new Event('change', { bubbles: true }));
++      }
 +    }
 +  });
 +}
++
++// Hook called by router or app.js after render, if needed to load data initially
++// For now we can just execute logic when we want to check for pending creations
++export function initHandoffsPage() {
++  loadTable();
++  const pendingDealId = sessionStorage.getItem('pendingHandoffDealId');
++  if (pendingDealId) {
++    sessionStorage.removeItem('pendingHandoffDealId');
++    const d = Store.getDealById(pendingDealId);
++    let defaultData = { dealId: pendingDealId };
++    if (d) {
++       defaultData.companyName = Store.getLeadById(d.leadId)?.company || '';
++       defaultData.contactId = d.contactId || '';
++       const props = Store.getProposals().filter(p => p.dealId === d.id && p.status === 'accepted');
++       if (props.length > 0) defaultData.proposalId = props[0].id;
++    }
++    openModal(null, defaultData);
++  }
++}
 diff --git a/js/pages/settings.js b/js/pages/settings.js
-index b30425d..52da186 100644
+index 52da186..7e924ba 100644
 --- a/js/pages/settings.js
 +++ b/js/pages/settings.js
-@@ -19,7 +19,9 @@ function getDataSummary() {
-     leads: Store.getLeads().length,
-     contacts: Store.getContacts().length,
+@@ -21,7 +21,8 @@ function getDataSummary() {
      deals: Store.getDeals().length,
--    activities: Store.getActivities().length
-+    activities: Store.getActivities().length,
-+    requirements: Store.getRequirements().length,
-+    proposals: Store.getProposals().length
+     activities: Store.getActivities().length,
+     requirements: Store.getRequirements().length,
+-    proposals: Store.getProposals().length
++    proposals: Store.getProposals().length,
++    handoffs: Store.getHandoffs().length
    };
  }
  
-@@ -108,7 +110,9 @@ function buildDataSummaryCard(user) {
-     { label: 'Leads', count: summary.leads, color: 'var(--color-stage-sourcing)' },
-     { label: 'Contacts', count: summary.contacts, color: 'var(--color-stage-delivery)' },
+@@ -112,7 +113,8 @@ function buildDataSummaryCard(user) {
      { label: 'Deals', count: summary.deals, color: 'var(--color-stage-feedback)' },
--    { label: 'Activities', count: summary.activities, color: 'var(--color-stage-invoice)' }
-+    { label: 'Activities', count: summary.activities, color: 'var(--color-stage-invoice)' },
-+    { label: 'Requirements', count: summary.requirements, color: 'var(--color-primary)' },
-+    { label: 'Proposals', count: summary.proposals, color: 'var(--color-success)' }
+     { label: 'Activities', count: summary.activities, color: 'var(--color-stage-invoice)' },
+     { label: 'Requirements', count: summary.requirements, color: 'var(--color-primary)' },
+-    { label: 'Proposals', count: summary.proposals, color: 'var(--color-success)' }
++    { label: 'Proposals', count: summary.proposals, color: 'var(--color-success)' },
++    { label: 'Project Handoffs', count: summary.handoffs, color: 'var(--color-stage-invoice)' }
    ];
  
    const itemsHtml = items.map(i => `
-@@ -125,7 +129,7 @@ function buildDataSummaryCard(user) {
-         <p style="margin:0.25rem 0 0; font-size:0.85rem; color:var(--color-muted);">${label}</p>
-       </div>
-       <div style="padding:1.5rem;">
--        <div style="display:grid; grid-template-columns:repeat(6, 1fr); gap:1rem;">
-+        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:1rem;">
-           ${itemsHtml}
-         </div>
-       </div>
-@@ -384,12 +388,19 @@ function handleImportJson() {
+@@ -388,7 +390,7 @@ function handleImportJson() {
  
      // Validate structure
      const requiredKeys = ['users', 'teams', 'leads', 'contacts', 'deals', 'activities'];
-+    const optionalArrayKeys = ['requirements', 'proposals'];
+-    const optionalArrayKeys = ['requirements', 'proposals'];
++    const optionalArrayKeys = ['requirements', 'proposals', 'handoffs'];
      for (const key of requiredKeys) {
        if (!Array.isArray(payload[key])) {
          Toast.error('Invalid Structure', `Missing or invalid "${key}" array in import file.`);
-         return;
-       }
-     }
-+    for (const key of optionalArrayKeys) {
-+      if (payload[key] !== undefined && !Array.isArray(payload[key])) {
-+        Toast.error('Invalid Structure', `"${key}" must be an array if present.`);
-+        return;
-+      }
-+    }
- 
-     if (!confirm('This will replace ALL existing CRM data with the imported data. Continue?')) {
-       return;
 diff --git a/js/router.js b/js/router.js
-index bb3955e..b8daed5 100644
+index b8daed5..15a7a06 100644
 --- a/js/router.js
 +++ b/js/router.js
-@@ -15,6 +15,8 @@ const ROUTES = {
-   'contacts':  { pageId: 'contacts',  title: 'Contacts' },
-   'deals':     { pageId: 'deals',     title: 'Deals' },
+@@ -17,6 +17,7 @@ const ROUTES = {
    'activities':{ pageId: 'activities',title: 'Activities' },
-+  'requirements':{ pageId: 'requirements',title: 'Requirements' },
-+  'proposals': { pageId: 'proposals', title: 'Proposals' },
+   'requirements':{ pageId: 'requirements',title: 'Requirements' },
+   'proposals': { pageId: 'proposals', title: 'Proposals' },
++  'handoffs':  { pageId: 'handoffs',  title: 'Handoffs' },
    'team':      { pageId: 'team',      title: 'Team' },
    'reports':   { pageId: 'reports',   title: 'Reports' },
    'settings':  { pageId: 'settings',  title: 'Settings' }
 diff --git a/js/seed.js b/js/seed.js
-index 2b97097..e978d8c 100644
+index e978d8c..5928583 100644
 --- a/js/seed.js
 +++ b/js/seed.js
-@@ -377,6 +377,102 @@ export function seedData() {
+@@ -221,7 +221,7 @@ export function seedData() {
+     {
+       id: 'deal_01', title: 'Infosys ERP Integration',
+       leadId: leads[0].id, contactId: contacts[0].id,
+-      value: 2500000, currency: 'INR', stage: 'sourcing', status: 'active',
++      value: 2500000, currency: 'INR', stage: 'sourcing', status: 'closed_won',
+       assignedTo: 'usr_emp_01', teamId: 'team_01', priority: 'high',
+       createdAt: daysAgo(14), updatedAt: daysAgo(1), closedAt: null,
+       notes: 'Multi-module ERP integration project'
+@@ -237,7 +237,7 @@ export function seedData() {
+     {
+       id: 'deal_03', title: 'Wipro Analytics Suite',
+       leadId: leads[2].id, contactId: contacts[2].id,
+-      value: 3200000, currency: 'INR', stage: 'delivery', status: 'active',
++      value: 3200000, currency: 'INR', stage: 'delivery', status: 'closed_won',
+       assignedTo: 'usr_emp_03', teamId: 'team_02', priority: 'urgent',
+       createdAt: daysAgo(30), updatedAt: daysAgo(1), closedAt: null,
+       notes: 'Custom analytics dashboard for ops team'
+@@ -253,7 +253,7 @@ export function seedData() {
+     {
+       id: 'deal_05', title: 'Freshworks SaaS Platform',
+       leadId: leads[7].id, contactId: contacts[5].id,
+-      value: 4200000, currency: 'INR', stage: 'invoice', status: 'active',
++      value: 4200000, currency: 'INR', stage: 'invoice', status: 'closed_won',
+       assignedTo: 'usr_emp_03', teamId: 'team_02', priority: 'medium',
+       createdAt: daysAgo(40), updatedAt: daysAgo(3), closedAt: null,
+       notes: '3-year SaaS licensing deal'
+@@ -432,7 +432,7 @@ export function seedData() {
+       requirementId: requirements[0].id,
+       dealId: 'deal_01',
+       version: '1.0',
+-      status: 'sent',
++      status: 'accepted',
+       approvalStatus: 'approved',
+       validUntil: new Date(Date.now() + 86400000 * 15).toISOString(),
+       assignedTo: 'usr_emp_01',
+@@ -473,6 +473,82 @@ export function seedData() {
      }
    ];
  
-+  const requirements = [
++  // ΓöÇΓöÇ Handoffs ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++  const handoffs = [
 +    {
 +      id: generateId(),
-+      title: 'Cloud Architecture Training',
++      title: 'Infosys AWS Training Delivery',
 +      dealId: 'deal_01',
++      proposalId: proposals[0].id,
++      requirementId: requirements[0].id,
 +      companyName: 'Infosys',
-+      requirementType: 'training',
-+      status: 'proposal_ready',
++      clientContactId: contacts[0].id,
++      projectBrief: 'Deliver comprehensive AWS architecture training based on accepted proposal.',
++      trainingRequirement: 'AWS Architecture Certification for 50 pax',
++      trainerNeed: '1 Lead Trainer, 2 Assistant Trainers',
++      deliveryMode: 'hybrid',
++      expectedStartDate: new Date(Date.now() + 86400000 * 5).toISOString(),
++      expectedEndDate: new Date(Date.now() + 86400000 * 25).toISOString(),
++      deliveryStatus: 'blocked',
 +      priority: 'high',
-+      summary: 'Need comprehensive AWS architecture training for 50 senior developers.',
 +      assignedTo: 'usr_emp_01',
 +      teamId: 'team_01',
 +      createdBy: 'usr_emp_01',
-+      createdAt: daysAgo(10),
-+      updatedAt: daysAgo(8)
++      createdAt: daysAgo(2),
++      updatedAt: daysAgo(1),
++      blockerReason: 'Awaiting PO from client finance team.',
++      internalNotes: 'Follow up with Rajesh Kumar regarding the PO delay.'
 +    },
 +    {
 +      id: generateId(),
-+      title: 'eLearning Module for Onboarding',
-+      dealId: 'deal_02',
-+      companyName: 'TCS',
-+      requirementType: 'elearning',
-+      status: 'captured',
-+      priority: 'medium',
-+      summary: 'Develop custom SCORM compliant modules for new joiner onboarding.',
-+      assignedTo: 'usr_emp_02',
-+      teamId: 'team_01',
-+      createdBy: 'usr_emp_02',
-+      createdAt: daysAgo(5),
-+      updatedAt: daysAgo(4)
-+    },
-+    {
-+      id: generateId(),
-+      title: 'IT Recruitment Drive',
-+      leadId: leads[2].id,
-+      companyName: leads[2].company,
-+      requirementType: 'hiring',
-+      status: 'draft',
++      title: 'Wipro Analytics Setup',
++      dealId: 'deal_03',
++      proposalId: null,
++      requirementId: null,
++      companyName: 'Wipro',
++      clientContactId: contacts[2].id,
++      projectBrief: 'Custom analytics dashboard setup for ops team.',
++      trainingRequirement: 'None',
++      trainerNeed: 'None',
++      deliveryMode: 'online',
++      expectedStartDate: daysAgo(10),
++      expectedEndDate: new Date(Date.now() + 86400000 * 15).toISOString(),
++      deliveryStatus: 'in_delivery',
 +      priority: 'urgent',
-+      summary: 'Immediate requirement for 10 full-stack engineers.',
 +      assignedTo: 'usr_emp_03',
 +      teamId: 'team_02',
 +      createdBy: 'usr_emp_03',
-+      createdAt: daysAgo(2),
-+      updatedAt: daysAgo(1)
-+    }
-+  ];
-+
-+  const proposals = [
-+    {
-+      id: generateId(),
-+      title: 'Infosys AWS Training Proposal',
-+      requirementId: requirements[0].id,
-+      dealId: 'deal_01',
-+      version: '1.0',
-+      status: 'sent',
-+      approvalStatus: 'approved',
-+      validUntil: new Date(Date.now() + 86400000 * 15).toISOString(),
-+      assignedTo: 'usr_emp_01',
-+      teamId: 'team_01',
-+      createdBy: 'usr_emp_01',
-+      createdAt: daysAgo(8),
-+      updatedAt: daysAgo(8),
-+      lineItems: [
-+        { id: generateId(), description: 'AWS Architect Training (5 days)', quantity: 1, unitPrice: 15000, discountPercent: 5, taxPercent: 18 },
-+        { id: generateId(), description: 'Certification Vouchers', quantity: 50, unitPrice: 200, discountPercent: 0, taxPercent: 18 }
-+      ],
-+      subtotal: 25000,
-+      discountTotal: 750,
-+      taxTotal: 4365,
-+      grandTotal: 28615
++      createdAt: daysAgo(15),
++      updatedAt: daysAgo(2),
++      blockerReason: '',
++      internalNotes: 'Phase 1 development is complete. Client testing in progress.'
 +    },
 +    {
 +      id: generateId(),
-+      title: 'TCS Custom eLearning',
-+      requirementId: requirements[1].id,
-+      dealId: 'deal_02',
-+      version: '1.0',
-+      status: 'draft',
-+      approvalStatus: 'pending',
-+      validUntil: new Date(Date.now() + 86400000 * 30).toISOString(),
-+      assignedTo: 'usr_emp_02',
-+      teamId: 'team_01',
-+      createdBy: 'usr_emp_02',
-+      createdAt: daysAgo(4),
-+      updatedAt: daysAgo(4),
-+      lineItems: [
-+        { id: generateId(), description: 'SCORM Module Development', quantity: 3, unitPrice: 5000, discountPercent: 15, taxPercent: 18 }
-+      ],
-+      subtotal: 15000,
-+      discountTotal: 2250,
-+      taxTotal: 2295,
-+      grandTotal: 15045
++      title: 'Freshworks SaaS Onboarding',
++      dealId: 'deal_05',
++      proposalId: null,
++      requirementId: null,
++      companyName: 'Freshworks',
++      clientContactId: contacts[5].id,
++      projectBrief: 'Onboarding for 3-year SaaS licensing deal.',
++      trainingRequirement: 'Platform usage training',
++      trainerNeed: 'Onboarding Specialist',
++      deliveryMode: 'online',
++      expectedStartDate: daysAgo(2),
++      expectedEndDate: new Date(Date.now() + 86400000 * 30).toISOString(),
++      deliveryStatus: 'handed_over',
++      priority: 'medium',
++      assignedTo: 'usr_emp_03',
++      teamId: 'team_02',
++      createdBy: 'usr_emp_03',
++      createdAt: daysAgo(3),
++      updatedAt: daysAgo(3),
++      blockerReason: '',
++      internalNotes: 'Account provisioning completed. Pending kick-off call.'
 +    }
 +  ];
 +
    // ΓöÇΓöÇ Persist ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
    users.forEach(u      => Store.createUser(u));
    teams.forEach(t      => Store.createTeam(t));
-@@ -384,6 +480,8 @@ export function seedData() {
-   contacts.forEach(c   => Store.createContact(c));
-   deals.forEach(d      => Store.createDeal(d));
+@@ -482,6 +558,7 @@ export function seedData() {
    activities.forEach(a => Store.createActivity(a));
-+  requirements.forEach(r => Store.createRequirement(r));
-+  proposals.forEach(p => Store.createProposal(p));
+   requirements.forEach(r => Store.createRequirement(r));
+   proposals.forEach(p => Store.createProposal(p));
++  handoffs.forEach(h => Store.createHandoff(h));
  
    Store.markSeeded();
    console.log('TechnoEdge CRM: Demo data seeded successfully.');
 diff --git a/js/store.js b/js/store.js
-index 1b6321f..cd939fb 100644
+index cd939fb..f37844a 100644
 --- a/js/store.js
 +++ b/js/store.js
-@@ -12,6 +12,8 @@ const KEYS = {
-   contacts:   STORAGE_PREFIX + 'contacts',
-   deals:      STORAGE_PREFIX + 'deals',
+@@ -14,6 +14,7 @@ const KEYS = {
    activities: STORAGE_PREFIX + 'activities',
-+  requirements: STORAGE_PREFIX + 'requirements',
-+  proposals:  STORAGE_PREFIX + 'proposals',
+   requirements: STORAGE_PREFIX + 'requirements',
+   proposals:  STORAGE_PREFIX + 'proposals',
++  handoffs:   STORAGE_PREFIX + 'handoffs',
    session:    STORAGE_PREFIX + 'session',
    settings:   STORAGE_PREFIX + 'settings',
    seeded:     STORAGE_PREFIX + 'seeded'
-@@ -253,6 +255,117 @@ export const Store = {
-     }
+@@ -366,6 +367,49 @@ export const Store = {
+     return prop.assignedTo === user.id || prop.createdBy === user.id;
    },
  
-+  // ΓöÇΓöÇ Requirements ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-+  getRequirements() { return getAll(KEYS.requirements); },
-+  getRequirementById(id) { return getById(KEYS.requirements, id); },
-+  createRequirement(req) { return create(KEYS.requirements, req); },
-+  updateRequirement(id, updates) { return update(KEYS.requirements, id, updates); },
-+  deleteRequirement(id) { return remove(KEYS.requirements, id); },
++  // ΓöÇΓöÇ Handoffs ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++  getHandoffs() { return getAll(KEYS.handoffs); },
++  getHandoffById(id) { return getById(KEYS.handoffs, id); },
++  createHandoff(handoff) { return create(KEYS.handoffs, handoff); },
++  updateHandoff(id, updates) { return update(KEYS.handoffs, id, updates); },
++  deleteHandoff(id) { return remove(KEYS.handoffs, id); },
 +
-+  getRequirementsForUser(user) {
++  getHandoffsForUser(user) {
 +    if (!user) return [];
-+    const reqs = Store.getRequirements();
-+    if (user.role === 'manager') return reqs;
-+
-+    const deals = Store.getDealsForUser(user);
-+    const dealIds = new Set(deals.map(d => d.id));
-+    const leads = Store.getLeadsForUser(user);
-+    const leadIds = new Set(leads.map(l => l.id));
++    const handoffs = Store.getHandoffs();
++    if (user.role === 'manager') return handoffs;
 +
 +    if (user.role === 'team_lead') {
 +      const teamUserIds = new Set(Store.getUsersByTeam(user.teamId).map(u => u.id));
 +      teamUserIds.add(user.id);
-+
-+      return reqs.filter(r => {
-+        if (r.teamId === user.teamId) return true;
-+        if (teamUserIds.has(r.assignedTo) || teamUserIds.has(r.createdBy)) return true;
-+        if (r.dealId && dealIds.has(r.dealId)) return true;
-+        if (r.leadId && leadIds.has(r.leadId)) return true;
++      return handoffs.filter(h => {
++        if (h.teamId === user.teamId) return true;
++        if (teamUserIds.has(h.assignedTo) || teamUserIds.has(h.createdBy)) return true;
 +        return false;
 +      });
 +    }
 +
 +    // Employee
-+    return reqs.filter(r => {
-+      if (r.assignedTo === user.id || r.createdBy === user.id) return true;
-+      if (r.dealId && dealIds.has(r.dealId)) return true;
-+      if (r.leadId && leadIds.has(r.leadId)) return true;
-+      return false;
-+    });
++    return handoffs.filter(h => h.assignedTo === user.id || h.createdBy === user.id);
 +  },
 +
-+  canUserViewRequirement(req, user) {
-+    if (!req || !user) return false;
++  canUserViewHandoff(handoff, user) {
++    if (!handoff || !user) return false;
 +    if (user.role === 'manager') return true;
-+    const reqs = Store.getRequirementsForUser(user);
-+    return reqs.some(r => r.id === req.id);
++    const handoffs = Store.getHandoffsForUser(user);
++    return handoffs.some(h => h.id === handoff.id);
 +  },
 +
-+  canUserEditRequirement(req, user) {
-+    if (!req || !user) return false;
++  canUserEditHandoff(handoff, user) {
++    if (!handoff || !user) return false;
 +    if (user.role === 'manager') return true;
 +    if (user.role === 'team_lead') {
-+      return Store.canUserViewRequirement(req, user);
++      return Store.canUserViewHandoff(handoff, user);
 +    }
-+    return req.assignedTo === user.id || req.createdBy === user.id;
++    return handoff.assignedTo === user.id || handoff.createdBy === user.id;
 +  },
 +
-+  // ΓöÇΓöÇ Proposals ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-+  getProposals() { return getAll(KEYS.proposals); },
-+  getProposalById(id) { return getById(KEYS.proposals, id); },
-+  createProposal(prop) { return create(KEYS.proposals, prop); },
-+  updateProposal(id, updates) { return update(KEYS.proposals, id, updates); },
-+  deleteProposal(id) { return remove(KEYS.proposals, id); },
-+
-+  getProposalsForUser(user) {
-+    if (!user) return [];
-+    const props = Store.getProposals();
-+    if (user.role === 'manager') return props;
-+
-+    const deals = Store.getDealsForUser(user);
-+    const dealIds = new Set(deals.map(d => d.id));
-+
-+    const visibleReqs = Store.getRequirementsForUser(user);
-+    const visibleReqIds = new Set(visibleReqs.map(r => r.id));
-+
-+    if (user.role === 'team_lead') {
-+      const teamUserIds = new Set(Store.getUsersByTeam(user.teamId).map(u => u.id));
-+      teamUserIds.add(user.id);
-+
-+      return props.filter(p => {
-+        if (p.teamId === user.teamId) return true;
-+        if (teamUserIds.has(p.assignedTo) || teamUserIds.has(p.createdBy)) return true;
-+        if (p.dealId && dealIds.has(p.dealId)) return true;
-+        if (p.requirementId && visibleReqIds.has(p.requirementId)) return true;
-+        return false;
-+      });
-+    }
-+
-+    // Employee
-+    return props.filter(p => {
-+      if (p.assignedTo === user.id || p.createdBy === user.id) return true;
-+      if (p.dealId && dealIds.has(p.dealId)) return true;
-+      if (p.requirementId && visibleReqIds.has(p.requirementId)) return true;
-+      return false;
-+    });
-+  },
-+
-+  canUserViewProposal(prop, user) {
-+    if (!prop || !user) return false;
-+    if (user.role === 'manager') return true;
-+    const props = Store.getProposalsForUser(user);
-+    return props.some(p => p.id === prop.id);
-+  },
-+
-+  canUserEditProposal(prop, user) {
-+    if (!prop || !user) return false;
-+    if (user.role === 'manager') return true;
-+    if (user.role === 'team_lead') {
-+      return Store.canUserViewProposal(prop, user);
-+    }
-+    return prop.assignedTo === user.id || prop.createdBy === user.id;
-+  },
 +
    // ΓöÇΓöÇ Export / Import ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
    exportData() {
      return {
-@@ -262,6 +375,8 @@ export const Store = {
-       contacts: getAll(KEYS.contacts),
-       deals: getAll(KEYS.deals),
+@@ -377,6 +421,7 @@ export const Store = {
        activities: getAll(KEYS.activities),
-+      requirements: getAll(KEYS.requirements),
-+      proposals: getAll(KEYS.proposals),
+       requirements: getAll(KEYS.requirements),
+       proposals: getAll(KEYS.proposals),
++      handoffs: getAll(KEYS.handoffs),
        settings: Store.getSettings(),
        exportedAt: new Date().toISOString()
      };
-@@ -269,15 +384,17 @@ export const Store = {
+@@ -384,7 +429,7 @@ export const Store = {
  
    importData(payload) {
      // Pre-serialize all datasets before touching localStorage
--    const dataKeys = [KEYS.users, KEYS.teams, KEYS.leads, KEYS.contacts, KEYS.deals, KEYS.activities, KEYS.settings];
-+    const dataKeys = [KEYS.users, KEYS.teams, KEYS.leads, KEYS.contacts, KEYS.deals, KEYS.activities, KEYS.requirements, KEYS.proposals, KEYS.settings];
+-    const dataKeys = [KEYS.users, KEYS.teams, KEYS.leads, KEYS.contacts, KEYS.deals, KEYS.activities, KEYS.requirements, KEYS.proposals, KEYS.settings];
++    const dataKeys = [KEYS.users, KEYS.teams, KEYS.leads, KEYS.contacts, KEYS.deals, KEYS.activities, KEYS.requirements, KEYS.proposals, KEYS.handoffs, KEYS.settings];
      const newValues = {
--      [KEYS.users]:      JSON.stringify(payload.users || []),
--      [KEYS.teams]:      JSON.stringify(payload.teams || []),
--      [KEYS.leads]:      JSON.stringify(payload.leads || []),
--      [KEYS.contacts]:   JSON.stringify(payload.contacts || []),
--      [KEYS.deals]:      JSON.stringify(payload.deals || []),
--      [KEYS.activities]: JSON.stringify(payload.activities || []),
--      [KEYS.settings]:   JSON.stringify(payload.settings || {})
-+      [KEYS.users]:        JSON.stringify(payload.users || []),
-+      [KEYS.teams]:        JSON.stringify(payload.teams || []),
-+      [KEYS.leads]:        JSON.stringify(payload.leads || []),
-+      [KEYS.contacts]:     JSON.stringify(payload.contacts || []),
-+      [KEYS.deals]:        JSON.stringify(payload.deals || []),
-+      [KEYS.activities]:   JSON.stringify(payload.activities || []),
-+      [KEYS.requirements]: JSON.stringify(payload.requirements || []),
-+      [KEYS.proposals]:    JSON.stringify(payload.proposals || []),
-+      [KEYS.settings]:     JSON.stringify(payload.settings || {})
+       [KEYS.users]:        JSON.stringify(payload.users || []),
+       [KEYS.teams]:        JSON.stringify(payload.teams || []),
+@@ -394,6 +439,7 @@ export const Store = {
+       [KEYS.activities]:   JSON.stringify(payload.activities || []),
+       [KEYS.requirements]: JSON.stringify(payload.requirements || []),
+       [KEYS.proposals]:    JSON.stringify(payload.proposals || []),
++      [KEYS.handoffs]:     JSON.stringify(payload.handoffs || []),
+       [KEYS.settings]:     JSON.stringify(payload.settings || {})
      };
  
-     // Back up existing values
 ```
 
 ## Tests Run
 ```text
-Browser preview performed externally: Manager, Team Lead, and Employee requirement/proposal visibility and actions checked; proposal totals and approval rules checked
+Browser preview performed externally: Manager, Team Lead, and Employee handoff visibility/actions checked; deal-detail handoff creation checked; duplicate and status guard behavior checked
 ```
 
 ## Risks / Pending Checks

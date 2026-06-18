@@ -221,7 +221,7 @@ export function seedData() {
     {
       id: 'deal_01', title: 'Infosys ERP Integration',
       leadId: leads[0].id, contactId: contacts[0].id,
-      value: 2500000, currency: 'INR', stage: 'sourcing', status: 'active',
+      value: 2500000, currency: 'INR', stage: 'sourcing', status: 'closed_won',
       assignedTo: 'usr_emp_01', teamId: 'team_01', priority: 'high',
       createdAt: daysAgo(14), updatedAt: daysAgo(1), closedAt: null,
       notes: 'Multi-module ERP integration project'
@@ -237,7 +237,7 @@ export function seedData() {
     {
       id: 'deal_03', title: 'Wipro Analytics Suite',
       leadId: leads[2].id, contactId: contacts[2].id,
-      value: 3200000, currency: 'INR', stage: 'delivery', status: 'active',
+      value: 3200000, currency: 'INR', stage: 'delivery', status: 'closed_won',
       assignedTo: 'usr_emp_03', teamId: 'team_02', priority: 'urgent',
       createdAt: daysAgo(30), updatedAt: daysAgo(1), closedAt: null,
       notes: 'Custom analytics dashboard for ops team'
@@ -253,7 +253,7 @@ export function seedData() {
     {
       id: 'deal_05', title: 'Freshworks SaaS Platform',
       leadId: leads[7].id, contactId: contacts[5].id,
-      value: 4200000, currency: 'INR', stage: 'invoice', status: 'active',
+      value: 4200000, currency: 'INR', stage: 'invoice', status: 'closed_won',
       assignedTo: 'usr_emp_03', teamId: 'team_02', priority: 'medium',
       createdAt: daysAgo(40), updatedAt: daysAgo(3), closedAt: null,
       notes: '3-year SaaS licensing deal'
@@ -432,7 +432,7 @@ export function seedData() {
       requirementId: requirements[0].id,
       dealId: 'deal_01',
       version: '1.0',
-      status: 'sent',
+      status: 'accepted',
       approvalStatus: 'approved',
       validUntil: new Date(Date.now() + 86400000 * 15).toISOString(),
       assignedTo: 'usr_emp_01',
@@ -473,6 +473,82 @@ export function seedData() {
     }
   ];
 
+  // ── Handoffs ───────────────────────────────────────────
+  const handoffs = [
+    {
+      id: generateId(),
+      title: 'Infosys AWS Training Delivery',
+      dealId: 'deal_01',
+      proposalId: proposals[0].id,
+      requirementId: requirements[0].id,
+      companyName: 'Infosys',
+      clientContactId: contacts[0].id,
+      projectBrief: 'Deliver comprehensive AWS architecture training based on accepted proposal.',
+      trainingRequirement: 'AWS Architecture Certification for 50 pax',
+      trainerNeed: '1 Lead Trainer, 2 Assistant Trainers',
+      deliveryMode: 'hybrid',
+      expectedStartDate: new Date(Date.now() + 86400000 * 5).toISOString(),
+      expectedEndDate: new Date(Date.now() + 86400000 * 25).toISOString(),
+      deliveryStatus: 'blocked',
+      priority: 'high',
+      assignedTo: 'usr_emp_01',
+      teamId: 'team_01',
+      createdBy: 'usr_emp_01',
+      createdAt: daysAgo(2),
+      updatedAt: daysAgo(1),
+      blockerReason: 'Awaiting PO from client finance team.',
+      internalNotes: 'Follow up with Rajesh Kumar regarding the PO delay.'
+    },
+    {
+      id: generateId(),
+      title: 'Wipro Analytics Setup',
+      dealId: 'deal_03',
+      proposalId: null,
+      requirementId: null,
+      companyName: 'Wipro',
+      clientContactId: contacts[2].id,
+      projectBrief: 'Custom analytics dashboard setup for ops team.',
+      trainingRequirement: 'None',
+      trainerNeed: 'None',
+      deliveryMode: 'online',
+      expectedStartDate: daysAgo(10),
+      expectedEndDate: new Date(Date.now() + 86400000 * 15).toISOString(),
+      deliveryStatus: 'in_delivery',
+      priority: 'urgent',
+      assignedTo: 'usr_emp_03',
+      teamId: 'team_02',
+      createdBy: 'usr_emp_03',
+      createdAt: daysAgo(15),
+      updatedAt: daysAgo(2),
+      blockerReason: '',
+      internalNotes: 'Phase 1 development is complete. Client testing in progress.'
+    },
+    {
+      id: generateId(),
+      title: 'Freshworks SaaS Onboarding',
+      dealId: 'deal_05',
+      proposalId: null,
+      requirementId: null,
+      companyName: 'Freshworks',
+      clientContactId: contacts[5].id,
+      projectBrief: 'Onboarding for 3-year SaaS licensing deal.',
+      trainingRequirement: 'Platform usage training',
+      trainerNeed: 'Onboarding Specialist',
+      deliveryMode: 'online',
+      expectedStartDate: daysAgo(2),
+      expectedEndDate: new Date(Date.now() + 86400000 * 30).toISOString(),
+      deliveryStatus: 'handed_over',
+      priority: 'medium',
+      assignedTo: 'usr_emp_03',
+      teamId: 'team_02',
+      createdBy: 'usr_emp_03',
+      createdAt: daysAgo(3),
+      updatedAt: daysAgo(3),
+      blockerReason: '',
+      internalNotes: 'Account provisioning completed. Pending kick-off call.'
+    }
+  ];
+
   // ── Persist ────────────────────────────────────────────
   users.forEach(u      => Store.createUser(u));
   teams.forEach(t      => Store.createTeam(t));
@@ -482,6 +558,7 @@ export function seedData() {
   activities.forEach(a => Store.createActivity(a));
   requirements.forEach(r => Store.createRequirement(r));
   proposals.forEach(p => Store.createProposal(p));
+  handoffs.forEach(h => Store.createHandoff(h));
 
   Store.markSeeded();
   console.log('TechnoEdge CRM: Demo data seeded successfully.');
