@@ -19,7 +19,9 @@ function getDataSummary() {
     leads: Store.getLeads().length,
     contacts: Store.getContacts().length,
     deals: Store.getDeals().length,
-    activities: Store.getActivities().length
+    activities: Store.getActivities().length,
+    requirements: Store.getRequirements().length,
+    proposals: Store.getProposals().length
   };
 }
 
@@ -108,7 +110,9 @@ function buildDataSummaryCard(user) {
     { label: 'Leads', count: summary.leads, color: 'var(--color-stage-sourcing)' },
     { label: 'Contacts', count: summary.contacts, color: 'var(--color-stage-delivery)' },
     { label: 'Deals', count: summary.deals, color: 'var(--color-stage-feedback)' },
-    { label: 'Activities', count: summary.activities, color: 'var(--color-stage-invoice)' }
+    { label: 'Activities', count: summary.activities, color: 'var(--color-stage-invoice)' },
+    { label: 'Requirements', count: summary.requirements, color: 'var(--color-primary)' },
+    { label: 'Proposals', count: summary.proposals, color: 'var(--color-success)' }
   ];
 
   const itemsHtml = items.map(i => `
@@ -125,7 +129,7 @@ function buildDataSummaryCard(user) {
         <p style="margin:0.25rem 0 0; font-size:0.85rem; color:var(--color-muted);">${label}</p>
       </div>
       <div style="padding:1.5rem;">
-        <div style="display:grid; grid-template-columns:repeat(6, 1fr); gap:1rem;">
+        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:1rem;">
           ${itemsHtml}
         </div>
       </div>
@@ -384,9 +388,16 @@ function handleImportJson() {
 
     // Validate structure
     const requiredKeys = ['users', 'teams', 'leads', 'contacts', 'deals', 'activities'];
+    const optionalArrayKeys = ['requirements', 'proposals'];
     for (const key of requiredKeys) {
       if (!Array.isArray(payload[key])) {
         Toast.error('Invalid Structure', `Missing or invalid "${key}" array in import file.`);
+        return;
+      }
+    }
+    for (const key of optionalArrayKeys) {
+      if (payload[key] !== undefined && !Array.isArray(payload[key])) {
+        Toast.error('Invalid Structure', `"${key}" must be an array if present.`);
         return;
       }
     }

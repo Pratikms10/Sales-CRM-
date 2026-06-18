@@ -20,6 +20,8 @@ import { renderTeam, bindTeamEvents } from './pages/team.js';
 import { renderReports, bindReportsEvents } from './pages/reports.js';
 import { renderSettings, bindSettingsEvents } from './pages/settings.js';
 import { renderActivities, bindActivitiesEvents } from './pages/activities.js';
+import { renderRequirements, bindRequirementsEvents } from './pages/requirements.js';
+import { renderProposals, bindProposalsEvents } from './pages/proposals.js';
 
 // ── DOM References ──────────────────────────────────────────
 
@@ -130,6 +132,12 @@ function renderPage(pageId, params) {
     case 'settings':
       contentEl.innerHTML = renderSettings();
       break;
+    case 'requirements':
+      contentEl.innerHTML = renderRequirements();
+      break;
+    case 'proposals':
+      contentEl.innerHTML = renderProposals();
+      break;
     default:
       contentEl.innerHTML = renderComingSoon(pageId);
   }
@@ -147,6 +155,8 @@ bindTeamEvents();
 bindReportsEvents();
 bindSettingsEvents();
 bindActivitiesEvents();
+bindRequirementsEvents();
+bindProposalsEvents();
 
 // ── Bootstrap ───────────────────────────────────────────────
 

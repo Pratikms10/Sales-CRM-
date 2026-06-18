@@ -377,6 +377,102 @@ export function seedData() {
     }
   ];
 
+  const requirements = [
+    {
+      id: generateId(),
+      title: 'Cloud Architecture Training',
+      dealId: 'deal_01',
+      companyName: 'Infosys',
+      requirementType: 'training',
+      status: 'proposal_ready',
+      priority: 'high',
+      summary: 'Need comprehensive AWS architecture training for 50 senior developers.',
+      assignedTo: 'usr_emp_01',
+      teamId: 'team_01',
+      createdBy: 'usr_emp_01',
+      createdAt: daysAgo(10),
+      updatedAt: daysAgo(8)
+    },
+    {
+      id: generateId(),
+      title: 'eLearning Module for Onboarding',
+      dealId: 'deal_02',
+      companyName: 'TCS',
+      requirementType: 'elearning',
+      status: 'captured',
+      priority: 'medium',
+      summary: 'Develop custom SCORM compliant modules for new joiner onboarding.',
+      assignedTo: 'usr_emp_02',
+      teamId: 'team_01',
+      createdBy: 'usr_emp_02',
+      createdAt: daysAgo(5),
+      updatedAt: daysAgo(4)
+    },
+    {
+      id: generateId(),
+      title: 'IT Recruitment Drive',
+      leadId: leads[2].id,
+      companyName: leads[2].company,
+      requirementType: 'hiring',
+      status: 'draft',
+      priority: 'urgent',
+      summary: 'Immediate requirement for 10 full-stack engineers.',
+      assignedTo: 'usr_emp_03',
+      teamId: 'team_02',
+      createdBy: 'usr_emp_03',
+      createdAt: daysAgo(2),
+      updatedAt: daysAgo(1)
+    }
+  ];
+
+  const proposals = [
+    {
+      id: generateId(),
+      title: 'Infosys AWS Training Proposal',
+      requirementId: requirements[0].id,
+      dealId: 'deal_01',
+      version: '1.0',
+      status: 'sent',
+      approvalStatus: 'approved',
+      validUntil: new Date(Date.now() + 86400000 * 15).toISOString(),
+      assignedTo: 'usr_emp_01',
+      teamId: 'team_01',
+      createdBy: 'usr_emp_01',
+      createdAt: daysAgo(8),
+      updatedAt: daysAgo(8),
+      lineItems: [
+        { id: generateId(), description: 'AWS Architect Training (5 days)', quantity: 1, unitPrice: 15000, discountPercent: 5, taxPercent: 18 },
+        { id: generateId(), description: 'Certification Vouchers', quantity: 50, unitPrice: 200, discountPercent: 0, taxPercent: 18 }
+      ],
+      subtotal: 25000,
+      discountTotal: 750,
+      taxTotal: 4365,
+      grandTotal: 28615
+    },
+    {
+      id: generateId(),
+      title: 'TCS Custom eLearning',
+      requirementId: requirements[1].id,
+      dealId: 'deal_02',
+      version: '1.0',
+      status: 'draft',
+      approvalStatus: 'pending',
+      validUntil: new Date(Date.now() + 86400000 * 30).toISOString(),
+      assignedTo: 'usr_emp_02',
+      teamId: 'team_01',
+      createdBy: 'usr_emp_02',
+      createdAt: daysAgo(4),
+      updatedAt: daysAgo(4),
+      lineItems: [
+        { id: generateId(), description: 'SCORM Module Development', quantity: 3, unitPrice: 5000, discountPercent: 15, taxPercent: 18 }
+      ],
+      subtotal: 15000,
+      discountTotal: 2250,
+      taxTotal: 2295,
+      grandTotal: 15045
+    }
+  ];
+
   // ── Persist ────────────────────────────────────────────
   users.forEach(u      => Store.createUser(u));
   teams.forEach(t      => Store.createTeam(t));
@@ -384,6 +480,8 @@ export function seedData() {
   contacts.forEach(c   => Store.createContact(c));
   deals.forEach(d      => Store.createDeal(d));
   activities.forEach(a => Store.createActivity(a));
+  requirements.forEach(r => Store.createRequirement(r));
+  proposals.forEach(p => Store.createProposal(p));
 
   Store.markSeeded();
   console.log('TechnoEdge CRM: Demo data seeded successfully.');

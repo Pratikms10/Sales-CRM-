@@ -12,6 +12,8 @@ const KEYS = {
   contacts:   STORAGE_PREFIX + 'contacts',
   deals:      STORAGE_PREFIX + 'deals',
   activities: STORAGE_PREFIX + 'activities',
+  requirements: STORAGE_PREFIX + 'requirements',
+  proposals:  STORAGE_PREFIX + 'proposals',
   session:    STORAGE_PREFIX + 'session',
   settings:   STORAGE_PREFIX + 'settings',
   seeded:     STORAGE_PREFIX + 'seeded'
@@ -253,6 +255,117 @@ export const Store = {
     }
   },
 
+  // ── Requirements ──────────────────────────────────────────
+  getRequirements() { return getAll(KEYS.requirements); },
+  getRequirementById(id) { return getById(KEYS.requirements, id); },
+  createRequirement(req) { return create(KEYS.requirements, req); },
+  updateRequirement(id, updates) { return update(KEYS.requirements, id, updates); },
+  deleteRequirement(id) { return remove(KEYS.requirements, id); },
+
+  getRequirementsForUser(user) {
+    if (!user) return [];
+    const reqs = Store.getRequirements();
+    if (user.role === 'manager') return reqs;
+
+    const deals = Store.getDealsForUser(user);
+    const dealIds = new Set(deals.map(d => d.id));
+    const leads = Store.getLeadsForUser(user);
+    const leadIds = new Set(leads.map(l => l.id));
+
+    if (user.role === 'team_lead') {
+      const teamUserIds = new Set(Store.getUsersByTeam(user.teamId).map(u => u.id));
+      teamUserIds.add(user.id);
+
+      return reqs.filter(r => {
+        if (r.teamId === user.teamId) return true;
+        if (teamUserIds.has(r.assignedTo) || teamUserIds.has(r.createdBy)) return true;
+        if (r.dealId && dealIds.has(r.dealId)) return true;
+        if (r.leadId && leadIds.has(r.leadId)) return true;
+        return false;
+      });
+    }
+
+    // Employee
+    return reqs.filter(r => {
+      if (r.assignedTo === user.id || r.createdBy === user.id) return true;
+      if (r.dealId && dealIds.has(r.dealId)) return true;
+      if (r.leadId && leadIds.has(r.leadId)) return true;
+      return false;
+    });
+  },
+
+  canUserViewRequirement(req, user) {
+    if (!req || !user) return false;
+    if (user.role === 'manager') return true;
+    const reqs = Store.getRequirementsForUser(user);
+    return reqs.some(r => r.id === req.id);
+  },
+
+  canUserEditRequirement(req, user) {
+    if (!req || !user) return false;
+    if (user.role === 'manager') return true;
+    if (user.role === 'team_lead') {
+      return Store.canUserViewRequirement(req, user);
+    }
+    return req.assignedTo === user.id || req.createdBy === user.id;
+  },
+
+  // ── Proposals ────────────────────────────────────────────
+  getProposals() { return getAll(KEYS.proposals); },
+  getProposalById(id) { return getById(KEYS.proposals, id); },
+  createProposal(prop) { return create(KEYS.proposals, prop); },
+  updateProposal(id, updates) { return update(KEYS.proposals, id, updates); },
+  deleteProposal(id) { return remove(KEYS.proposals, id); },
+
+  getProposalsForUser(user) {
+    if (!user) return [];
+    const props = Store.getProposals();
+    if (user.role === 'manager') return props;
+
+    const deals = Store.getDealsForUser(user);
+    const dealIds = new Set(deals.map(d => d.id));
+
+    const visibleReqs = Store.getRequirementsForUser(user);
+    const visibleReqIds = new Set(visibleReqs.map(r => r.id));
+
+    if (user.role === 'team_lead') {
+      const teamUserIds = new Set(Store.getUsersByTeam(user.teamId).map(u => u.id));
+      teamUserIds.add(user.id);
+
+      return props.filter(p => {
+        if (p.teamId === user.teamId) return true;
+        if (teamUserIds.has(p.assignedTo) || teamUserIds.has(p.createdBy)) return true;
+        if (p.dealId && dealIds.has(p.dealId)) return true;
+        if (p.requirementId && visibleReqIds.has(p.requirementId)) return true;
+        return false;
+      });
+    }
+
+    // Employee
+    return props.filter(p => {
+      if (p.assignedTo === user.id || p.createdBy === user.id) return true;
+      if (p.dealId && dealIds.has(p.dealId)) return true;
+      if (p.requirementId && visibleReqIds.has(p.requirementId)) return true;
+      return false;
+    });
+  },
+
+  canUserViewProposal(prop, user) {
+    if (!prop || !user) return false;
+    if (user.role === 'manager') return true;
+    const props = Store.getProposalsForUser(user);
+    return props.some(p => p.id === prop.id);
+  },
+
+  canUserEditProposal(prop, user) {
+    if (!prop || !user) return false;
+    if (user.role === 'manager') return true;
+    if (user.role === 'team_lead') {
+      return Store.canUserViewProposal(prop, user);
+    }
+    return prop.assignedTo === user.id || prop.createdBy === user.id;
+  },
+
   // ── Export / Import ────────────────────────────────────
   exportData() {
     return {
@@ -262,6 +375,8 @@ export const Store = {
       contacts: getAll(KEYS.contacts),
       deals: getAll(KEYS.deals),
       activities: getAll(KEYS.activities),
+      requirements: getAll(KEYS.requirements),
+      proposals: getAll(KEYS.proposals),
       settings: Store.getSettings(),
       exportedAt: new Date().toISOString()
     };
@@ -269,15 +384,17 @@ export const Store = {
 
   importData(payload) {
     // Pre-serialize all datasets before touching localStorage
-    const dataKeys = [KEYS.users, KEYS.teams, KEYS.leads, KEYS.contacts, KEYS.deals, KEYS.activities, KEYS.settings];
+    const dataKeys = [KEYS.users, KEYS.teams, KEYS.leads, KEYS.contacts, KEYS.deals, KEYS.activities, KEYS.requirements, KEYS.proposals, KEYS.settings];
     const newValues = {
-      [KEYS.users]:      JSON.stringify(payload.users || []),
-      [KEYS.teams]:      JSON.stringify(payload.teams || []),
-      [KEYS.leads]:      JSON.stringify(payload.leads || []),
-      [KEYS.contacts]:   JSON.stringify(payload.contacts || []),
-      [KEYS.deals]:      JSON.stringify(payload.deals || []),
-      [KEYS.activities]: JSON.stringify(payload.activities || []),
-      [KEYS.settings]:   JSON.stringify(payload.settings || {})
+      [KEYS.users]:        JSON.stringify(payload.users || []),
+      [KEYS.teams]:        JSON.stringify(payload.teams || []),
+      [KEYS.leads]:        JSON.stringify(payload.leads || []),
+      [KEYS.contacts]:     JSON.stringify(payload.contacts || []),
+      [KEYS.deals]:        JSON.stringify(payload.deals || []),
+      [KEYS.activities]:   JSON.stringify(payload.activities || []),
+      [KEYS.requirements]: JSON.stringify(payload.requirements || []),
+      [KEYS.proposals]:    JSON.stringify(payload.proposals || []),
+      [KEYS.settings]:     JSON.stringify(payload.settings || {})
     };
 
     // Back up existing values

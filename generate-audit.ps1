@@ -8,14 +8,14 @@ $stamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
 
 New-Item -ItemType Directory -Force audits | Out-Null
 
-git add -N . | Out-Null
+& "C:\Program Files\Git\cmd\git.exe" add -N . | Out-Null
 
-$branch = git branch --show-current
-$commit = git rev-parse --short HEAD
-$status = git status --short
-$changedFiles = git diff --name-status HEAD -- . ":(exclude)audits/CHANGE_AUDIT.md"
-$summary = git diff --stat HEAD -- . ":(exclude)audits/CHANGE_AUDIT.md"
-$diff = git diff --no-ext-diff HEAD -- . ":(exclude)audits/CHANGE_AUDIT.md"
+$branch = & "C:\Program Files\Git\cmd\git.exe" branch --show-current
+$commit = & "C:\Program Files\Git\cmd\git.exe" rev-parse --short HEAD
+$status = & "C:\Program Files\Git\cmd\git.exe" status --short
+$changedFiles = & "C:\Program Files\Git\cmd\git.exe" diff --name-status HEAD -- . ":(exclude)audits/CHANGE_AUDIT.md"
+$summary = & "C:\Program Files\Git\cmd\git.exe" diff --stat HEAD -- . ":(exclude)audits/CHANGE_AUDIT.md"
+$diff = & "C:\Program Files\Git\cmd\git.exe" diff --no-ext-diff HEAD -- . ":(exclude)audits/CHANGE_AUDIT.md"
 
 $report = @(
 "# AI Change Audit Report"

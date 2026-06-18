@@ -110,6 +110,44 @@ export function renderDealDetail(params) {
     `;
   }).join('') || '<div class="activity-feed-empty">No activities recorded.</div>';
 
+  const reqs = Store.getRequirementsForUser(user).filter(r => r.dealId === deal.id);
+  const props = Store.getProposalsForUser(user).filter(p => p.dealId === deal.id);
+
+  let reqHtml = reqs.length === 0 ? '<div style="color:var(--color-muted); font-size:0.85rem; margin-bottom:1rem;">No linked requirements.</div>' :
+    reqs.map(r => `
+      <div style="border:1px solid var(--color-hairline-soft); border-radius:4px; padding:8px; margin-bottom:8px; background:var(--color-surface-card);">
+        <div style="font-weight:600; font-size:0.9rem;">${r.title}</div>
+        <div style="font-size:0.8rem; color:var(--color-muted);">Type: ${r.requirementType} | Status: ${r.status}</div>
+      </div>
+    `).join('');
+
+  let propHtml = props.length === 0 ? '<div style="color:var(--color-muted); font-size:0.85rem; margin-bottom:1rem;">No linked proposals.</div>' :
+    props.map(p => `
+      <div style="border:1px solid var(--color-hairline-soft); border-radius:4px; padding:8px; margin-bottom:8px; background:var(--color-surface-card);">
+        <div style="font-weight:600; font-size:0.9rem;">${p.title} <span class="badge badge-neutral" style="font-size:0.7rem;">v${p.version || '1.0'}</span></div>
+        <div style="font-size:0.8rem; color:var(--color-muted);">Status: ${p.status} | Total: ${formatCurrency(p.grandTotal || 0)}</div>
+      </div>
+    `).join('');
+
+  const reqPropSection = `
+    <div class="dashboard-section" style="display:flex; gap:1rem; flex-wrap:wrap;">
+      <div style="flex:1; min-width:300px;">
+        <div class="dashboard-section-header" style="justify-content:space-between; align-items:center;">
+          <h4 class="dashboard-section-title" style="margin:0;">Requirements</h4>
+          <a href="#/requirements" class="btn btn-sm btn-secondary">View All</a>
+        </div>
+        <div>${reqHtml}</div>
+      </div>
+      <div style="flex:1; min-width:300px;">
+        <div class="dashboard-section-header" style="justify-content:space-between; align-items:center;">
+          <h4 class="dashboard-section-title" style="margin:0;">Proposals</h4>
+          <a href="#/proposals" class="btn btn-sm btn-secondary">View All</a>
+        </div>
+        <div>${propHtml}</div>
+      </div>
+    </div>
+  `;
+
   return `
     <div class="content-inner">
       <div class="deal-detail-header">
@@ -127,6 +165,8 @@ export function renderDealDetail(params) {
           ${sopProgressHtml}
         </div>
       </div>
+
+      ${reqPropSection}
 
       <div class="dashboard-section">
         <div class="dashboard-section-header" style="justify-content:space-between; align-items:center;">

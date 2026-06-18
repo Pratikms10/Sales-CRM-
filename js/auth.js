@@ -14,6 +14,8 @@ const NAV_ITEMS = [
   { id: 'contacts',  label: 'Contacts',   hash: '#/contacts',  icon: 'contacts',  roles: ['manager', 'team_lead', 'employee'] },
   { id: 'deals',     label: 'Deals',      hash: '#/deals',     icon: 'deals',     roles: ['manager', 'team_lead', 'employee'] },
   { id: 'activities',label: 'Activities', hash: '#/activities',icon: 'activities',roles: ['manager', 'team_lead', 'employee'] },
+  { id: 'requirements',label: 'Requirements', hash: '#/requirements',icon: 'requirements',roles: ['manager', 'team_lead', 'employee'] },
+  { id: 'proposals',   label: 'Proposals',  hash: '#/proposals', icon: 'proposals', roles: ['manager', 'team_lead', 'employee'] },
   { id: 'team',      label: 'Team',       hash: '#/team',      icon: 'team',      roles: ['manager', 'team_lead'] },
   { id: 'reports',   label: 'Reports',    hash: '#/reports',   icon: 'reports',   roles: ['manager'] },
   { id: 'settings',  label: 'Settings',   hash: '#/settings',  icon: 'settings',  roles: ['manager', 'team_lead', 'employee'] }
